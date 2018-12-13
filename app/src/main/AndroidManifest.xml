@@ -8,12 +8,6 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <meta-data
-            android:name="design_width_in_dp"
-            android:value="1086"/>
-        <meta-data
-            android:name="design_height_in_dp"
-            android:value="1920"/>
         <activity android:name=".HomeActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
