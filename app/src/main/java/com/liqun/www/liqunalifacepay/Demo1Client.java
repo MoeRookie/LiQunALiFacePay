@@ -6,7 +6,7 @@ import java.net.Socket;
 
 public class Demo1Client {
     public static void main(String[] args) {
-        String msg = "POSCERTIFY${\"ip\":\"128.192.80.252\",\"operators\":\"90001\",\"flag\":\"0\"}";
+        String msg = "OFFLINECERTIFY${\"ip\":\"128.192.80.251\",\"flag\":\"0\"}";
         //建立tcp的服务
         try {
             Socket socket = new Socket("128.192.80.113",3012);

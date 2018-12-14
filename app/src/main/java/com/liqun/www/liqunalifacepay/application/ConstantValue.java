@@ -17,4 +17,12 @@ public class ConstantValue {
      * POS后台服务器地址
      */
     public static final String IP_SERVER_ADDRESS = "128.192.80.113";
+    /**
+     * 日结的flag
+     */
+    public static final String FLAG_DAY_END = "0";
+    /**
+     * 日结的标识符
+     */
+    public static final String TAG_DAY_END = "OFFLINECERTIFY";
 }

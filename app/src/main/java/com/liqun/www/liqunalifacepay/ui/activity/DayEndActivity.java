@@ -11,7 +11,6 @@ import android.support.annotation.Nullable;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -19,8 +18,10 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.liqun.www.liqunalifacepay.R;
+import com.liqun.www.liqunalifacepay.application.ALiFacePayApplication;
 import com.liqun.www.liqunalifacepay.application.ConstantValue;
 import com.liqun.www.liqunalifacepay.data.utils.CommonUtils;
+import com.liqun.www.liqunalifacepay.data.utils.JointDismantleUtils;
 import com.liqun.www.liqunalifacepay.data.utils.L;
 
 import java.io.IOException;
@@ -29,8 +30,9 @@ import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 
+import static com.liqun.www.liqunalifacepay.data.bean.DayEndBean.DayEndRequestBean;
+
 public class DayEndActivity extends AppCompatActivity {
-    private static final String TAG = "DayEndActivity";
     private ImageView mIvBack;
     private Button mBtnDayEnd;
     private ProgressDialog mDialog;
@@ -45,15 +47,12 @@ public class DayEndActivity extends AppCompatActivity {
                 case 1:
                     err = R.string.connect_server_fail;
                     break;
-                case 2:
-                    err = R.string.day_end_end;
-                    mDialog.dismiss();
-                    break;
             }
             CommonUtils.showLongToast(err);
             super.handleMessage(msg);
         }
     };
+    private DayEndRequestBean mRequestBean;
 
     public static Intent newIntent(Context packageContext) {
         Intent intent = new Intent(packageContext, DayEndActivity.class);
@@ -66,6 +65,13 @@ public class DayEndActivity extends AppCompatActivity {
         setContentView(R.layout.activity_day_end);
         initUI();
         initListener();
+        initRequestBean();
+    }
+
+    private void initRequestBean() {
+        mRequestBean = new DayEndRequestBean();
+        mRequestBean.setIp(ALiFacePayApplication.getInstance().getHostIP());
+        mRequestBean.setFlag(ConstantValue.FLAG_DAY_END);
     }
 
     private void initNetWorkServer() {
@@ -84,10 +90,9 @@ public class DayEndActivity extends AppCompatActivity {
                     byte[] buf = new byte[1024];
                     int length = 0;
                     length = inputStream.read(buf);
-                    L.i("内容已接收:"+ new String(buf,0,length));
+                    L.i("服务端返回 = " + new String(buf,0,length));
                     //关闭资源
                     serverSocket.close();
-                    mHandler.sendEmptyMessage(2);
                 } catch (IOException e) {
                     mHandler.sendEmptyMessage(0);
                     e.printStackTrace();
@@ -179,7 +184,10 @@ public class DayEndActivity extends AppCompatActivity {
                  *  dismantleResponse(str);
                  *      json -> object(fastJson)
                  */
-                String msg = "OFFLINECERTIFY${\"ip\":\"128.192.80.251\",\"flag\":\"0\"}";
+                String msg = JointDismantleUtils.jointRequest(
+                        ConstantValue.TAG_DAY_END,
+                        mRequestBean
+                );
                 //建立tcp的服务
                 try {
                     Socket socket = new Socket(
@@ -189,7 +197,7 @@ public class DayEndActivity extends AppCompatActivity {
                     OutputStream outputStream = socket.getOutputStream();
                     //利用输出流对象把数据写出即可。
                     outputStream.write(msg.getBytes("utf-8"));
-                    Log.i(TAG, "内容已写出!");
+                    L.i("内容已写出!");
                     //关闭资源
                     socket.close();
                 } catch (IOException e) {
