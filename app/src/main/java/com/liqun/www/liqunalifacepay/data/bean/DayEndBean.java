@@ -37,7 +37,7 @@ public class DayEndBean {
                     '}';
         }
     }
-    public class DayEndResponseBean{
+    public static class DayEndResponseBean{
         String retflag; // 返回标志 0 正常 1异常
         String retmsg; // 返回的信息
 

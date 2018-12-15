@@ -31,27 +31,50 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 import static com.liqun.www.liqunalifacepay.data.bean.DayEndBean.DayEndRequestBean;
+import static com.liqun.www.liqunalifacepay.data.bean.DayEndBean.DayEndResponseBean;
 
 public class DayEndActivity extends AppCompatActivity {
     private ImageView mIvBack;
     private Button mBtnDayEnd;
     private ProgressDialog mDialog;
+    private Message mMessage = Message.obtain();
     private Handler mHandler = new Handler(){
         @Override
         public void handleMessage(Message msg) {
-            int err = -1;
+            int err = R.string.day_end_success;
             switch (msg.what) {
                 case 0:
                     err = R.string.connect_client_fail;
+                    CommonUtils.showLongToast(err);
                     break;
                 case 1:
                     err = R.string.connect_server_fail;
+                    CommonUtils.showLongToast(err);
+                    break;
+                case 2:
+                    if (msg.obj != null) {
+                        handleResult(msg.obj);
+                    }
                     break;
             }
-            CommonUtils.showLongToast(err);
             super.handleMessage(msg);
         }
     };
+
+    /**
+     * 处理请求返回结果
+     * @param
+     */
+    private void handleResult(Object obj) {
+        // 日结
+        DayEndResponseBean bean = null;
+        if (obj instanceof DayEndResponseBean) {
+            bean = (DayEndResponseBean) obj;
+        }
+        mDialog.dismiss();
+        CommonUtils.showLongToast(bean.getRetmsg());
+    }
+
     private DayEndRequestBean mRequestBean;
 
     public static Intent newIntent(Context packageContext) {
@@ -91,11 +114,17 @@ public class DayEndActivity extends AppCompatActivity {
                     int length = 0;
                     length = inputStream.read(buf);
                     L.i("服务端返回 = " + new String(buf,0,length));
+                    mMessage.what = 2;
+                    mMessage.obj = JointDismantleUtils.dismantleResponse(
+                            new String(buf,0,length)
+                    );
                     //关闭资源
                     serverSocket.close();
                 } catch (IOException e) {
-                    mHandler.sendEmptyMessage(0);
+                    mMessage.what = 0;
                     e.printStackTrace();
+                }finally {
+                    mHandler.sendMessage(mMessage);
                 }
             }
         }.start();
@@ -201,7 +230,8 @@ public class DayEndActivity extends AppCompatActivity {
                     //关闭资源
                     socket.close();
                 } catch (IOException e) {
-                    mHandler.sendEmptyMessage(1);
+                    mMessage.what = 1;
+                    mHandler.sendMessage(mMessage);
                     e.printStackTrace();
                 }
             }
