@@ -9,17 +9,25 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import com.liqun.www.liqunalifacepay.R;
-import com.liqun.www.liqunalifacepay.data.bean.SettingItem;
+import com.liqun.www.liqunalifacepay.data.bean.SettingItemBean;
 
 import java.util.List;
-import java.util.zip.Inflater;
 
 public class SettingAdapter extends RecyclerView.Adapter
         <SettingAdapter.SettingItemViewHolder> {
     private Context mCtx;
-    private List<SettingItem> mItemList;
+    private List<SettingItemBean> mItemList;
     private LayoutInflater mInflater;
-    public SettingAdapter(Context ctx, List<SettingItem> itemList) {
+    private OnItemClickListener mListener;
+    public interface OnItemClickListener{
+        void onItemClick(int position);
+    }
+
+    public void setOnItemClickListener(OnItemClickListener listener) {
+        mListener = listener;
+    }
+
+    public SettingAdapter(Context ctx, List<SettingItemBean> itemList) {
         mCtx = ctx;
         mItemList = itemList;
         mInflater = LayoutInflater.from(mCtx);
@@ -33,10 +41,16 @@ public class SettingAdapter extends RecyclerView.Adapter
     }
 
     @Override
-    public void onBindViewHolder(@NonNull SettingItemViewHolder holder, int i) {
-        SettingItem item = mItemList.get(i);
+    public void onBindViewHolder(@NonNull final SettingItemViewHolder holder, final int i) {
+        SettingItemBean item = mItemList.get(i);
         holder.mTvTitle.setText(item.getTitleId());
         holder.mTvContent.setText(item.getContent());
+        holder.itemView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mListener.onItemClick(i);
+            }
+        });
     }
 
     @Override

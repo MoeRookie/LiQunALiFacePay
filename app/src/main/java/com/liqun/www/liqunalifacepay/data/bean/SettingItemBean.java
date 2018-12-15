@@ -1,13 +1,13 @@
 package com.liqun.www.liqunalifacepay.data.bean;
 
-public class SettingItem {
+public class SettingItemBean {
     private int titleId; // 标题
     private String content; // 内容
 
-    public SettingItem() {
+    public SettingItemBean() {
     }
 
-    public SettingItem(int titleId, String content) {
+    public SettingItemBean(int titleId, String content) {
         this.titleId = titleId;
         this.content = content;
     }
@@ -30,7 +30,7 @@ public class SettingItem {
 
     @Override
     public String toString() {
-        return "SettingItem{" +
+        return "SettingItemBean{" +
                 "titleId=" + titleId +
                 ", content='" + content + '\'' +
                 '}';

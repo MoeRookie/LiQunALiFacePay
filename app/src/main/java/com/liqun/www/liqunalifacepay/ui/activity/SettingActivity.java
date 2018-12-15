@@ -18,7 +18,8 @@ import android.widget.TextView;
 import com.liqun.www.liqunalifacepay.R;
 import com.liqun.www.liqunalifacepay.application.ALiFacePayApplication;
 import com.liqun.www.liqunalifacepay.application.ConstantValue;
-import com.liqun.www.liqunalifacepay.data.bean.SettingItem;
+import com.liqun.www.liqunalifacepay.data.bean.SettingItemBean;
+import com.liqun.www.liqunalifacepay.data.utils.SpUtils;
 import com.liqun.www.liqunalifacepay.ui.adapter.SettingAdapter;
 
 import java.util.ArrayList;
@@ -27,7 +28,7 @@ import java.util.List;
 public class SettingActivity extends AppCompatActivity {
     private ImageView mIvBack;
     private RecyclerView mRvSetting;
-    private List<SettingItem> mItemList;
+    private List<SettingItemBean> mItemList;
     private SettingAdapter mAdapter;
     public static Intent newIntent(Context packageContext) {
         Intent intent = new Intent(packageContext, SettingActivity.class);
@@ -50,39 +51,191 @@ public class SettingActivity extends AppCompatActivity {
                 finish();
             }
         });
+        mAdapter.setOnItemClickListener(new SettingAdapter.OnItemClickListener() {
+            @Override
+            public void onItemClick(int position) {
+                switch (position) {
+                    /**
+                     * 若点击了"门店名称". . ."Pos后台IP端口"
+                     * _>修改以其标题作为title的弹框:
+                     *      显示之前保存过的"门店名称",若首次设置则显示为空(hint="请输入 . . .")
+                     *      点击"确认"按钮:
+                     *          若编辑框中没有任何内容,则直接提示"内容不能为空！"
+                     *          否则获取到编辑框中的内容、关闭对话框、设置给对应的列表项内容并刷新保存;
+                     */
+                    case 2:
+                    case 3:
+                    case 4:
+                    case 5:
+                    case 6:
+                    case 7:
+                        showEditContentDialog(position);
+                        break;
+                    case 8:
+                        /**
+                         *
+                         */
+//                        showSelectShoppingBagDialog(position);
+                        break;
+                }
+            }
+        });
+    }
+
+    /**
+     * _>修改以其标题作为title的弹框
+     * @param position 列表项的索引值
+     */
+    private void showEditContentDialog(final int position) {
+        final SettingItemBean item = mItemList.get(position);
+        String title = getString(item.getTitleId());
+        String content = item.getContent();
+        // 初始化dialog配置
+        View view = View.inflate(this, R.layout.view_item_content, null);
+        final EditText etContent = view.findViewById(R.id.et_content);
+        etContent.selectAll();
+        // 显示之前保存过的"门店名称"
+        etContent.setText(content);
+        final TextView tvErrHint = view.findViewById(R.id.tv_err_hint);
+        final AlertDialog dialog = new AlertDialog.Builder(
+                this)
+                .setTitle(title)
+                .setView(view)
+                .setCancelable(true)
+                .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                    }
+                })
+                .setPositiveButton(R.string.sure,null)
+                .create();
+        dialog.show();
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+                .setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        String content = etContent.getText().toString().trim();
+                        if (TextUtils.isEmpty(content)) {
+                            tvErrHint.setText(R.string.content_null_err);
+                            return;
+                        }
+                        item.setContent(content);
+                        mAdapter.notifyDataSetChanged();
+                        saveContent(item,position);
+                        dialog.dismiss();
+                    }
+                });
+    }
+
+    private void saveContent(SettingItemBean item, int position) {
+        switch (position) {
+            case 2:
+                SpUtils.putString(
+                        this,
+                        ConstantValue.SHOP_NAME,
+                        item.getContent()
+                );
+                break;
+            case 3:
+                SpUtils.putString(
+                        this,
+                        ConstantValue.SHOP_NO,
+                        item.getContent()
+                );
+                break;
+            case 4:
+                SpUtils.putString(
+                        this,
+                        ConstantValue.SHOP_MERCHANT_NO,
+                        item.getContent()
+                );
+                break;
+            case 5:
+                SpUtils.putString(
+                        this,
+                        ConstantValue.CATWALK_NO,
+                        item.getContent()
+                );
+                break;
+            case 6:
+                SpUtils.putString(
+                        this,
+                        ConstantValue.POS_SERVER_IP,
+                        item.getContent()
+                );
+                break;
+            case 7:
+                SpUtils.putString(
+                        this,
+                        ConstantValue.POS_SERVER_PORT,
+                        item.getContent()
+                );
+                break;
+        }
     }
 
     private void initData() {
         mItemList = new ArrayList<>();
-        mItemList.add(new SettingItem(
+        mItemList.add(new SettingItemBean(
                 R.string.self_gathering_ip,ALiFacePayApplication.getInstance().getHostIP()));
-        mItemList.add(new SettingItem(
+        mItemList.add(new SettingItemBean(
             R.string.self_gathering_port,ConstantValue.SELF_GATHERING_PORT
         ));
         mItemList.add(
-                new SettingItem(R.string.shop_name,"")
+                new SettingItemBean(R.string.shop_name,
+                        SpUtils.getString(
+                                this,
+                                ConstantValue.SHOP_NAME,
+                                ""
+                        ))
         );
         mItemList.add(
-                new SettingItem(R.string.shop_no,"")
+                new SettingItemBean(R.string.shop_no,
+                        SpUtils.getString(
+                                this,
+                                ConstantValue.SHOP_NO,
+                                ""
+                        ))
         );
         mItemList.add(
-                new SettingItem(R.string.shop_merchant_no,"")
+                new SettingItemBean(R.string.shop_merchant_no,
+                        SpUtils.getString(
+                                this,
+                                ConstantValue.SHOP_MERCHANT_NO,
+                                ""
+                        ))
         );
         mItemList.add(
-                new SettingItem(R.string.catwalk_no,"")
+                new SettingItemBean(R.string.catwalk_no,
+                        SpUtils.getString(
+                                this,
+                                ConstantValue.CATWALK_NO,
+                                ""
+                        ))
         );
         mItemList.add(
-                new SettingItem(R.string.pos_server_ip,"")
+                new SettingItemBean(R.string.pos_server_ip,
+                        SpUtils.getString(
+                                this,
+                                ConstantValue.POS_SERVER_IP,
+                                ""
+                        ))
         );
         mItemList.add(
-                new SettingItem(R.string.pos_server_port, "")
+                new SettingItemBean(R.string.pos_server_port,
+                        SpUtils.getString(
+                                this,
+                                ConstantValue.POS_SERVER_PORT,
+                                ""
+                        ))
         );
         mItemList.add(
-                new SettingItem(R.string.use_shopping_bag,
+                new SettingItemBean(R.string.use_shopping_bag,
                         getString(R.string.no_use_shopping_bag))
         );
         mItemList.add(
-                new SettingItem(R.string.debug_pattern,
+                new SettingItemBean(R.string.debug_pattern,
                         getString(R.string.debug_close))
         );
     }

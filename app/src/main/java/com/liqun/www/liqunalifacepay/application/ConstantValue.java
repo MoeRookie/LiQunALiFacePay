@@ -29,4 +29,28 @@ public class ConstantValue {
      * 自助收银IP端口
      */
     public static final String SELF_GATHERING_PORT = "20001";
+    /**
+     * 门店名称
+     */
+    public static final String SHOP_NAME = "shop_name";
+    /**
+     * Pos后台IP端口
+     */
+    public static final String POS_SERVER_PORT = "pos_server_port";
+    /**
+     * Pos后台IP地址
+     */
+    public static final String POS_SERVER_IP = "pos_server_ip";
+    /**
+     * 款台号
+     */
+    public static final String CATWALK_NO = "catwalk_no";
+    /**
+     * 门店商户号
+     */
+    public static final String SHOP_MERCHANT_NO = "shop_merchant_no";
+    /**
+     * 门店编号
+     */
+    public static final String SHOP_NO = "shop_no";
 }

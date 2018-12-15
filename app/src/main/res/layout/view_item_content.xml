@@ -4,13 +4,13 @@
     android:layout_height="wrap_content"
     android:orientation="vertical">
     <EditText
-        android:id="@+id/et_pwd"
+        android:id="@+id/et_content"
         android:layout_marginTop="20dp"
         android:layout_marginLeft="50dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="@string/plsase_input"
-        android:inputType="textPassword"
+        android:inputType="text"
         android:textSize="22sp">
     </EditText>
     <TextView

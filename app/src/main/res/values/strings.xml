@@ -26,4 +26,6 @@
     <string name="no_use_shopping_bag">未启用购物袋</string>
     <string name="debug_pattern">调试模式</string>
     <string name="debug_close">调试模式已关闭</string>
+    <string name="plsase_input">请输入 . . .</string>
+    <string name="content_null_err">内容不能为空！</string>
 </resources>
