@@ -12,4 +12,18 @@
     <string name="connect_client_fail">读取服务器失败 . . .</string>
     <string name="result_null_err">日结无果,请重新操作！</string>
     <string name="day_end_success">日结完成！</string>
+    <!-- 设置 -->
+    <string name="title_setting">设置</string>
+    <string name="self_gathering_ip">自助收款IP地址</string>
+    <string name="self_gathering_port">自助收银IP端口</string>
+    <string name="shop_name">门店名称</string>
+    <string name="shop_no">门店编号</string>
+    <string name="shop_merchant_no">门店商户号</string>
+    <string name="catwalk_no">款台号</string>
+    <string name="pos_server_ip">Pos后台IP地址</string>
+    <string name="pos_server_port">Pos后台IP端口</string>
+    <string name="use_shopping_bag">启用购物袋</string>
+    <string name="no_use_shopping_bag">未启用购物袋</string>
+    <string name="debug_pattern">调试模式</string>
+    <string name="debug_close">调试模式已关闭</string>
 </resources>

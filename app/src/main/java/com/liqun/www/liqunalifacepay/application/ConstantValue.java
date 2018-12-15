@@ -25,4 +25,8 @@ public class ConstantValue {
      * 日结的标识符
      */
     public static final String TAG_DAY_END = "OFFLINECERTIFY";
+    /**
+     * 自助收银IP端口
+     */
+    public static final String SELF_GATHERING_PORT = "20001";
 }

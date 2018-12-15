@@ -12,14 +12,15 @@ import android.widget.LinearLayout.LayoutParams;
 
 import com.liqun.www.liqunalifacepay.R;
 
-public class HomeActivity extends AppCompatActivity {
-    private static final String TAG = "HomeActivity";
+public class HomeActivity extends AppCompatActivity
+implements View.OnClickListener {
     private Display mDefaultDisplay;
     private ImageView mIvHead;
     private Button mBtnVip;
     private Button mBtnNoVip;
     private long[] mHits = new long[5]; // 设置多击时需要的点击次数
     private ImageView mIvLiQun;
+    private ImageView mIvRt;
 
     @Override
 
@@ -27,23 +28,14 @@ public class HomeActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
         initUI();
-        initListener();
+        setListener();
     }
 
-    private void initListener() {
-        mIvLiQun.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                System.arraycopy(mHits, 1, mHits, 0, mHits.length - 1);
-                mHits[mHits.length - 1] = SystemClock.uptimeMillis();
-                if (mHits[mHits.length - 1] - mHits[0] < 1000) {
-                    // 满足"五击事件"后,跳转"日结"界面
-                    Intent intent = DayEndActivity.newIntent(HomeActivity.this);
-                    startActivity(intent);
-                }
-            }
-        });
+    private void setListener() {
+        mIvLiQun.setOnClickListener(this);
+        mIvRt.setOnClickListener(this);
     }
+
 
     private void initUI() {
         mDefaultDisplay = getWindowManager().getDefaultDisplay();
@@ -51,6 +43,7 @@ public class HomeActivity extends AppCompatActivity {
         mIvHead = findViewById(R.id.iv_head);
         setImageDisplay(mIvHead,898,1920);
         mIvLiQun = findViewById(R.id.iv_liqun);
+        mIvRt = findViewById(R.id.iv_rt);
     }
 
     /**
@@ -64,5 +57,25 @@ public class HomeActivity extends AppCompatActivity {
         layoutParams.width = mDefaultDisplay.getWidth();
         layoutParams.height = layoutParams.width * width / height;
         iv.setLayoutParams(layoutParams);
+    }
+
+    @Override
+    public void onClick(View v) {
+        Intent intent = null;
+        System.arraycopy(mHits, 1, mHits, 0, mHits.length - 1);
+        mHits[mHits.length - 1] = SystemClock.uptimeMillis();
+        if (mHits[mHits.length - 1] - mHits[0] < 1000) {
+            switch (v.getId()) {
+                case R.id.iv_liqun:
+                    // 满足"五击事件"后,跳转"日结"界面
+                    intent = DayEndActivity.newIntent(HomeActivity.this);
+                    break;
+                case R.id.iv_rt:
+                    // 满足"五击事件"后,跳转"设置"界面
+                    intent = SettingActivity.newIntent(HomeActivity.this);
+                    break;
+            }
+            startActivity(intent);
+        }
     }
 }
