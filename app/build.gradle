@@ -27,4 +27,6 @@ dependencies {
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
     implementation 'com.alibaba:fastjson:1.1.70.android'
     implementation 'com.android.support:recyclerview-v7:28.0.0'
+    // 今日头条屏幕适配方案
+    implementation 'me.jessyan:autosize:1.1.1'
 }
