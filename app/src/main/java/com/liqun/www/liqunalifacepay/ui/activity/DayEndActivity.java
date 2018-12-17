@@ -34,7 +34,7 @@ import static com.liqun.www.liqunalifacepay.data.bean.DayEndBean.DayEndRequestBe
 import static com.liqun.www.liqunalifacepay.data.bean.DayEndBean.DayEndResponseBean;
 
 public class DayEndActivity extends AppCompatActivity {
-    private ImageView mIvBack;
+    private TextView mTvBack;
     private Button mBtnDayEnd;
     private ProgressDialog mDialog;
     private Message mMessage = Message.obtain();
@@ -131,7 +131,7 @@ public class DayEndActivity extends AppCompatActivity {
     }
 
     private void initListener() {
-        mIvBack.setOnClickListener(new View.OnClickListener() {
+        mTvBack.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 finish();
@@ -239,7 +239,7 @@ public class DayEndActivity extends AppCompatActivity {
     }
 
     private void initUI() {
-        mIvBack = findViewById(R.id.iv_back);
+        mTvBack = findViewById(R.id.tv_back);
         mBtnDayEnd = findViewById(R.id.btn_day_end);
     }
 }
