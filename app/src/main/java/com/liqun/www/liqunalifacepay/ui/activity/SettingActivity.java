@@ -253,7 +253,7 @@ public class SettingActivity extends AppCompatActivity {
 
     private void showDialog() {
         // 初始化dialog配置
-        View view = View.inflate(this, R.layout.dialog_pwd, null);
+        View view = View.inflate(this, R.layout.dialog_global, null);
         final EditText etPwd = view.findViewById(R.id.et_pwd);
         final TextView tvErrHint = view.findViewById(R.id.tv_err_hint);
         final AlertDialog dialog = new AlertDialog.Builder(

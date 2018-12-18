@@ -1,5 +1,7 @@
 package com.liqun.www.liqunalifacepay.data.utils;
 
+import android.text.TextUtils;
+
 import com.alibaba.fastjson.JSON;
 
 import static com.liqun.www.liqunalifacepay.data.bean.DayEndBean.DayEndRequestBean;
@@ -16,7 +18,7 @@ public class JointDismantleUtils {
     public static String jointRequest(String tag,Object obj){
         String request = tag + "$";
         String json = null;
-        if (obj instanceof DayEndRequestBean) {
+        if (obj instanceof DayEndRequestBean) { // 日结
             DayEndRequestBean derb = (DayEndRequestBean) obj;
             json = JSON.toJSONString(derb);
         }
@@ -32,11 +34,11 @@ public class JointDismantleUtils {
         Object obj = null;
         String tag = null;
         String msg = null;
-        if (result != null) {
+        if (!TextUtils.isEmpty(result)) {
             tag = result.substring(0,result.indexOf("$"));
             msg = result.substring(result.indexOf("$")+1);
             switch (tag) {
-                case RESPONSE_TAG_DAY_END:
+                case RESPONSE_TAG_DAY_END: // 日结
                     obj = JSON.parseObject(msg,DayEndResponseBean.class);
                     break;
             }

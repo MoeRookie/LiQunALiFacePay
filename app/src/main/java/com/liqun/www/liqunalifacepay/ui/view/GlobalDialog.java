@@ -14,7 +14,7 @@ import com.liqun.www.liqunalifacepay.R;
  * 自定义 dialog
  */
 
-public class PwdDialog extends Dialog {
+public class GlobalDialog extends Dialog {
     private Button btnYes, btnNo;
     private TextView tvTitle, tvMessage;
     private EditText etEnter;
@@ -27,34 +27,34 @@ public class PwdDialog extends Dialog {
     private String strYes, strNo;
 
     // 取消按钮被点击了的监听器
-    private onNoOnclickListener noOnclickListener;
+    private OnNoClickListener onNoClickListener;
     // 确定按钮被点击了的监听器
-    private onYesOnclickListener yesOnclickListener;
+    private OnYesClickListener onYesClickListener;
 
     /** 设置取消按钮的显示内容和监听 */
-    public void setNoOnclickListener(String str, onNoOnclickListener onNoOnclickListener) {
+    public void setOnNoClickListener(String str, OnNoClickListener OnNoClickListener) {
         if (str != null) {
             strNo = str;
         }
-        this.noOnclickListener = onNoOnclickListener;
+        this.onNoClickListener = OnNoClickListener;
     }
 
     /** 设置确定按钮的显示内容和监听 */
-    public void setYesOnclickListener(String str, onYesOnclickListener onYesOnclickListener) {
+    public void setOnYesClickListener(String str, OnYesClickListener OnYesClickListener) {
         if (str != null) {
             strYes = str;
         }
-        this.yesOnclickListener = onYesOnclickListener;
+        this.onYesClickListener = OnYesClickListener;
     }
 
-    public PwdDialog(Context context) {
-        super(context, R.style.PwdDialogStyle);
+    public GlobalDialog(Context context) {
+        super(context, R.style.GlobalDialogStyle);
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.dialog_pwd);
+        setContentView(R.layout.dialog_global);
         // 按空白处不能取消动画
         setCanceledOnTouchOutside(false);
         // 初始化界面控件
@@ -104,8 +104,8 @@ public class PwdDialog extends Dialog {
         btnYes.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (yesOnclickListener != null) {
-                    yesOnclickListener.onYesClick();
+                if (onYesClickListener != null) {
+                    onYesClickListener.onYesClick();
                 }
             }
         });
@@ -113,8 +113,8 @@ public class PwdDialog extends Dialog {
         btnNo.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (noOnclickListener != null) {
-                    noOnclickListener.onNoClick();
+                if (onNoClickListener != null) {
+                    onNoClickListener.onNoClick();
                 }
             }
         });
@@ -136,11 +136,11 @@ public class PwdDialog extends Dialog {
         typeInput = type;
     }
     /** 设置确定按钮被点击的接口 */
-    public interface onYesOnclickListener {
+    public interface OnYesClickListener {
         void onYesClick();
     }
     /** 设置取消按钮被点击的接口 */
-    public interface onNoOnclickListener {
+    public interface OnNoClickListener {
         void onNoClick();
     }
 }

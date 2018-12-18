@@ -1,6 +1,5 @@
 package com.liqun.www.liqunalifacepay.ui.activity;
 
-import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
@@ -9,8 +8,10 @@ import android.os.Message;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.text.InputType;
+import android.text.TextUtils;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 
 import com.liqun.www.liqunalifacepay.R;
@@ -19,7 +20,8 @@ import com.liqun.www.liqunalifacepay.application.ConstantValue;
 import com.liqun.www.liqunalifacepay.data.utils.CommonUtils;
 import com.liqun.www.liqunalifacepay.data.utils.JointDismantleUtils;
 import com.liqun.www.liqunalifacepay.data.utils.L;
-import com.liqun.www.liqunalifacepay.ui.view.PwdDialog;
+import com.liqun.www.liqunalifacepay.ui.view.GlobalDialog;
+import com.liqun.www.liqunalifacepay.ui.view.LoadingDialog;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,8 +36,11 @@ public class DayEndActivity extends AppCompatActivity{
     private TextView mTvBack;
     private TextView mTvSure;
     private Button mBtnDayEnd;
-    private ProgressDialog mDialog;
-    private Message mMessage = Message.obtain();
+    private GlobalDialog mGlobalDialog;
+    private LoadingDialog mLoadingDialog;
+    private TextView mTvMessage;
+    private EditText mEtPwd;
+    private Message mMessage;
     private Handler mHandler = new Handler(){
         @Override
         public void handleMessage(Message msg) {
@@ -43,11 +48,9 @@ public class DayEndActivity extends AppCompatActivity{
             switch (msg.what) {
                 case 0:
                     err = R.string.connect_client_fail;
-                    CommonUtils.showLongToast(err);
                     break;
                 case 1:
                     err = R.string.connect_server_fail;
-                    CommonUtils.showLongToast(err);
                     break;
                 case 2:
                     if (msg.obj != null) {
@@ -55,6 +58,7 @@ public class DayEndActivity extends AppCompatActivity{
                     }
                     break;
             }
+            mLoadingDialog.dismiss();
             super.handleMessage(msg);
         }
     };
@@ -69,7 +73,7 @@ public class DayEndActivity extends AppCompatActivity{
         if (obj instanceof DayEndResponseBean) {
             bean = (DayEndResponseBean) obj;
         }
-        mDialog.dismiss();
+        mGlobalDialog.dismiss();
         CommonUtils.showLongToast(bean.getRetmsg());
     }
 
@@ -142,6 +146,7 @@ public class DayEndActivity extends AppCompatActivity{
                     int length = 0;
                     length = inputStream.read(buf);
                     L.i("服务端返回 = " + new String(buf,0,length));
+                    mMessage = Message.obtain();
                     mMessage.what = 2;
                     mMessage.obj = JointDismantleUtils.dismantleResponse(
                             new String(buf,0,length)
@@ -149,6 +154,7 @@ public class DayEndActivity extends AppCompatActivity{
                     //关闭资源
                     serverSocket.close();
                 } catch (IOException e) {
+                    mMessage = Message.obtain();
                     mMessage.what = 0;
                     e.printStackTrace();
                 }finally {
@@ -160,63 +166,66 @@ public class DayEndActivity extends AppCompatActivity{
 
     private void showDialog() {
         // 使用自定义dialog可以避免因使用了头条的适配方式而导致原生dialog适配出错的问题
-        PwdDialog dialog = new PwdDialog(this);
+        mGlobalDialog = new GlobalDialog(this);
         String title = getString(R.string.input_pwd);
         // 设置对话框标题
-        dialog.setTitle(title);
+        mGlobalDialog.setTitle(title);
         // 设置输入的文本类型
-        dialog.setEtInputType(InputType.TYPE_CLASS_NUMBER|InputType.TYPE_NUMBER_VARIATION_PASSWORD);
+        mGlobalDialog.setEtInputType(InputType.TYPE_CLASS_NUMBER|InputType.TYPE_NUMBER_VARIATION_PASSWORD);
         // 显示对话框
-        dialog.show();
-        TextView tvMessage = dialog.findViewById(R.id.tv_message);
+        mGlobalDialog.show();
+        mTvMessage = mGlobalDialog.findViewById(R.id.tv_message);
+        mEtPwd = mGlobalDialog.findViewById(R.id.et_pwd);
         // 设置弹出对话框时显示错误消息的tv不显示且不占空间
-        tvMessage.setVisibility(View.GONE);
-//        // 初始化dialog配置
-//        View view = View.inflate(this, R.layout.dialog_pwd, null);
-//        final EditText etPwd = view.findViewById(R.id.et_pwd);
-//        final TextView tvErrHint = view.findViewById(R.id.tv_err_hint);
-//        final AlertDialog dialog = new AlertDialog.Builder(
-//                this)
-//                .setTitle(R.string.please_input_pwd)
-//                .setView(view)
-//                .setCancelable(false)
-//                .setNegativeButton(R.string.cancel,
-//                        new DialogInterface.OnClickListener() {
-//                            @Override
-//                            public void onClick(DialogInterface dialog, int which) {
-//                                dialog.dismiss();
-//                                finish();
-//                            }
-//                        })
-//                .setPositiveButton(R.string.sure,null)
-//                .create();
-//        dialog.show();
-//        dialog.getButton(AlertDialog.BUTTON_POSITIVE)
-//                .setOnClickListener(new View.OnClickListener() {
-//                @Override
-//                public void onClick(View v) {
-//                    String pwd = etPwd.getText().toString().trim();
-//                    if (TextUtils.isEmpty(pwd)) {
-//                        tvErrHint.setText(R.string.pwd_not_null);
-//                        return;
-//                    }
-//                    if (!ConstantValue.DAY_END_PWD.equals(pwd)) {
-//                        tvErrHint.setText(R.string.pwd_err);
-//                        etPwd.setText("");
-//                        return;
-//                    }
-//                    dialog.dismiss();
-//                    startDayEnd();
-//                }
-//        });
+        mTvMessage.setVisibility(View.GONE);
+        setDialogListener();
     }
 
-    private void startDayEnd() {
-        // 弹出提示"日结中,请稍后 . . ."的对话框
-        mDialog = ProgressDialog.show(
-                this,
-                "日结中 . . .", "",
-                true, false);
+    /**
+     * 监听输入密码对话框取消&确定按钮被点击
+     */
+    private void setDialogListener() {
+        String noStr = getString(R.string.cancel);
+        String yesStr = getString(R.string.sure);
+        mGlobalDialog.setOnNoClickListener(noStr, new GlobalDialog.OnNoClickListener() {
+            @Override
+            public void onNoClick() {
+                mGlobalDialog.dismiss();
+                finish();
+            }
+        });
+        mGlobalDialog.setOnYesClickListener(yesStr, new GlobalDialog.OnYesClickListener() {
+            @Override
+            public void onYesClick() {
+                String pwd = mEtPwd.getText().toString().trim();
+                if (TextUtils.isEmpty(pwd)) {
+                    // 设置msg控件显示&设置显示内容&中断流程
+                    mTvMessage.setVisibility(View.VISIBLE);
+                    mTvMessage.setText(R.string.pwd_not_null);
+                    return;
+                }
+                if (!ConstantValue.DAY_END_PWD.equals(pwd)) {
+                    // 设置msg控件显示&设置显示内容&清空输入框内容&中断流程
+                    mTvMessage.setVisibility(View.VISIBLE);
+                    mTvMessage.setText(R.string.pwd_err);
+                    mEtPwd.setText("");
+                    return;
+                }
+                // 隐藏msg控件&关掉对话框&发起日结请求
+                mTvMessage.setVisibility(View.GONE);
+                mGlobalDialog.dismiss();
+                // doDayEnd();
+                doDayEnd();
+            }
+        });
+    }
+
+    /**
+     * 日结请求
+     */
+    private void doDayEnd() {
+        // 弹出提示"日结中,请稍后 . . ."的对话框(自定义"加载中 . . ."类型的对话框)
+        showLoadingDialog();
         // 请求网络做日结
         new Thread(){
             @Override
@@ -229,7 +238,7 @@ public class DayEndActivity extends AppCompatActivity{
                  *  机具ip地址
                  *  flag
                  *
-                 * JointDismantleUtil
+                 * JointDismantleUtils
                  *  获取本机ip地址?????????????????????????????????????????
                  *  jointRequest(标识符,Object);
                  *      object -> json(fastJson)
@@ -247,17 +256,26 @@ public class DayEndActivity extends AppCompatActivity{
                             ConstantValue.PORT_SERVER_RECEIVE);
                     //获取到Socket的输出流对象
                     OutputStream outputStream = socket.getOutputStream();
-                    //利用输出流对象把数据写出即可。
+                    //利用输出流对象把数据写出即可
                     outputStream.write(msg.getBytes("utf-8"));
                     L.i("内容已写出!");
                     //关闭资源
                     socket.close();
                 } catch (IOException e) {
+                    mMessage = Message.obtain();
                     mMessage.what = 1;
                     mHandler.sendMessage(mMessage);
                     e.printStackTrace();
                 }
             }
         }.start();
+    }
+    /**
+     * 显示提示"加载中 . . ."类型的对话框
+     */
+    private void showLoadingDialog() {
+        mLoadingDialog = new LoadingDialog(this, R.style.LoadingDialogStyle);
+        mLoadingDialog.show();
+        mLoadingDialog.setMessage(R.string.loading_day_end);
     }
 }
