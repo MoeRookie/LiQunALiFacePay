@@ -12,6 +12,7 @@ import android.text.TextUtils;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.liqun.www.liqunalifacepay.R;
@@ -39,39 +40,29 @@ public class DayEndActivity extends AppCompatActivity{
     private GlobalDialog mGlobalDialog;
     private LoadingDialog mLoadingDialog;
     private WarnDialog mWarnDialog;
+    private RelativeLayout mSuccessDialog;
     private TextView mTvMessage;
     private EditText mEtPwd;
     private Message mMessage;
     private Handler mHandler = new Handler(){
         @Override
         public void handleMessage(Message msg) {
-            String message = getString(R.string.day_end_success);
+            int msgId = 0;
             switch (msg.what) {
-                /**
-                 * 读取服务端返回数据失败
-                 * 1.读取的过程中发生了异常
-                 * 2.等待日结的过程中发生了异常
-                 */
                 case 0:
-                    message = getString(R.string.connect_client_fail);
-                    // 隐藏提示加载中的对话框
-                    if (mLoadingDialog != null) {mLoadingDialog.dismiss();}
-                    // 显示警告类的对话框
-                    showWarnDialog(message);
+                    msgId = R.string.connect_client_fail;
+                    // 隐藏提示加载中的对话框&显示警告类的对话框
+                    dismissLoadingDialog(true,msgId);
                     break;
                 case 1:
-                    message = getString(R.string.connect_server_fail);
-                    // 隐藏提示加载中的对话框
-                    mLoadingDialog.dismiss();
-                    // 显示警告类的对话框
-                    showWarnDialog(message);
+                    msgId = R.string.connect_server_fail;
+                    dismissLoadingDialog(true,msgId);
                     break;
                 case 2:
                     if (msg.obj != null) {
                         handleResult(msg.obj);
                     }
-                    // 隐藏提示加载中的对话框
-                    mLoadingDialog.dismiss();
+                    dismissLoadingDialog(false,msgId);
                     break;
             }
             super.handleMessage(msg);
@@ -79,14 +70,30 @@ public class DayEndActivity extends AppCompatActivity{
     };
 
     /**
-     * 显示警告类型的对话框
-     * @param message
+     * 隐藏提示"加载中"的对话框并提示异常信息
+     * @param isError
+     * @param msgId 异常信息串id
      */
-    private void showWarnDialog(String message) {
+    private void dismissLoadingDialog(boolean isError, int msgId) {
+        // 隐藏提示"加载中"的对话框
+        if (mLoadingDialog != null && mLoadingDialog.isShowing()) {
+            mLoadingDialog.dismiss();
+        }
+        if (isError) {
+            // 显示警告类型的对话框
+            showWarnDialog(getString(msgId));
+        }
+    }
+
+    /**
+     * 显示警告类型的对话框
+     * @param msg 报错信息串
+     */
+    private void showWarnDialog(String msg) {
         if (mWarnDialog == null) {
             mWarnDialog = new WarnDialog(this);
         }
-        mWarnDialog.setMessage(message);
+        mWarnDialog.setMessage(msg);
         mWarnDialog.show();
         mWarnDialog.setOnConfirmClickListener(new WarnDialog.OnConfirmClickListener() {
             @Override
@@ -107,8 +114,16 @@ public class DayEndActivity extends AppCompatActivity{
         DayEndResponseBean bean = null;
         if (obj instanceof DayEndResponseBean) {
             bean = (DayEndResponseBean) obj;
+            if ("0".equals(bean.getRetflag())) {
+                // 设置日结完成界面显示
+                mSuccessDialog.setVisibility(View.VISIBLE);
+            } else if ("1".equals(bean.getRetflag())) {
+                // 设置日结完成界面隐藏
+                mSuccessDialog.setVisibility(View.GONE);
+                // 显示⚠️类型的对话框
+                showWarnDialog(bean.getRetmsg());
+            }
         }
-        showWarnDialog(bean.getRetmsg());
     }
 
     private DayEndRequestBean mRequestBean;
@@ -131,6 +146,7 @@ public class DayEndActivity extends AppCompatActivity{
         mTvBack = findViewById(R.id.tv_back);
         mTvSure = findViewById(R.id.tv_sure);
         mBtnDayEnd = findViewById(R.id.btn_day_end);
+        mSuccessDialog = findViewById(R.id.dialog_day_end_success);
     }
 
     private void initRequestBean() {
@@ -140,6 +156,10 @@ public class DayEndActivity extends AppCompatActivity{
     }
 
     private void setListener() {
+        /**
+         * 点击"返回"|"确定"按钮都返回到上一个界面
+         * 即便是"确定"具有积极结果的意义(成功日结)
+         */
         mTvBack.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -152,6 +172,11 @@ public class DayEndActivity extends AppCompatActivity{
                 finish();
             }
         });
+        /**
+         * 点击"日结"按钮
+         * 开启本地服务端,以监听此时作为客户端的服务器返回数据
+         * 弹出确认密码的对话框(因为不是什么人都可以做日结的,必须要有一个验证的过程)
+         */
         mBtnDayEnd.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -161,15 +186,27 @@ public class DayEndActivity extends AppCompatActivity{
                 showGlobalDialog();
             }
         });
+        /**
+         * 点击确定按钮,返回上级界面
+         */
+        mSuccessDialog.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                finish();
+            }
+        });
     }
 
+    /**
+     * 开启本地服务端,以监听此时作为客户端的服务器返回数据
+     */
     private void initNetWorkServer() {
-        // 建立Tcp的服务端,并且监听一个端口
         new Thread(){
             @Override
             public void run() {
                 super.run();
                 try {
+                    // 建立Tcp的服务端,并且监听一个端口
                     ServerSocket serverSocket = new ServerSocket(
                             ConstantValue.PORT_SERVER_RETURN);
                     // 接受客户端的连接
@@ -180,6 +217,9 @@ public class DayEndActivity extends AppCompatActivity{
                     int length = 0;
                     length = inputStream.read(buf);
                     L.i("服务端返回 = " + new String(buf,0,length));
+                    /**
+                     * 为了避免出现msg被重用的问题,每次的msg对象都要通过Message.obtain()方法获取
+                     */
                     mMessage = Message.obtain();
                     mMessage.what = 2;
                     mMessage.obj = JointDismantleUtils.dismantleResponse(
@@ -198,12 +238,15 @@ public class DayEndActivity extends AppCompatActivity{
         }.start();
     }
 
+    /**
+     * 弹出确认密码弹框
+     */
     private void showGlobalDialog() {
         if (mGlobalDialog == null) {
             // 使用自定义dialog可以避免因使用了头条的适配方式而导致原生dialog适配出错的问题
             mGlobalDialog = new GlobalDialog(this);
-            String title = getString(R.string.input_pwd);
             // 设置对话框标题
+            String title = getString(R.string.input_pwd);
             mGlobalDialog.setTitle(title);
             // 设置输入的文本类型
             mGlobalDialog.setEtInputType(InputType.TYPE_CLASS_NUMBER|InputType.TYPE_NUMBER_VARIATION_PASSWORD);
@@ -228,7 +271,9 @@ public class DayEndActivity extends AppCompatActivity{
         mGlobalDialog.setOnNoClickListener(noStr, new GlobalDialog.OnNoClickListener() {
             @Override
             public void onNoClick() {
-                mGlobalDialog.dismiss();
+                if (mGlobalDialog.isShowing()) {
+                    mGlobalDialog.dismiss();
+                }
                 finish();
             }
         });
@@ -237,32 +282,46 @@ public class DayEndActivity extends AppCompatActivity{
             public void onYesClicked() {
                 String pwd = mEtPwd.getText().toString().trim();
                 if (TextUtils.isEmpty(pwd)) {
-                    // 设置msg控件显示&设置显示内容&中断流程
-                    mTvMessage.setVisibility(View.VISIBLE);
-                    mTvMessage.setText(R.string.pwd_not_null);
+                    setErrorMsgLayout(true,R.string.pwd_not_null);
                     return;
                 }
                 if (!ConstantValue.DAY_END_PWD.equals(pwd)) {
-                    // 设置msg控件显示&设置显示内容&清空输入框内容&中断流程
-                    mTvMessage.setVisibility(View.VISIBLE);
-                    mTvMessage.setText(R.string.pwd_err);
+                    setErrorMsgLayout(true,R.string.pwd_err);
                     mEtPwd.setText("");
                     return;
                 }
+                setErrorMsgLayout(false,R.string.empty);
                 // 隐藏msg控件&关掉对话框&发起日结请求
-                mTvMessage.setVisibility(View.GONE);
                 mGlobalDialog.dismiss();
                 // doDayEnd();
+                /**
+                 * 发起日结
+                 * 开启本地服务端,以监听此时作为客户端的服务器返回数据
+                 *  1.端口被占用的异常
+                 *  2.读取服务端返回数据的过程中的io异常
+                 *  3.
+                 */
                 doDayEnd();
             }
         });
     }
 
     /**
+     * 设置报错后的对话框布局
+     * @param isError 是否报错
+     * @param errStrId 报错提示字符串id
+     */
+    private void setErrorMsgLayout(boolean isError, int errStrId) {
+        // 设置msg控件显示&设置显示内容&中断流程
+        mTvMessage.setVisibility(isError?View.VISIBLE:View.GONE);
+        mTvMessage.setText(errStrId);
+    }
+
+    /**
      * 日结请求
      */
     private void doDayEnd() {
-        // 弹出提示"日结中 . . ."的对话框(自定义"加载中 . . ."类型的对话框)
+        // 弹出提示"日结中 . . ."的对话框(自定义"加载"类型的对话框)
         showLoadingDialog();
         // 请求网络做日结
         new Thread(){
