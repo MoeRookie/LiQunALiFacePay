@@ -2,19 +2,15 @@ package com.liqun.www.liqunalifacepay.ui.activity;
 
 import android.app.ProgressDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.annotation.Nullable;
-import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
-import android.text.TextUtils;
+import android.text.InputType;
 import android.view.View;
 import android.widget.Button;
-import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.liqun.www.liqunalifacepay.R;
@@ -23,6 +19,7 @@ import com.liqun.www.liqunalifacepay.application.ConstantValue;
 import com.liqun.www.liqunalifacepay.data.utils.CommonUtils;
 import com.liqun.www.liqunalifacepay.data.utils.JointDismantleUtils;
 import com.liqun.www.liqunalifacepay.data.utils.L;
+import com.liqun.www.liqunalifacepay.ui.view.PwdDialog;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -33,8 +30,9 @@ import java.net.Socket;
 import static com.liqun.www.liqunalifacepay.data.bean.DayEndBean.DayEndRequestBean;
 import static com.liqun.www.liqunalifacepay.data.bean.DayEndBean.DayEndResponseBean;
 
-public class DayEndActivity extends AppCompatActivity {
+public class DayEndActivity extends AppCompatActivity{
     private TextView mTvBack;
+    private TextView mTvSure;
     private Button mBtnDayEnd;
     private ProgressDialog mDialog;
     private Message mMessage = Message.obtain();
@@ -87,8 +85,14 @@ public class DayEndActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_day_end);
         initUI();
-        initListener();
+        setListener();
         initRequestBean();
+    }
+
+    private void initUI() {
+        mTvBack = findViewById(R.id.tv_back);
+        mTvSure = findViewById(R.id.tv_sure);
+        mBtnDayEnd = findViewById(R.id.btn_day_end);
     }
 
     private void initRequestBean() {
@@ -97,8 +101,32 @@ public class DayEndActivity extends AppCompatActivity {
         mRequestBean.setFlag(ConstantValue.FLAG_DAY_END);
     }
 
+    private void setListener() {
+        mTvBack.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                finish();
+            }
+        });
+        mTvSure.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                finish();
+            }
+        });
+        mBtnDayEnd.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // 等待日结服务端
+                initNetWorkServer();
+                // 弹出确认密码弹框
+                showDialog();
+            }
+        });
+    }
+
     private void initNetWorkServer() {
-        //建立Tcp的服务端,并且监听一个端口。
+        // 建立Tcp的服务端,并且监听一个端口
         new Thread(){
             @Override
             public void run() {
@@ -106,9 +134,9 @@ public class DayEndActivity extends AppCompatActivity {
                 try {
                     ServerSocket serverSocket = new ServerSocket(
                             ConstantValue.PORT_SERVER_RETURN);
-                    //接受客户端的连接
-                    Socket socket  =  serverSocket.accept(); //accept()  接受客户端的连接 该方法也是一个阻塞型的方法，没有客户端与其连接时，会一直等待下去。
-                    //获取输入流对象，读取客户端发送的内容。
+                    // 接受客户端的连接
+                    Socket socket  =  serverSocket.accept(); // 接受客户端的连接(该方法是一个阻塞型的方法,当没有客户端与其连接时会一直等待下去)
+                    // 获取输入流对象,读取客户端发送的内容
                     InputStream inputStream = socket.getInputStream();
                     byte[] buf = new byte[1024];
                     int length = 0;
@@ -130,62 +158,57 @@ public class DayEndActivity extends AppCompatActivity {
         }.start();
     }
 
-    private void initListener() {
-        mTvBack.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                finish();
-            }
-        });
-        mBtnDayEnd.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // 等待日结服务端
-                initNetWorkServer();
-                // 弹出确认密码弹框
-                showDialog();
-            }
-        });
-    }
-
     private void showDialog() {
-        // 初始化dialog配置
-        View view = View.inflate(this, R.layout.view_pwd, null);
-        final EditText etPwd = view.findViewById(R.id.et_pwd);
-        final TextView tvErrHint = view.findViewById(R.id.tv_err_hint);
-        final AlertDialog dialog = new AlertDialog.Builder(
-                this)
-                .setTitle(R.string.please_input_pwd)
-                .setView(view)
-                .setCancelable(false)
-                .setNegativeButton(R.string.cancel,
-                        new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                dialog.dismiss();
-                            }
-                        })
-                .setPositiveButton(R.string.sure,null)
-                .create();
+        // 使用自定义dialog可以避免因使用了头条的适配方式而导致原生dialog适配出错的问题
+        PwdDialog dialog = new PwdDialog(this);
+        String title = getString(R.string.input_pwd);
+        // 设置对话框标题
+        dialog.setTitle(title);
+        // 设置输入的文本类型
+        dialog.setEtInputType(InputType.TYPE_CLASS_NUMBER|InputType.TYPE_NUMBER_VARIATION_PASSWORD);
+        // 显示对话框
         dialog.show();
-        dialog.getButton(AlertDialog.BUTTON_POSITIVE)
-                .setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    String pwd = etPwd.getText().toString().trim();
-                    if (TextUtils.isEmpty(pwd)) {
-                        tvErrHint.setText(R.string.pwd_not_null);
-                        return;
-                    }
-                    if (!ConstantValue.DAY_END_PWD.equals(pwd)) {
-                        tvErrHint.setText(R.string.pwd_err);
-                        etPwd.setText("");
-                        return;
-                    }
-                    dialog.dismiss();
-                    startDayEnd();
-                }
-        });
+        TextView tvMessage = dialog.findViewById(R.id.tv_message);
+        // 设置弹出对话框时显示错误消息的tv不显示且不占空间
+        tvMessage.setVisibility(View.GONE);
+//        // 初始化dialog配置
+//        View view = View.inflate(this, R.layout.dialog_pwd, null);
+//        final EditText etPwd = view.findViewById(R.id.et_pwd);
+//        final TextView tvErrHint = view.findViewById(R.id.tv_err_hint);
+//        final AlertDialog dialog = new AlertDialog.Builder(
+//                this)
+//                .setTitle(R.string.please_input_pwd)
+//                .setView(view)
+//                .setCancelable(false)
+//                .setNegativeButton(R.string.cancel,
+//                        new DialogInterface.OnClickListener() {
+//                            @Override
+//                            public void onClick(DialogInterface dialog, int which) {
+//                                dialog.dismiss();
+//                                finish();
+//                            }
+//                        })
+//                .setPositiveButton(R.string.sure,null)
+//                .create();
+//        dialog.show();
+//        dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+//                .setOnClickListener(new View.OnClickListener() {
+//                @Override
+//                public void onClick(View v) {
+//                    String pwd = etPwd.getText().toString().trim();
+//                    if (TextUtils.isEmpty(pwd)) {
+//                        tvErrHint.setText(R.string.pwd_not_null);
+//                        return;
+//                    }
+//                    if (!ConstantValue.DAY_END_PWD.equals(pwd)) {
+//                        tvErrHint.setText(R.string.pwd_err);
+//                        etPwd.setText("");
+//                        return;
+//                    }
+//                    dialog.dismiss();
+//                    startDayEnd();
+//                }
+//        });
     }
 
     private void startDayEnd() {
@@ -236,10 +259,5 @@ public class DayEndActivity extends AppCompatActivity {
                 }
             }
         }.start();
-    }
-
-    private void initUI() {
-        mTvBack = findViewById(R.id.tv_back);
-        mBtnDayEnd = findViewById(R.id.btn_day_end);
     }
 }

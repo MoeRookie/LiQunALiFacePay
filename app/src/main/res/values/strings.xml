@@ -3,6 +3,7 @@
     <!-- 日结 -->
     <string name="title_day_end">日结</string>
     <string name="day_end_explain">当日营业结束，自助前端需要做日结处理</string>
+    <string name="input_pwd">输入密码</string>
     <string name="please_input_pwd">请输入密码</string>
     <string name="cancel">取消</string>
     <string name="sure">确定</string>

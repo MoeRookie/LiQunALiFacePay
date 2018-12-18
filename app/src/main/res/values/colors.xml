@@ -2,7 +2,7 @@
 <resources>
     <color name="colorPrimary">#008577</color>
     <color name="colorPrimaryDark">#00574B</color>
-    <color name="colorAccent">#D81B60</color>
+    <color name="colorAccent">@color/deepskyblue</color>
     <color name="bg_title_bar">#00a1ea</color>
     <!-- 添加android常用色值 -->
     <color name="white">#ffffff</color> <!-- 白色 -->
@@ -83,7 +83,6 @@
     <color name="greenyellow">#adff2f</color> <!-- 黄绿色 -->
     <color name="lightblue">#add8e6</color> <!-- 亮蓝色 -->
     <color name="darkgray">#a9a9a9</color> <!-- 暗灰色 -->
-    <color name="darkgrey">#a9a9a9</color> <!-- 暗灰色 -->
     <color name="brown">#a52a2a</color> <!-- 褐色 -->
     <color name="sienna">#a0522d</color> <!-- 赭色 -->
     <color name="darkorchid">#9932cc</color> <!-- 暗紫色 -->
@@ -99,7 +98,6 @@
     <color name="lightskyblue">#87cefa</color> <!-- 亮天蓝色 -->
     <color name="skyblue">#87ceeb</color> <!-- 天蓝色 -->
     <color name="gray">#808080</color> <!-- 灰色 -->
-    <color name="grey">#808080</color> <!-- 灰色 -->
     <color name="olive">#808000</color> <!-- 橄榄色 -->
     <color name="purple">#800080</color> <!-- 紫色 -->
     <color name="maroon">#800000</color> <!-- 粟色 -->
@@ -108,13 +106,11 @@
     <color name="lawngreen">#7cfc00</color> <!-- 草绿色 -->
     <color name="mediumslateblue">#7b68ee</color> <!-- 中暗蓝色 -->
     <color name="lightslategray">#778899</color> <!-- 亮蓝灰 -->
-    <color name="lightslategrey">#778899</color> <!-- 亮蓝灰 -->
     <color name="slategray">#708090</color> <!-- 灰石色 -->
     <color name="slategrey">#708090</color> <!-- 灰石色 -->
     <color name="olivedrab">#6b8e23</color> <!-- 深绿褐色 -->
     <color name="slateblue">#6a5acd</color> <!-- 石蓝色 -->
     <color name="dimgray">#696969</color> <!-- 暗灰色 -->
-    <color name="dimgrey">#696969</color> <!-- 暗灰色 -->
     <color name="mediumaquamarine">#66cdaa</color> <!-- 中绿色 -->
     <color name="cornflowerblue">#6495ed</color> <!-- 菊兰色 -->
     <color name="cadetblue">#5f9ea0</color> <!-- 军兰色 -->
