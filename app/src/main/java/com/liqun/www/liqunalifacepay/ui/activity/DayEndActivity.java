@@ -17,11 +17,11 @@ import android.widget.TextView;
 import com.liqun.www.liqunalifacepay.R;
 import com.liqun.www.liqunalifacepay.application.ALiFacePayApplication;
 import com.liqun.www.liqunalifacepay.application.ConstantValue;
-import com.liqun.www.liqunalifacepay.data.utils.CommonUtils;
 import com.liqun.www.liqunalifacepay.data.utils.JointDismantleUtils;
 import com.liqun.www.liqunalifacepay.data.utils.L;
 import com.liqun.www.liqunalifacepay.ui.view.GlobalDialog;
 import com.liqun.www.liqunalifacepay.ui.view.LoadingDialog;
+import com.liqun.www.liqunalifacepay.ui.view.WarnDialog;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -38,30 +38,65 @@ public class DayEndActivity extends AppCompatActivity{
     private Button mBtnDayEnd;
     private GlobalDialog mGlobalDialog;
     private LoadingDialog mLoadingDialog;
+    private WarnDialog mWarnDialog;
     private TextView mTvMessage;
     private EditText mEtPwd;
     private Message mMessage;
     private Handler mHandler = new Handler(){
         @Override
         public void handleMessage(Message msg) {
-            int err = R.string.day_end_success;
+            String message = getString(R.string.day_end_success);
             switch (msg.what) {
+                /**
+                 * 读取服务端返回数据失败
+                 * 1.读取的过程中发生了异常
+                 * 2.等待日结的过程中发生了异常
+                 */
                 case 0:
-                    err = R.string.connect_client_fail;
+                    message = getString(R.string.connect_client_fail);
+                    // 隐藏提示加载中的对话框
+                    if (mLoadingDialog != null) {mLoadingDialog.dismiss();}
+                    // 显示警告类的对话框
+                    showWarnDialog(message);
                     break;
                 case 1:
-                    err = R.string.connect_server_fail;
+                    message = getString(R.string.connect_server_fail);
+                    // 隐藏提示加载中的对话框
+                    mLoadingDialog.dismiss();
+                    // 显示警告类的对话框
+                    showWarnDialog(message);
                     break;
                 case 2:
                     if (msg.obj != null) {
                         handleResult(msg.obj);
                     }
+                    // 隐藏提示加载中的对话框
+                    mLoadingDialog.dismiss();
                     break;
             }
-            mLoadingDialog.dismiss();
             super.handleMessage(msg);
         }
     };
+
+    /**
+     * 显示警告类型的对话框
+     * @param message
+     */
+    private void showWarnDialog(String message) {
+        if (mWarnDialog == null) {
+            mWarnDialog = new WarnDialog(this);
+        }
+        mWarnDialog.setMessage(message);
+        mWarnDialog.show();
+        mWarnDialog.setOnConfirmClickListener(new WarnDialog.OnConfirmClickListener() {
+            @Override
+            public void onConfirmClicked() {
+                if (mWarnDialog.isShowing()) {
+                    mWarnDialog.dismiss();
+                }
+            }
+        });
+    }
 
     /**
      * 处理请求返回结果
@@ -73,8 +108,7 @@ public class DayEndActivity extends AppCompatActivity{
         if (obj instanceof DayEndResponseBean) {
             bean = (DayEndResponseBean) obj;
         }
-        mGlobalDialog.dismiss();
-        CommonUtils.showLongToast(bean.getRetmsg());
+        showWarnDialog(bean.getRetmsg());
     }
 
     private DayEndRequestBean mRequestBean;
@@ -124,7 +158,7 @@ public class DayEndActivity extends AppCompatActivity{
                 // 等待日结服务端
                 initNetWorkServer();
                 // 弹出确认密码弹框
-                showDialog();
+                showGlobalDialog();
             }
         });
     }
@@ -164,21 +198,25 @@ public class DayEndActivity extends AppCompatActivity{
         }.start();
     }
 
-    private void showDialog() {
-        // 使用自定义dialog可以避免因使用了头条的适配方式而导致原生dialog适配出错的问题
-        mGlobalDialog = new GlobalDialog(this);
-        String title = getString(R.string.input_pwd);
-        // 设置对话框标题
-        mGlobalDialog.setTitle(title);
-        // 设置输入的文本类型
-        mGlobalDialog.setEtInputType(InputType.TYPE_CLASS_NUMBER|InputType.TYPE_NUMBER_VARIATION_PASSWORD);
+    private void showGlobalDialog() {
+        if (mGlobalDialog == null) {
+            // 使用自定义dialog可以避免因使用了头条的适配方式而导致原生dialog适配出错的问题
+            mGlobalDialog = new GlobalDialog(this);
+            String title = getString(R.string.input_pwd);
+            // 设置对话框标题
+            mGlobalDialog.setTitle(title);
+            // 设置输入的文本类型
+            mGlobalDialog.setEtInputType(InputType.TYPE_CLASS_NUMBER|InputType.TYPE_NUMBER_VARIATION_PASSWORD);
+        }
         // 显示对话框
         mGlobalDialog.show();
-        mTvMessage = mGlobalDialog.findViewById(R.id.tv_message);
-        mEtPwd = mGlobalDialog.findViewById(R.id.et_pwd);
-        // 设置弹出对话框时显示错误消息的tv不显示且不占空间
-        mTvMessage.setVisibility(View.GONE);
-        setDialogListener();
+        if (mGlobalDialog.isShowing()) {
+            mTvMessage = mGlobalDialog.findViewById(R.id.tv_message);
+            mEtPwd = mGlobalDialog.findViewById(R.id.et_pwd);
+            // 设置弹出对话框时显示错误消息的tv不显示且不占空间
+            mTvMessage.setVisibility(View.GONE);
+            setDialogListener();
+        }
     }
 
     /**
@@ -196,7 +234,7 @@ public class DayEndActivity extends AppCompatActivity{
         });
         mGlobalDialog.setOnYesClickListener(yesStr, new GlobalDialog.OnYesClickListener() {
             @Override
-            public void onYesClick() {
+            public void onYesClicked() {
                 String pwd = mEtPwd.getText().toString().trim();
                 if (TextUtils.isEmpty(pwd)) {
                     // 设置msg控件显示&设置显示内容&中断流程
@@ -224,7 +262,7 @@ public class DayEndActivity extends AppCompatActivity{
      * 日结请求
      */
     private void doDayEnd() {
-        // 弹出提示"日结中,请稍后 . . ."的对话框(自定义"加载中 . . ."类型的对话框)
+        // 弹出提示"日结中 . . ."的对话框(自定义"加载中 . . ."类型的对话框)
         showLoadingDialog();
         // 请求网络做日结
         new Thread(){
@@ -274,7 +312,9 @@ public class DayEndActivity extends AppCompatActivity{
      * 显示提示"加载中 . . ."类型的对话框
      */
     private void showLoadingDialog() {
-        mLoadingDialog = new LoadingDialog(this, R.style.LoadingDialogStyle);
+        if (mLoadingDialog == null) {
+            mLoadingDialog = new LoadingDialog(this, R.style.LoadingDialogStyle);
+        }
         mLoadingDialog.show();
         mLoadingDialog.setMessage(R.string.loading_day_end);
     }

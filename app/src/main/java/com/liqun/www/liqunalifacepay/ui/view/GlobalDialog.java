@@ -105,7 +105,7 @@ public class GlobalDialog extends Dialog {
             @Override
             public void onClick(View v) {
                 if (onYesClickListener != null) {
-                    onYesClickListener.onYesClick();
+                    onYesClickListener.onYesClicked();
                 }
             }
         });
@@ -137,7 +137,7 @@ public class GlobalDialog extends Dialog {
     }
     /** 设置确定按钮被点击的接口 */
     public interface OnYesClickListener {
-        void onYesClick();
+        void onYesClicked();
     }
     /** 设置取消按钮被点击的接口 */
     public interface OnNoClickListener {
