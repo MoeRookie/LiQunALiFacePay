@@ -178,6 +178,7 @@ public class SettingActivity extends AppCompatActivity {
                     tvMessage.setText(R.string.hint_content_null_err);
                     return;
                 }
+                tvMessage.setVisibility(View.GONE);
                 // 否则关闭对话框、更新当前列表项内容、刷新界面显示
                 mUpdateDialog.dismiss();
                 mItemBean.setContent(content);
