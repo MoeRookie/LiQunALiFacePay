@@ -9,7 +9,7 @@
         android:layout_marginLeft="50dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="@string/plsase_input"
+        android:hint="@string/please_input"
         android:inputType="text"
         android:textSize="22sp">
     </EditText>

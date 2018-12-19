@@ -53,4 +53,8 @@ public class ConstantValue {
      * 门店编号
      */
     public static final String SHOP_NO = "shop_no";
+    /**
+     * 设置界面内容的key
+     */
+    public static final String KEY_SETTING_CONTENT = "key_setting_content";
 }
