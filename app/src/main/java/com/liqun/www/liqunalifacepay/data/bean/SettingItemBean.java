@@ -1,23 +1,23 @@
 package com.liqun.www.liqunalifacepay.data.bean;
 
 public class SettingItemBean {
-    private int titleId; // 标题
+    private String title; // 标题
     private String content; // 内容
 
     public SettingItemBean() {
     }
 
-    public SettingItemBean(int titleId, String content) {
-        this.titleId = titleId;
+    public SettingItemBean(String title, String content) {
+        this.title = title;
         this.content = content;
     }
 
-    public int getTitleId() {
-        return titleId;
+    public String getTitle() {
+        return title;
     }
 
-    public void setTitleId(int titleId) {
-        this.titleId = titleId;
+    public void setTitle(String title) {
+        this.title = title;
     }
 
     public String getContent() {
@@ -31,7 +31,7 @@ public class SettingItemBean {
     @Override
     public String toString() {
         return "SettingItemBean{" +
-                "titleId=" + titleId +
+                "title='" + title + '\'' +
                 ", content='" + content + '\'' +
                 '}';
     }

@@ -256,7 +256,7 @@ public class DayEndActivity extends AppCompatActivity{
         mGlobalDialog.show();
         if (mGlobalDialog.isShowing()) {
             mTvMessage = mGlobalDialog.findViewById(R.id.tv_message);
-            mEtPwd = mGlobalDialog.findViewById(R.id.et_pwd);
+            mEtPwd = mGlobalDialog.findViewById(R.id.et_content);
         }
     }
 

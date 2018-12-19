@@ -31,7 +31,7 @@
         <!--
             android:background="@drawable/shape_edit_bg"-->
         <EditText
-            android:id="@+id/et_pwd"
+            android:id="@+id/et_content"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@drawable/shape_bg_et_pwd"

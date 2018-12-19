@@ -43,7 +43,7 @@ public class SettingAdapter extends RecyclerView.Adapter
     @Override
     public void onBindViewHolder(@NonNull final SettingItemViewHolder holder, final int i) {
         SettingItemBean item = mItemList.get(i);
-        holder.mTvTitle.setText(item.getTitleId());
+        holder.mTvTitle.setText(item.getTitle());
         holder.mTvContent.setText(item.getContent());
         holder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override

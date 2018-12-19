@@ -70,7 +70,7 @@ public class GlobalDialog extends Dialog {
         btnNo = findViewById(R.id.btn_no);
         tvTitle = findViewById(R.id.tv_title);
         tvMessage = findViewById(R.id.tv_message);
-        etEnter = findViewById(R.id.et_pwd);
+        etEnter = findViewById(R.id.et_content);
     }
     /** 初始化界面控件的显示数据 */
     private void initData() {
