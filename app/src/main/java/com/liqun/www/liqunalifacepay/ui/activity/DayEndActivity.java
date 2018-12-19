@@ -250,15 +250,13 @@ public class DayEndActivity extends AppCompatActivity{
             mGlobalDialog.setTitle(title);
             // 设置输入的文本类型
             mGlobalDialog.setEtInputType(InputType.TYPE_CLASS_NUMBER|InputType.TYPE_NUMBER_VARIATION_PASSWORD);
+            setDialogListener();
         }
         // 显示对话框
         mGlobalDialog.show();
         if (mGlobalDialog.isShowing()) {
             mTvMessage = mGlobalDialog.findViewById(R.id.tv_message);
             mEtPwd = mGlobalDialog.findViewById(R.id.et_pwd);
-            // 设置弹出对话框时显示错误消息的tv不显示且不占空间
-            mTvMessage.setVisibility(View.GONE);
-            setDialogListener();
         }
     }
 

@@ -4,7 +4,7 @@ public class ConstantValue {
     /**
      * 日结确认密码
      */
-    public static final String DAY_END_PWD = "111333777";
+    public static final String DAY_END_PWD = "666666";
     /**
      * 服务端返回消息需监听的端口
      */
@@ -57,4 +57,8 @@ public class ConstantValue {
      * 设置界面内容的key
      */
     public static final String KEY_SETTING_CONTENT = "key_setting_content";
+    /**
+     * 设置需要的密码值
+     */
+    public static final String VALUE_SETTING_PWD = "111333777";
 }

@@ -31,4 +31,5 @@
     <string name="content_null_err">内容不能为空！</string>
     <string name="loading_day_end">日结中 . . .</string>
     <string name="empty" />
+    <string name="title_notice">注意！</string>
 </resources>

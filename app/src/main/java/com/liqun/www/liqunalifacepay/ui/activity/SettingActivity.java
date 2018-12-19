@@ -41,12 +41,16 @@ import java.util.List;
  */
 public class SettingActivity extends AppCompatActivity {
     private TextView mTvBack;
+    private TextView mTvTitle;
     private TextView mTvSure;
     private RecyclerView mRvSetting;
     private LinearLayoutManager mLayoutManager;
     private List<SettingItemBean> mItemList = new ArrayList<>();
     private SettingAdapter mAdapter;
-    private GlobalDialog mGlobalDialog;
+    private String mNoStr;
+    private String mYesStr;
+    private GlobalDialog mConfirmDialog;
+    private GlobalDialog mUpdateDialog;
     private TextView mTvMessage;
     private EditText mEtPwd;
     public static Intent newIntent(Context packageContext) {
@@ -74,6 +78,30 @@ public class SettingActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 finish();
+            }
+        });
+        mAdapter.setOnItemClickListener(new SettingAdapter.OnItemClickListener() {
+            @Override
+            public void onItemClick(int position) {
+                // 获取当前列表项
+                SettingItemBean itemBean = mItemList.get(position);
+                switch (position) {
+                    case 2:
+                    case 3:
+                    case 4:
+                    case 5:
+                    case 6:
+                    case 7:
+                        // 弹出以列表项标题为title、内容为content的普通对话框
+                        // 取消 -> 关闭对话框
+                        // 确定:
+                        // 内容不能为空
+                        // ->正确的内容\>确定(关闭对话框、更新当前列表项内容、刷新界面显示)
+                        showUpdateDialog(itemBean.getTitleId(),itemBean.getContent());
+                        break;
+                    case 8:
+                        break;
+                }
             }
         });
 //        mAdapter.setOnItemClickListener(new SettingAdapter.OnItemClickListener() {
@@ -105,6 +133,36 @@ public class SettingActivity extends AppCompatActivity {
 //                }
 //            }
 //        });
+    }
+
+    /**
+     * 弹出修改&更新内容的对话框
+     * @param titleId 列表项标题id
+     * @param content 列表项内容
+     */
+    private void showUpdateDialog(int titleId, String content) {
+        if (mUpdateDialog == null) {
+            mUpdateDialog = new GlobalDialog(this);
+            // 设置取消&确定按钮监听
+            setUpdateDialogListener();
+        }
+        // 设置对话框标题
+        String title = getString(titleId);
+        mUpdateDialog.setTitle(title);
+        // 显示对话框
+        mUpdateDialog.show();
+    }
+
+    /**
+     * 修改&更新内容对话框的按钮监听
+     */
+    private void setUpdateDialogListener() {
+        mUpdateDialog.setOnNoClickListener(mNoStr, new GlobalDialog.OnNoClickListener() {
+            @Override
+            public void onNoClick() {
+                mUpdateDialog.dismiss();
+            }
+        });
     }
 //
 //    /**
@@ -316,6 +374,9 @@ public class SettingActivity extends AppCompatActivity {
 
     private void initUI() {
         mTvBack = findViewById(R.id.tv_back);
+        mTvTitle = findViewById(R.id.tv_title);
+        // 设置此页标题
+        mTvTitle.setText(R.string.title_setting);
         mTvSure = findViewById(R.id.tv_sure);
         // 把读取到的内容显示在rv上
         // fbi->rv(layoutManager、adapter)
@@ -325,49 +386,49 @@ public class SettingActivity extends AppCompatActivity {
         mAdapter = new SettingAdapter(this,mItemList);
         mRvSetting.setAdapter(mAdapter);
         // 首先显示提示"输入密码"的对话框
-        showGlobalDialog();
+        showConfirmDialog();
     }
 
     /**
      * 弹出确认密码弹框
      */
-    private void showGlobalDialog() {
-        if (mGlobalDialog == null) {
+    private void showConfirmDialog() {
+        if (mConfirmDialog == null) {
             // 使用自定义dialog可以避免因使用了头条的适配方式而导致原生dialog适配出错的问题
-            mGlobalDialog = new GlobalDialog(this);
+            mConfirmDialog = new GlobalDialog(this);
             // 设置对话框标题
             String title = getString(R.string.input_pwd);
-            mGlobalDialog.setTitle(title);
+            mConfirmDialog.setTitle(title);
             // 设置输入的文本类型
-            mGlobalDialog.setEtInputType(InputType.TYPE_CLASS_NUMBER|InputType.TYPE_NUMBER_VARIATION_PASSWORD);
+            mConfirmDialog.setEtInputType(InputType.TYPE_CLASS_NUMBER|InputType.TYPE_NUMBER_VARIATION_PASSWORD);
+            setConfirmDialogListener();
         }
         // 显示对话框
-        mGlobalDialog.show();
-        if (mGlobalDialog.isShowing()) {
-            mTvMessage = mGlobalDialog.findViewById(R.id.tv_message);
-            mEtPwd = mGlobalDialog.findViewById(R.id.et_pwd);
+        mConfirmDialog.show();
+        if (mConfirmDialog.isShowing()) {
+            mTvMessage = mConfirmDialog.findViewById(R.id.tv_message);
+            mEtPwd = mConfirmDialog.findViewById(R.id.et_pwd);
             // 设置弹出对话框时显示错误消息的tv不显示且不占空间
             mTvMessage.setVisibility(View.GONE);
-            setDialogListener();
         }
     }
 
     /**
      * 监听输入密码对话框取消&确定按钮被点击
      */
-    private void setDialogListener() {
-        String noStr = getString(R.string.cancel);
-        String yesStr = getString(R.string.sure);
-        mGlobalDialog.setOnNoClickListener(noStr, new GlobalDialog.OnNoClickListener() {
+    private void setConfirmDialogListener() {
+        mNoStr = getString(R.string.cancel);
+        mYesStr = getString(R.string.sure);
+        mConfirmDialog.setOnNoClickListener(mNoStr, new GlobalDialog.OnNoClickListener() {
             @Override
             public void onNoClick() {
-                if (mGlobalDialog.isShowing()) {
-                    mGlobalDialog.dismiss();
+                if (mConfirmDialog.isShowing()) {
+                    mConfirmDialog.dismiss();
                 }
                 finish();
             }
         });
-        mGlobalDialog.setOnYesClickListener(yesStr, new GlobalDialog.OnYesClickListener() {
+        mConfirmDialog.setOnYesClickListener(mYesStr, new GlobalDialog.OnYesClickListener() {
             @Override
             public void onYesClicked() {
                 String pwd = mEtPwd.getText().toString().trim();
@@ -375,14 +436,14 @@ public class SettingActivity extends AppCompatActivity {
                     setErrorMsgLayout(true,R.string.pwd_not_null);
                     return;
                 }
-                if (!ConstantValue.DAY_END_PWD.equals(pwd)) {
+                if (!ConstantValue.VALUE_SETTING_PWD.equals(pwd)) {
                     setErrorMsgLayout(true,R.string.pwd_err);
                     mEtPwd.setText("");
                     return;
                 }
                 setErrorMsgLayout(false,R.string.empty);
                 // 隐藏msg控件&关掉对话框&发起日结请求
-                mGlobalDialog.dismiss();
+                mConfirmDialog.dismiss();
                 // 显示设置内容列表
                 mRvSetting.setVisibility(View.VISIBLE);
             }
