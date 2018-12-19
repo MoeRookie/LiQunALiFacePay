@@ -1,21 +1,18 @@
 package com.liqun.www.liqunalifacepay.ui.activity;
 
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
-import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.text.InputType;
 import android.text.TextUtils;
 import android.view.View;
 import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.liqun.www.liqunalifacepay.R;
 import com.liqun.www.liqunalifacepay.application.ALiFacePayApplication;
@@ -24,6 +21,7 @@ import com.liqun.www.liqunalifacepay.data.bean.SettingItemBean;
 import com.liqun.www.liqunalifacepay.data.utils.L;
 import com.liqun.www.liqunalifacepay.data.utils.SpUtils;
 import com.liqun.www.liqunalifacepay.ui.adapter.SettingAdapter;
+import com.liqun.www.liqunalifacepay.ui.view.GlobalDialog;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,10 +40,15 @@ import java.util.List;
  * 4.点击确定按钮,即写入|保存列表内容
  */
 public class SettingActivity extends AppCompatActivity {
-    private ImageView mIvBack;
+    private TextView mTvBack;
+    private TextView mTvSure;
     private RecyclerView mRvSetting;
+    private LinearLayoutManager mLayoutManager;
     private List<SettingItemBean> mItemList = new ArrayList<>();
     private SettingAdapter mAdapter;
+    private GlobalDialog mGlobalDialog;
+    private TextView mTvMessage;
+    private EditText mEtPwd;
     public static Intent newIntent(Context packageContext) {
         Intent intent = new Intent(packageContext, SettingActivity.class);
         return intent;
@@ -56,17 +59,23 @@ public class SettingActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_setting);
         initData();
-//        initUI();
-//        setListener();
+        initUI();
+        setListener();
     }
 
-//    private void setListener() {
-//        mIvBack.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                finish();
-//            }
-//        });
+    private void setListener() {
+        mTvBack.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                finish();
+            }
+        });
+        mTvSure.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                finish();
+            }
+        });
 //        mAdapter.setOnItemClickListener(new SettingAdapter.OnItemClickListener() {
 //            @Override
 //            public void onItemClick(int position) {
@@ -96,7 +105,7 @@ public class SettingActivity extends AppCompatActivity {
 //                }
 //            }
 //        });
-//    }
+    }
 //
 //    /**
 //     * _>修改以其标题作为title的弹框
@@ -305,16 +314,90 @@ public class SettingActivity extends AppCompatActivity {
 //        );
     }
 
-//    private void initUI() {
-//        mIvBack = findViewById(R.id.iv_back);
-//        mRvSetting = findViewById(R.id.rv_setting);
-//        LinearLayoutManager lm = new LinearLayoutManager(this);
-//        mRvSetting.setLayoutManager(lm);
-//        mAdapter = new SettingAdapter(this,mItemList);
-//        mRvSetting.setAdapter(mAdapter);
-//        // 首先显示提示"输入密码"的对话框
-//        showDialog();
-//    }
+    private void initUI() {
+        mTvBack = findViewById(R.id.tv_back);
+        mTvSure = findViewById(R.id.tv_sure);
+        // 把读取到的内容显示在rv上
+        // fbi->rv(layoutManager、adapter)
+        mRvSetting = findViewById(R.id.rv_setting);
+        mLayoutManager = new LinearLayoutManager(this);
+        mRvSetting.setLayoutManager(mLayoutManager);
+        mAdapter = new SettingAdapter(this,mItemList);
+        mRvSetting.setAdapter(mAdapter);
+        // 首先显示提示"输入密码"的对话框
+        showGlobalDialog();
+    }
+
+    /**
+     * 弹出确认密码弹框
+     */
+    private void showGlobalDialog() {
+        if (mGlobalDialog == null) {
+            // 使用自定义dialog可以避免因使用了头条的适配方式而导致原生dialog适配出错的问题
+            mGlobalDialog = new GlobalDialog(this);
+            // 设置对话框标题
+            String title = getString(R.string.input_pwd);
+            mGlobalDialog.setTitle(title);
+            // 设置输入的文本类型
+            mGlobalDialog.setEtInputType(InputType.TYPE_CLASS_NUMBER|InputType.TYPE_NUMBER_VARIATION_PASSWORD);
+        }
+        // 显示对话框
+        mGlobalDialog.show();
+        if (mGlobalDialog.isShowing()) {
+            mTvMessage = mGlobalDialog.findViewById(R.id.tv_message);
+            mEtPwd = mGlobalDialog.findViewById(R.id.et_pwd);
+            // 设置弹出对话框时显示错误消息的tv不显示且不占空间
+            mTvMessage.setVisibility(View.GONE);
+            setDialogListener();
+        }
+    }
+
+    /**
+     * 监听输入密码对话框取消&确定按钮被点击
+     */
+    private void setDialogListener() {
+        String noStr = getString(R.string.cancel);
+        String yesStr = getString(R.string.sure);
+        mGlobalDialog.setOnNoClickListener(noStr, new GlobalDialog.OnNoClickListener() {
+            @Override
+            public void onNoClick() {
+                if (mGlobalDialog.isShowing()) {
+                    mGlobalDialog.dismiss();
+                }
+                finish();
+            }
+        });
+        mGlobalDialog.setOnYesClickListener(yesStr, new GlobalDialog.OnYesClickListener() {
+            @Override
+            public void onYesClicked() {
+                String pwd = mEtPwd.getText().toString().trim();
+                if (TextUtils.isEmpty(pwd)) {
+                    setErrorMsgLayout(true,R.string.pwd_not_null);
+                    return;
+                }
+                if (!ConstantValue.DAY_END_PWD.equals(pwd)) {
+                    setErrorMsgLayout(true,R.string.pwd_err);
+                    mEtPwd.setText("");
+                    return;
+                }
+                setErrorMsgLayout(false,R.string.empty);
+                // 隐藏msg控件&关掉对话框&发起日结请求
+                mGlobalDialog.dismiss();
+                // 显示设置内容列表
+                mRvSetting.setVisibility(View.VISIBLE);
+            }
+        });
+    }
+    /**
+     * 设置报错后的对话框布局
+     * @param isError 是否报错
+     * @param errStrId 报错提示字符串id
+     */
+    private void setErrorMsgLayout(boolean isError, int errStrId) {
+        // 设置msg控件显示&设置显示内容&中断流程
+        mTvMessage.setVisibility(isError?View.VISIBLE:View.GONE);
+        mTvMessage.setText(errStrId);
+    }
 //
 //    private void showDialog() {
 //        // 初始化dialog配置
