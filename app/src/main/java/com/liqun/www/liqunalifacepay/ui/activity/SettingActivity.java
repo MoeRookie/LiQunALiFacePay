@@ -18,9 +18,13 @@ import com.liqun.www.liqunalifacepay.R;
 import com.liqun.www.liqunalifacepay.application.ALiFacePayApplication;
 import com.liqun.www.liqunalifacepay.application.ConstantValue;
 import com.liqun.www.liqunalifacepay.data.bean.SettingItemBean;
+import com.liqun.www.liqunalifacepay.data.bean.ShoppingBagBean;
+import com.liqun.www.liqunalifacepay.data.utils.L;
 import com.liqun.www.liqunalifacepay.data.utils.SpUtils;
 import com.liqun.www.liqunalifacepay.ui.adapter.SettingAdapter;
+import com.liqun.www.liqunalifacepay.ui.adapter.ShoppingBagAdapter;
 import com.liqun.www.liqunalifacepay.ui.view.GlobalDialog;
+import com.liqun.www.liqunalifacepay.ui.view.MultipleDialog;
 import com.liqun.www.liqunalifacepay.ui.view.WarnDialog;
 
 import java.util.ArrayList;
@@ -51,6 +55,7 @@ public class SettingActivity extends AppCompatActivity {
     private RecyclerView mRvSetting;
     private LinearLayoutManager mLayoutManager;
     private List<SettingItemBean> mItemList = new ArrayList<>();
+    private List<ShoppingBagBean> mBagList = new ArrayList<>();
     private SettingAdapter mAdapter;
     private String mNoStr;
     private String mYesStr;
@@ -63,6 +68,9 @@ public class SettingActivity extends AppCompatActivity {
     private TextView tvMessage;
     private SettingItemBean mItemBean;
     private WarnDialog mWarnDialog;
+    private MultipleDialog mMultipleDialog;
+    private ShoppingBagAdapter mBagAdapter;
+    private StringBuilder mSb = new StringBuilder();
 
     public static Intent newIntent(Context packageContext) {
         Intent intent = new Intent(packageContext, SettingActivity.class);
@@ -113,8 +121,109 @@ public class SettingActivity extends AppCompatActivity {
                         showUpdateDialog(mItemBean.getTitle(),mItemBean.getContent());
                         break;
                     case 8:
+                        // 1.点击"启用购物袋"->从sp中获取购物袋信息并展示
+                        // 1.1.首次使用->读取文件并保存到sp中
+                        // 从sp中获取购物袋信息并展示
+                        ALiFacePayApplication.getInstance().getShoppingBagMsg();
+                        String json = SpUtils.getString(
+                                getApplicationContext(),
+                                ConstantValue.KEY_SHOPPING_BAG_MSG,
+                                ""
+                        );
+                        if ("".equals(json)) {
+                            json = ALiFacePayApplication.getInstance().getShoppingBagMsg();
+                            SpUtils.putString(
+                                    getApplicationContext(),
+                                    ConstantValue.KEY_SHOPPING_BAG_MSG,
+                                    json
+                            );
+                        }
+                        if (mBagList.size() > 0) {
+                            mBagList.clear();
+                            List<ShoppingBagBean> bagList = JSONArray.parseArray(json, ShoppingBagBean.class);
+                            mBagList.addAll(bagList);
+                        }
+                        // 弹出"启用购物袋"的对话框(title,mBagList)
+                        // 自定义多项选择的对话框
+                            // 可以设置标题(以列表项标题为title)
+                            // 内容为多项选择列表(列表项长度可变)
+                            // 带有确定&否定意义的按钮(设置按钮事件监听)
+                        // 根据对应购物袋之前的选择状态设置当前条目是否被选中
+//                        showShoppingBagDialog(mItemBean.getTitle(),mBagList,mItemBean);
+                        // 2.点击"确定"按钮时根据购物袋的选择状态保存购物袋信息到sp中、关闭对话框!
+                        // &根据购物袋的选择状态拼接条目的内容
                         break;
                 }
+            }
+        });
+    }
+
+    /**
+     * 显示"启用购物袋"的对话框
+     * @param title 对话框标题
+     * @param bagList 购物袋列表
+     * @param itemBean 当前设置项
+     */
+    private void showShoppingBagDialog(String title, final List<ShoppingBagBean> bagList, SettingItemBean itemBean) {
+        if (mMultipleDialog == null) {
+            mMultipleDialog = new MultipleDialog(this);
+            mMultipleDialog.setTitle(title);
+            mBagAdapter = new ShoppingBagAdapter(this, bagList);
+            mMultipleDialog.setAdapter(mBagAdapter);
+            mBagAdapter.setOnItemCheckedChangeListener(new ShoppingBagAdapter.OnItemCheckedChangeListener() {
+                @Override
+                public void onItemCheckedChanged(int i) {
+                    ShoppingBagBean bagBean = bagList.get(i);
+                    bagBean.setSelected(!bagBean.isSelected());
+                    mBagAdapter.notifyDataSetChanged();
+                }
+            });
+            setMultipleDialogListener(itemBean);
+        }
+        mMultipleDialog.show();
+    }
+
+    /**
+     * 监听多选对话框取消&确定按钮被点击
+     * @param itemBean 当前设置项
+     */
+    private void setMultipleDialogListener(final SettingItemBean itemBean) {
+        String noStr = getString(R.string.cancel);
+        String yesStr = getString(R.string.sure);
+        mMultipleDialog.setOnNoClickListener(noStr, new MultipleDialog.OnNoClickListener() {
+            @Override
+            public void onNoClick() {
+                mMultipleDialog.dismiss();
+            }
+        });
+        mMultipleDialog.setOnYesClickListener(yesStr, new MultipleDialog.OnYesClickListener() {
+            @Override
+            public void onYesClicked() {
+                String json = JSONArray.toJSONString(mBagList);
+                SpUtils.putString(
+                        getApplicationContext(),
+                        ConstantValue.KEY_SHOPPING_BAG_MSG,
+                        json
+                );
+                if (mSb.length() > 0) {
+                    mSb.delete(0, mSb.length());
+                }
+                for (ShoppingBagBean bagBean : mBagList) {
+                    String type = bagBean.getType();
+                    if (type.contains("特大")) {
+                        mSb.append("特大");
+                    }
+                    if (type.contains("大")) {
+                        mSb.append("大");
+                    }
+                    if (type.contains("中")) {
+                        mSb.append("中");
+                    }
+                    if (type.contains("小")) {
+                        mSb.append("小");
+                    }
+                }
+                itemBean.setContent("已启用"+ mSb.toString()+"号购物袋");
             }
         });
     }
@@ -233,7 +342,6 @@ public class SettingActivity extends AppCompatActivity {
             String hostIp = ALiFacePayApplication.getInstance().getHostIP();
             String hostPort = ConstantValue.SELF_GATHERING_PORT;
             String noUseShoppingBag = getString(R.string.content_no_use_shopping_bag);
-            String debugPatternClosed = getString(R.string.content_debug_closed);
             //
             mItemList.add(new SettingItemBean("自助收银IP地址",hostIp));
             // 自助收银IP端口

@@ -61,4 +61,8 @@ public class ConstantValue {
      * 设置需要的密码值
      */
     public static final String VALUE_SETTING_PWD = "111333777";
+    /**
+     * 购物袋信息的key
+     */
+    public static final String KEY_SHOPPING_BAG_MSG = "key_shopping_bag_msg";
 }
