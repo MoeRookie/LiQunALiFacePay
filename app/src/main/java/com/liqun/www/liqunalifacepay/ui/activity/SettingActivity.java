@@ -2,7 +2,6 @@ package com.liqun.www.liqunalifacepay.ui.activity;
 
 import android.content.Context;
 import android.content.Intent;
-import android.opengl.ETC1;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
@@ -19,15 +18,16 @@ import com.liqun.www.liqunalifacepay.R;
 import com.liqun.www.liqunalifacepay.application.ALiFacePayApplication;
 import com.liqun.www.liqunalifacepay.application.ConstantValue;
 import com.liqun.www.liqunalifacepay.data.bean.SettingItemBean;
-import com.liqun.www.liqunalifacepay.data.utils.L;
 import com.liqun.www.liqunalifacepay.data.utils.SpUtils;
 import com.liqun.www.liqunalifacepay.ui.adapter.SettingAdapter;
 import com.liqun.www.liqunalifacepay.ui.view.GlobalDialog;
+import com.liqun.www.liqunalifacepay.ui.view.WarnDialog;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * Day1119
  * 1.从SP中读取要显示的列表内容(初始化->onCreate(...))
  *                      √
  *                          json->jsonArr->list
@@ -39,6 +39,10 @@ import java.util.List;
  * 2.把读取到的内容显示在rv上
  * 3.根据列表项的分类,处理每一个条目的逻辑
  * 4.点击确定按钮,即写入|保存列表内容
+ * Day1120
+ * 1.点击"确定"保存时弹出warn对话框,点击对话框中的确定按钮才返回到上级界面;
+ * 2.点击"启用购物袋"读取内容并展示在对话框中;
+ * 3.分析并开始"非会员结账"流程;
  */
 public class SettingActivity extends AppCompatActivity {
     private TextView mTvBack;
@@ -58,6 +62,7 @@ public class SettingActivity extends AppCompatActivity {
     private EditText etContent;
     private TextView tvMessage;
     private SettingItemBean mItemBean;
+    private WarnDialog mWarnDialog;
 
     public static Intent newIntent(Context packageContext) {
         Intent intent = new Intent(packageContext, SettingActivity.class);
@@ -83,8 +88,9 @@ public class SettingActivity extends AppCompatActivity {
         mTvSure.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                // 点击"确定"保存时弹出warn对话框,点击对话框中的确定按钮才返回到上级界面;
                 saveInstanceState();
-                finish();
+                showWarnDialog();
             }
         });
         mAdapter.setOnItemClickListener(new SettingAdapter.OnItemClickListener() {
@@ -108,6 +114,26 @@ public class SettingActivity extends AppCompatActivity {
                         break;
                     case 8:
                         break;
+                }
+            }
+        });
+    }
+
+    /**
+     * 点击"确定"保存时弹出warn对话框,点击对话框中的确定按钮才返回到上级界面;
+     */
+    private void showWarnDialog() {
+        if (mWarnDialog == null) {
+            mWarnDialog = new WarnDialog(this);
+            mWarnDialog.setMessage("设置保存成功!");
+        }
+        mWarnDialog.show();
+        mWarnDialog.setOnConfirmClickListener(new WarnDialog.OnConfirmClickListener() {
+            @Override
+            public void onConfirmClicked() {
+                if (mWarnDialog.isShowing()) {
+                    mWarnDialog.dismiss();
+                    finish();
                 }
             }
         });
@@ -186,99 +212,6 @@ public class SettingActivity extends AppCompatActivity {
             }
         });
     }
-//
-//    /**
-//     * _>修改以其标题作为title的弹框
-//     * @param position 列表项的索引值
-//     */
-//    private void showEditContentDialog(final int position) {
-//        final SettingItemBean item = mItemList.get(position);
-//        String title = getString(item.getTitleId());
-//        String content = item.getContent();
-//        // 初始化dialog配置
-//        View view = View.inflate(this, R.layout.view_item_content, null);
-//        final EditText etContent = view.findViewById(R.id.et_content);
-//        etContent.selectAll();
-//        // 显示之前保存过的"门店名称"
-//        etContent.setText(content);
-//        final TextView tvErrHint = view.findViewById(R.id.tv_err_hint);
-//        final AlertDialog dialog = new AlertDialog.Builder(
-//                this)
-//                .setTitle(title)
-//                .setView(view)
-//                .setCancelable(true)
-//                .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
-//                    @Override
-//                    public void onClick(DialogInterface dialog, int which) {
-//                        dialog.dismiss();
-//                    }
-//                })
-//                .setPositiveButton(R.string.sure,null)
-//                .create();
-//        dialog.show();
-//        dialog.getButton(AlertDialog.BUTTON_POSITIVE)
-//                .setOnClickListener(new View.OnClickListener() {
-//                    @Override
-//                    public void onClick(View v) {
-//                        String content = etContent.getText().toString().trim();
-//                        if (TextUtils.isEmpty(content)) {
-//                            tvErrHint.setText(R.string.content_null_err);
-//                            return;
-//                        }
-//                        item.setContent(content);
-//                        mAdapter.notifyDataSetChanged();
-//                        saveContent(item,position);
-//                        dialog.dismiss();
-//                    }
-//                });
-//    }
-//
-//    private void saveContent(SettingItemBean item, int position) {
-//        switch (position) {
-//            case 2:
-//                SpUtils.putString(
-//                        this,
-//                        ConstantValue.SHOP_NAME,
-//                        item.getContent()
-//                );
-//                break;
-//            case 3:
-//                SpUtils.putString(
-//                        this,
-//                        ConstantValue.SHOP_NO,
-//                        item.getContent()
-//                );
-//                break;
-//            case 4:
-//                SpUtils.putString(
-//                        this,
-//                        ConstantValue.SHOP_MERCHANT_NO,
-//                        item.getContent()
-//                );
-//                break;
-//            case 5:
-//                SpUtils.putString(
-//                        this,
-//                        ConstantValue.CATWALK_NO,
-//                        item.getContent()
-//                );
-//                break;
-//            case 6:
-//                SpUtils.putString(
-//                        this,
-//                        ConstantValue.POS_SERVER_IP,
-//                        item.getContent()
-//                );
-//                break;
-//            case 7:
-//                SpUtils.putString(
-//                        this,
-//                        ConstantValue.POS_SERVER_PORT,
-//                        item.getContent()
-//                );
-//                break;
-//        }
-//    }
 
     private void initData() {
         // 从SP中读取要显示的列表内容
@@ -306,21 +239,19 @@ public class SettingActivity extends AppCompatActivity {
             // 自助收银IP端口
             mItemList.add(new SettingItemBean("自助收银IP端口",hostPort));
             // 门店名称
-            mItemList.add(new SettingItemBean("门店名称","诺德"));
+            mItemList.add(new SettingItemBean("门店名称",""));
             // 门店编码
             mItemList.add(new SettingItemBean("门店编码",""));
             // 门店商户号
             mItemList.add(new SettingItemBean("门店商户号",""));
             // 款台号
             mItemList.add(new SettingItemBean("款台号",""));
-            // Pos后台IP端口
-            mItemList.add(new SettingItemBean("Pos后台IP端口",""));
             // Pos后台IP地址
             mItemList.add(new SettingItemBean("Pos后台IP地址",""));
+            // Pos后台IP端口
+            mItemList.add(new SettingItemBean("Pos后台IP端口",""));
             // 启用购物袋
             mItemList.add(new SettingItemBean("启用购物袋",noUseShoppingBag));
-            // 调试模式
-            mItemList.add(new SettingItemBean("调试模式",debugPatternClosed));
             // 保存为json
             saveInstanceState();
         }

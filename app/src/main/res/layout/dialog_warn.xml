@@ -38,6 +38,7 @@
             android:paddingTop="3dp"
             android:paddingRight="6dp"
             android:paddingBottom="3dp"
-            android:text="@string/sure"/>
+            android:text="@string/sure"
+            android:textColor="@color/white"/>
     </LinearLayout>
 </RelativeLayout>
