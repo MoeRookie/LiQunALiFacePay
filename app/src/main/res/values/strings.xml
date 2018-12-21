@@ -33,4 +33,7 @@
     <string name="empty" />
     <string name="title_notice">注意！</string>
     <string name="hint_content_null_err">内容不可为空！</string>
+    <string name="input_bar_code">手输条码</string>
+    <string name="title_self_help_pay">自助收银</string>
+    <string name="pay">去付款</string>
 </resources>
