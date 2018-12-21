@@ -36,4 +36,5 @@
     <string name="input_bar_code">手输条码</string>
     <string name="title_self_help_pay">自助收银</string>
     <string name="pay">去付款</string>
+    <string name="cancel_deal">取消交易</string>
 </resources>
