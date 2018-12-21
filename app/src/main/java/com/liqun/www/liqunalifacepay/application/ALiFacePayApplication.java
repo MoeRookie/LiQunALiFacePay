@@ -5,6 +5,7 @@ import android.content.Context;
 import android.os.Environment;
 import android.os.storage.StorageManager;
 import android.os.storage.StorageVolume;
+import android.widget.TextView;
 
 import com.liqun.www.liqunalifacepay.data.utils.L;
 
@@ -86,6 +87,7 @@ public class ALiFacePayApplication extends Application {
                     char[] input  = new char[fis.available()];
                     isr.read(input);
                     shoppingBagMsg = new String(input);
+                    L.e(shoppingBagMsg);
                 } catch (FileNotFoundException e) {
                     e.printStackTrace();
                 } catch (IOException e) {

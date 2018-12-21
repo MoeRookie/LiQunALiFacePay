@@ -56,7 +56,7 @@ public class MultipleDialog extends Dialog {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.dialog_global);
+        setContentView(R.layout.dialog_multiple);
         // 按空白处不能取消动画
         setCanceledOnTouchOutside(false);
         // 初始化界面控件

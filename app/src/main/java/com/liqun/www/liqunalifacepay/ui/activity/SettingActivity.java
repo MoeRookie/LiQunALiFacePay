@@ -124,7 +124,6 @@ public class SettingActivity extends AppCompatActivity {
                         // 1.点击"启用购物袋"->从sp中获取购物袋信息并展示
                         // 1.1.首次使用->读取文件并保存到sp中
                         // 从sp中获取购物袋信息并展示
-                        ALiFacePayApplication.getInstance().getShoppingBagMsg();
                         String json = SpUtils.getString(
                                 getApplicationContext(),
                                 ConstantValue.KEY_SHOPPING_BAG_MSG,
@@ -140,16 +139,16 @@ public class SettingActivity extends AppCompatActivity {
                         }
                         if (mBagList.size() > 0) {
                             mBagList.clear();
-                            List<ShoppingBagBean> bagList = JSONArray.parseArray(json, ShoppingBagBean.class);
-                            mBagList.addAll(bagList);
                         }
+                        List<ShoppingBagBean> bagList = JSONArray.parseArray(json, ShoppingBagBean.class);
+                        mBagList.addAll(bagList);
                         // 弹出"启用购物袋"的对话框(title,mBagList)
                         // 自定义多项选择的对话框
                             // 可以设置标题(以列表项标题为title)
                             // 内容为多项选择列表(列表项长度可变)
                             // 带有确定&否定意义的按钮(设置按钮事件监听)
                         // 根据对应购物袋之前的选择状态设置当前条目是否被选中
-//                        showShoppingBagDialog(mItemBean.getTitle(),mBagList,mItemBean);
+                        showShoppingBagDialog(mItemBean);
                         // 2.点击"确定"按钮时根据购物袋的选择状态保存购物袋信息到sp中、关闭对话框!
                         // &根据购物袋的选择状态拼接条目的内容
                         break;
@@ -160,20 +159,18 @@ public class SettingActivity extends AppCompatActivity {
 
     /**
      * 显示"启用购物袋"的对话框
-     * @param title 对话框标题
-     * @param bagList 购物袋列表
      * @param itemBean 当前设置项
      */
-    private void showShoppingBagDialog(String title, final List<ShoppingBagBean> bagList, SettingItemBean itemBean) {
+    private void showShoppingBagDialog(SettingItemBean itemBean) {
         if (mMultipleDialog == null) {
             mMultipleDialog = new MultipleDialog(this);
-            mMultipleDialog.setTitle(title);
-            mBagAdapter = new ShoppingBagAdapter(this, bagList);
+            mMultipleDialog.setTitle(itemBean.getTitle());
+            mBagAdapter = new ShoppingBagAdapter(this, mBagList);
             mMultipleDialog.setAdapter(mBagAdapter);
             mBagAdapter.setOnItemCheckedChangeListener(new ShoppingBagAdapter.OnItemCheckedChangeListener() {
                 @Override
                 public void onItemCheckedChanged(int i) {
-                    ShoppingBagBean bagBean = bagList.get(i);
+                    ShoppingBagBean bagBean = mBagList.get(i);
                     bagBean.setSelected(!bagBean.isSelected());
                     mBagAdapter.notifyDataSetChanged();
                 }
@@ -182,6 +179,9 @@ public class SettingActivity extends AppCompatActivity {
         }
         mMultipleDialog.show();
     }
+
+
+
 
     /**
      * 监听多选对话框取消&确定按钮被点击
@@ -208,22 +208,27 @@ public class SettingActivity extends AppCompatActivity {
                 if (mSb.length() > 0) {
                     mSb.delete(0, mSb.length());
                 }
-                for (ShoppingBagBean bagBean : mBagList) {
+                for (int i = 0; i < mBagList.size(); i++) {
+                    ShoppingBagBean bagBean = mBagList.get(i);
                     String type = bagBean.getType();
-                    if (type.contains("特大")) {
-                        mSb.append("特大");
-                    }
-                    if (type.contains("大")) {
-                        mSb.append("大");
-                    }
-                    if (type.contains("中")) {
-                        mSb.append("中");
-                    }
                     if (type.contains("小")) {
-                        mSb.append("小");
+                        type = "小";
+                    } else if (type.contains("中")) {
+                        type = "中";
+                    } else if (type.contains("大")) {
+                        type = "大";
+                    } else if (type.contains("特大")) {
+                        type = "特大";
+                    }
+                    if (bagBean.isSelected()) {
+                        mSb.append(type);
                     }
                 }
                 itemBean.setContent("已启用"+ mSb.toString()+"号购物袋");
+                mAdapter.notifyDataSetChanged();
+                // 保存当前界面状态
+                saveInstanceState();
+                mMultipleDialog.dismiss();
             }
         });
     }
@@ -277,6 +282,7 @@ public class SettingActivity extends AppCompatActivity {
         if(tvTitle == null){tvTitle = mUpdateDialog.findViewById(R.id.tv_title);}
         if (etContent == null) {etContent = mUpdateDialog.findViewById(R.id.et_content);}
         if (tvMessage == null) {tvMessage = mUpdateDialog.findViewById(R.id.tv_message);}
+        tvMessage.setVisibility(View.GONE);
         // 设置对话框标题&内容
         setUpdateDialogDisplay(title,content);
     }
