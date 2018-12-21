@@ -34,6 +34,14 @@ implements View.OnClickListener {
     private void setListener() {
         mIvLiQun.setOnClickListener(this);
         mIvRt.setOnClickListener(this);
+
+        mBtnNoVip.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = SelfHelpPayActivity.newIntent(HomeActivity.this);
+                startActivity(intent);
+            }
+        });
     }
 
 
@@ -44,6 +52,19 @@ implements View.OnClickListener {
         setImageDisplay(mIvHead,898,1920);
         mIvLiQun = findViewById(R.id.iv_liqun);
         mIvRt = findViewById(R.id.iv_rt);
+        // 会员结账&非会员结账
+        mBtnNoVip = findViewById(R.id.btn_novip);
+        /**
+         * 1.编写"自助收银"界面布局
+         * 2."取消交易"
+         * 3."手输条码"
+         * 4."扫描商品码"
+         * 5.编写商品信息界面布局
+         * 6.添加购物袋
+         * 7."选择支付方式"界面布局
+         * 8.编写"扫码支付"界面布局
+         * 9.编写"刷脸付"界面布局
+         */
     }
 
     /**
