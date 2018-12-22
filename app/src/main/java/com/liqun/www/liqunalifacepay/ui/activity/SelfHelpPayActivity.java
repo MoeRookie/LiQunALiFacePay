@@ -23,6 +23,7 @@ public class SelfHelpPayActivity extends AppCompatActivity
 implements View.OnClickListener {
 
     private Button mBtnCancelDeal;
+    private Button mBtnPay;
 
     public static Intent newIntent(Context packageContext) {
         Intent intent = new Intent(packageContext, SelfHelpPayActivity.class);
@@ -39,60 +40,67 @@ implements View.OnClickListener {
 
     private void initUI() {
         mBtnCancelDeal = findViewById(R.id.btn_cancel_deal);
+        mBtnPay = findViewById(R.id.btn_pay);
     }
 
     private void setListener() {
         mBtnCancelDeal.setOnClickListener(this);
+        mBtnPay.setOnClickListener(this);
         // 等待取消交易结果的服务端监听
-        initNetWorkServer();
+//        initNetWorkServer();
     }
 
     /**
      * 开启本地服务端,以监听此时作为客户端的服务器返回数据
      */
-    private void initNetWorkServer() {
-        new Thread() {
-            @Override
-            public void run() {
-                super.run();
-                try {
-                    // 建立Tcp的服务端,并且监听一个端口
-                    ServerSocket serverSocket = new ServerSocket(
-                            ConstantValue.PORT_SERVER_RETURN);
-                    // 接受客户端的连接
-                    Socket socket = serverSocket.accept(); // 接受客户端的连接(该方法是一个阻塞型的方法,当没有客户端与其连接时会一直等待下去)
-                    // 获取输入流对象,读取客户端发送的内容
-                    InputStream inputStream = socket.getInputStream();
-                    byte[] buf = new byte[1024];
-                    int length = 0;
-                    length = inputStream.read(buf);
-                    L.i("服务端返回 = " + new String(buf, 0, length));
-                    /**
-                     * 为了避免出现msg被重用的问题,每次的msg对象都要通过Message.obtain()方法获取
-                     */
-                    mMessage = Message.obtain();
-                    mMessage.what = 2;
-                    mMessage.obj = JointDismantleUtils.dismantleResponse(
-                            new String(buf, 0, length)
-                    );
-                    //关闭资源
-                    serverSocket.close();
-                } catch (IOException e) {
-                    mMessage = Message.obtain();
-                    mMessage.what = 0;
-                    e.printStackTrace();
-                } finally {
-                    mHandler.sendMessage(mMessage);
-                }
-            }
-        }.start();
-    }
+//    private void initNetWorkServer() {
+//        new Thread() {
+//            @Override
+//            public void run() {
+//                super.run();
+//                try {
+//                    // 建立Tcp的服务端,并且监听一个端口
+//                    ServerSocket serverSocket = new ServerSocket(
+//                            ConstantValue.PORT_SERVER_RETURN);
+//                    // 接受客户端的连接
+//                    Socket socket = serverSocket.accept(); // 接受客户端的连接(该方法是一个阻塞型的方法,当没有客户端与其连接时会一直等待下去)
+//                    // 获取输入流对象,读取客户端发送的内容
+//                    InputStream inputStream = socket.getInputStream();
+//                    byte[] buf = new byte[1024];
+//                    int length = 0;
+//                    length = inputStream.read(buf);
+//                    L.i("服务端返回 = " + new String(buf, 0, length));
+//                    /**
+//                     * 为了避免出现msg被重用的问题,每次的msg对象都要通过Message.obtain()方法获取
+//                     */
+//                    mMessage = Message.obtain();
+//                    mMessage.what = 2;
+//                    mMessage.obj = JointDismantleUtils.dismantleResponse(
+//                            new String(buf, 0, length)
+//                    );
+//                    //关闭资源
+//                    serverSocket.close();
+//                } catch (IOException e) {
+//                    mMessage = Message.obtain();
+//                    mMessage.what = 0;
+//                    e.printStackTrace();
+//                } finally {
+//                    mHandler.sendMessage(mMessage);
+//                }
+//            }
+//        }.start();
+//    }
 
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.btn_cancel_deal:
                 // 取消交易
+                break;
+            case R.id.btn_pay:
+                // 跳转到选择支付方式界面
+                Intent intent = SelectPayTypeActivity.newIntent(this);
+                startActivity(intent);
                 break;
         }
     }

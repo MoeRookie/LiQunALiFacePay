@@ -26,6 +26,7 @@
         <activity android:name=".ui.activity.DayEndActivity"/>
         <activity android:name=".ui.activity.SettingActivity"/>
         <activity android:name=".ui.activity.SelfHelpPayActivity"/>
+        <activity android:name=".ui.activity.SelectPayTypeActivity"/>
     </application>
 
 </manifest>
