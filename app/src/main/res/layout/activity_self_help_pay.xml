@@ -10,7 +10,7 @@
         android:background="@color/white">
         <LinearLayout
             android:id="@+id/ll_self_pay_first"
-            android:visibility="gone"
+            android:visibility="visible"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical">
@@ -38,7 +38,7 @@
         </LinearLayout>
         <LinearLayout
             android:id="@+id/ll_self_pay_second"
-            android:visibility="visible"
+            android:visibility="gone"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical">
