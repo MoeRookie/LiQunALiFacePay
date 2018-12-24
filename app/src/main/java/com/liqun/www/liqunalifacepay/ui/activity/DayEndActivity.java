@@ -24,9 +24,12 @@ import com.liqun.www.liqunalifacepay.ui.view.GlobalDialog;
 import com.liqun.www.liqunalifacepay.ui.view.LoadingDialog;
 import com.liqun.www.liqunalifacepay.ui.view.WarnDialog;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -196,7 +199,6 @@ public class DayEndActivity extends AppCompatActivity{
             }
         });
     }
-
     /**
      * 开启本地服务端,以监听此时作为客户端的服务器返回数据
      */
@@ -213,18 +215,20 @@ public class DayEndActivity extends AppCompatActivity{
                     Socket socket  =  serverSocket.accept(); // 接受客户端的连接(该方法是一个阻塞型的方法,当没有客户端与其连接时会一直等待下去)
                     // 获取输入流对象,读取客户端发送的内容
                     InputStream inputStream = socket.getInputStream();
-                    byte[] buf = new byte[1024];
-                    int length = 0;
-                    length = inputStream.read(buf);
-                    L.i("服务端返回 = " + new String(buf,0,length));
+                    InputStreamReader inputStreamReader=new InputStreamReader(inputStream);
+                    // 加入缓冲区
+                    BufferedReader bufferedReader=new BufferedReader(inputStreamReader);
+                    String temp=null;
+                    String info="";
+                    while((temp=bufferedReader.readLine())!=null){
+                        info+=temp;
+                    }
                     /**
                      * 为了避免出现msg被重用的问题,每次的msg对象都要通过Message.obtain()方法获取
                      */
                     mMessage = Message.obtain();
                     mMessage.what = 2;
-                    mMessage.obj = JointDismantleUtils.dismantleResponse(
-                            new String(buf,0,length)
-                    );
+                    mMessage.obj = JointDismantleUtils.dismantleResponse(info);
                     //关闭资源
                     serverSocket.close();
                 } catch (IOException e) {
@@ -297,7 +301,6 @@ public class DayEndActivity extends AppCompatActivity{
                  * 开启本地服务端,以监听此时作为客户端的服务器返回数据
                  *  1.端口被占用的异常
                  *  2.读取服务端返回数据的过程中的io异常
-                 *  3.
                  */
                 doDayEnd();
             }
@@ -351,10 +354,10 @@ public class DayEndActivity extends AppCompatActivity{
                             ConstantValue.PORT_SERVER_RECEIVE);
                     //获取到Socket的输出流对象
                     OutputStream outputStream = socket.getOutputStream();
-                    //利用输出流对象把数据写出即可
-                    outputStream.write(msg.getBytes("utf-8"));
-                    L.i("内容已写出!");
-                    //关闭资源
+                    // 将输出流包装成打印流
+                    PrintWriter printWriter=new PrintWriter(outputStream);
+                    printWriter.print(msg);
+                    printWriter.flush();
                     socket.close();
                 } catch (IOException e) {
                     mMessage = Message.obtain();

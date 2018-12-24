@@ -9,6 +9,7 @@ import static com.liqun.www.liqunalifacepay.data.bean.DayEndBean.DayEndResponseB
 
 public class JointDismantleUtils {
     static final String RESPONSE_TAG_DAY_END = "OFFLINEINFO";
+    static final String RESPONSE_TAG_SCAN_GOODS = "GOODSINFO";
     /**
      * 拼接请求串
      * @param tag 标识符
