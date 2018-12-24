@@ -17,14 +17,60 @@ public class ConstantValue {
      * POS后台服务器地址
      */
     public static final String IP_SERVER_ADDRESS = "128.192.80.113";
+
+    /**
+     * 交易流水的tag
+     */
+    public static final String TAG_DEAL_RECORD = "POSCERTIFY";
+    /**
+     * 会员卡的tag
+     */
+    public static final String TAG_VIP_CARD = "VIPCERTIFY";
+    /**
+     * 扫描商品的tag
+     */
+    public static final String TAG_SCAN_GOODS = "BARCODECERTIFY";
+    /**
+     * 取消商品的tag
+     */
+    public static final String TAG_CANCEL_GOODS = "CANCELBARCODECERTIFY";
+    /**
+     * 取消交易的tag
+     */
+    public static final String TAG_CANCEL_DEAL = "CANCELTRADECERTIFY";
+    /**
+     * 重新获取整比交易明细的tag
+     */
+    public static final String TAG_RE_OBTAIN_DEAL_DETAILS = "TRADECERTIFY";
+    /**
+     * 准备付款的tag
+     */
+    public static final String TAG_PREPARE_PAYMENT = "PAYREQUESTCERTIFY";
+    /**
+     * 取消付款的tag
+     */
+    public static final String TAG_CANCEL_PAYMENT = "CANCELPAYCERTIFY";
+    /**
+     * 付款方式的tag
+     */
+    public static final String TAG_PAYMENT_TYPE = "PAYCERTIFY";
+    /**
+     * 日结的tag
+     */
+    public static final String TAG_DAY_END = "OFFLINECERTIFY";
     /**
      * 日结的flag
      */
     public static final String FLAG_DAY_END = "0";
     /**
-     * 日结的标识符
+     * 储值卡查询tag
      */
-    public static final String TAG_DAY_END = "OFFLINECERTIFY";
+    public static final String TAG_DEPOSIT_CARD_QUERY = "CZKCERTIFY";
+    /**
+     * 管理员授权tag
+     */
+    public static final String TAG_LICENSE_MANAGER = "CANCELCERTIFY";
+
     /**
      * 自助收银IP端口
      */
@@ -65,4 +111,5 @@ public class ConstantValue {
      * 购物袋信息的key
      */
     public static final String KEY_SHOPPING_BAG_MSG = "key_shopping_bag_msg";
+
 }

@@ -1,21 +1,19 @@
 package com.liqun.www.liqunalifacepay.data.bean;
 
 /**
- * 扫描商品
+ * 重新获取整比交易明细
  */
-public class ScanGoodsBean {
-    public static class ScanGoodsRequestBean {
+public class ReObtainDealDetailsBean {
+    public static class ReObtainDealDetailsRequestBean{
         private String ip; // 机具的ip地址
-        private String barcode; // 商品条码
-        private float qty; // 数量
+        private String flow_no; // 流水号
 
-        public ScanGoodsRequestBean() {
+        public ReObtainDealDetailsRequestBean() {
         }
 
-        public ScanGoodsRequestBean(String ip, String barcode, float qty) {
+        public ReObtainDealDetailsRequestBean(String ip, String flow_no) {
             this.ip = ip;
-            this.barcode = barcode;
-            this.qty = qty;
+            this.flow_no = flow_no;
         }
 
         public String getIp() {
@@ -26,54 +24,47 @@ public class ScanGoodsBean {
             this.ip = ip;
         }
 
-        public String getBarcode() {
-            return barcode;
+        public String getFlow_no() {
+            return flow_no;
         }
 
-        public void setBarcode(String barcode) {
-            this.barcode = barcode;
-        }
-
-        public float getQty() {
-            return qty;
-        }
-
-        public void setQty(float qty) {
-            this.qty = qty;
+        public void setFlow_no(String flow_no) {
+            this.flow_no = flow_no;
         }
 
         @Override
         public String toString() {
-            return "ScanGoodsRequestBean{" +
+            return "ReObtainDealDetailsRequestBean{" +
                     "ip='" + ip + '\'' +
-                    ", barcode='" + barcode + '\'' +
-                    ", qty=" + qty +
+                    ", flow_no='" + flow_no + '\'' +
                     '}';
         }
     }
-    public static class ScanGoodsResponseBean{
+    public static class ReObtainDealDetailsResponseBean{
+        private int flow_id; // 商品行号
         private String incode; // 商品编码
-        private String barcode; // 商品条码(前端扫描条码)
+        private String barcode; //  商品条码(前端扫描条码)
         private String fname; // 商品名称
         private String specs; // 规格
         private String units; // 单位
         private float unitprice; // 原零售价
         private float price; // 实际售价
-        private float qty; // 数量或重量
+        private float qty; // 数量或者是重量
         private float disc; // 折扣
         private float total; // 总金额
-        private float dsctotal; // 优惠金额(暂时不用)
-        private String dsctype; // 优惠方式(暂时不用)默认0
+        private float dsctotal; // 优惠金额(暂无)
+        private String dsctype; // 优惠方式(默认0)
         private String plutype; // 是否称重的标志(0普通1称重)
-        private float weight; // 商品重量(plutype=0 默认为0,plutype=1时返回商品重量)
+        private float weight; // 商品重量(plutype=0 默认为0,plutype=1 返回商品重量)
         private String goodsno; // 商品条码
         private String retflag; // 返回标志(0 正常 1异常)
         private String retmsg; // 返回的信息
 
-        public ScanGoodsResponseBean() {
+        public ReObtainDealDetailsResponseBean() {
         }
 
-        public ScanGoodsResponseBean(String incode, String barcode, String fname, String specs, String units, float unitprice, float price, float qty, float disc, float total, float dsctotal, String dsctype, String plutype, float weight, String goodsno, String retflag, String retmsg) {
+        public ReObtainDealDetailsResponseBean(int flow_id, String incode, String barcode, String fname, String specs, String units, float unitprice, float price, float qty, float disc, float total, float dsctotal, String dsctype, String plutype, float weight, String goodsno, String retflag, String retmsg) {
+            this.flow_id = flow_id;
             this.incode = incode;
             this.barcode = barcode;
             this.fname = fname;
@@ -91,6 +82,14 @@ public class ScanGoodsBean {
             this.goodsno = goodsno;
             this.retflag = retflag;
             this.retmsg = retmsg;
+        }
+
+        public int getFlow_id() {
+            return flow_id;
+        }
+
+        public void setFlow_id(int flow_id) {
+            this.flow_id = flow_id;
         }
 
         public String getIncode() {
@@ -231,8 +230,9 @@ public class ScanGoodsBean {
 
         @Override
         public String toString() {
-            return "ScanGoodsResponseBean{" +
-                    "incode='" + incode + '\'' +
+            return "ReObtainDealDetailsResponseBean{" +
+                    "flow_id=" + flow_id +
+                    ", incode='" + incode + '\'' +
                     ", barcode='" + barcode + '\'' +
                     ", fname='" + fname + '\'' +
                     ", specs='" + specs + '\'' +

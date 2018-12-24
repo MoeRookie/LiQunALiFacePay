@@ -1,17 +1,17 @@
 package com.liqun.www.liqunalifacepay.data.bean;
 
 /**
- * 日结
+ * 取消付款
  */
-public class DayEndBean {
-    public static class DayEndRequestBean{
-        String ip; // 机具的ip地址
-        String flag; // 标志位
+public class CancelPaymentBean {
+    public static class CancelPaymentRequestBean{
+        private String ip; // 机具的ip地址
+        private String flag; // 默认为0
 
-        public DayEndRequestBean() {
+        public CancelPaymentRequestBean() {
         }
 
-        public DayEndRequestBean(String ip, String flag) {
+        public CancelPaymentRequestBean(String ip, String flag) {
             this.ip = ip;
             this.flag = flag;
         }
@@ -34,20 +34,20 @@ public class DayEndBean {
 
         @Override
         public String toString() {
-            return "DayEndRequestBean{" +
+            return "CancelPaymentRequestBean{" +
                     "ip='" + ip + '\'' +
                     ", flag='" + flag + '\'' +
                     '}';
         }
     }
-    public static class DayEndResponseBean{
-        String retflag; // 返回标志 0 正常 1异常
-        String retmsg; // 返回的信息
+    public static class CancelPaymentResponseBean{
+        private String retflag; // 返回标志(0 正常 1异常)
+        private String retmsg; // 返回的信息
 
-        public DayEndResponseBean() {
+        public CancelPaymentResponseBean() {
         }
 
-        public DayEndResponseBean(String retflag, String retmsg) {
+        public CancelPaymentResponseBean(String retflag, String retmsg) {
             this.retflag = retflag;
             this.retmsg = retmsg;
         }
@@ -70,7 +70,7 @@ public class DayEndBean {
 
         @Override
         public String toString() {
-            return "DayEndResponseBean{" +
+            return "CancelPaymentResponseBean{" +
                     "retflag='" + retflag + '\'' +
                     ", retmsg='" + retmsg + '\'' +
                     '}';

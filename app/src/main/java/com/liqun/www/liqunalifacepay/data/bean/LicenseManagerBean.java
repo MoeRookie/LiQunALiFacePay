@@ -1,19 +1,19 @@
 package com.liqun.www.liqunalifacepay.data.bean;
 
 /**
- * 日结
+ * 管理员授权
  */
-public class DayEndBean {
-    public static class DayEndRequestBean{
-        String ip; // 机具的ip地址
-        String flag; // 标志位
+public class LicenseManagerBean {
+    public static class LicenseManagerRequestBean{
+        private String ip; // 机具的ip地址
+        private String cardno; // 磁条信息
 
-        public DayEndRequestBean() {
+        public LicenseManagerRequestBean() {
         }
 
-        public DayEndRequestBean(String ip, String flag) {
+        public LicenseManagerRequestBean(String ip, String cardno) {
             this.ip = ip;
-            this.flag = flag;
+            this.cardno = cardno;
         }
 
         public String getIp() {
@@ -24,30 +24,30 @@ public class DayEndBean {
             this.ip = ip;
         }
 
-        public String getFlag() {
-            return flag;
+        public String getCardno() {
+            return cardno;
         }
 
-        public void setFlag(String flag) {
-            this.flag = flag;
+        public void setCardno(String cardno) {
+            this.cardno = cardno;
         }
 
         @Override
         public String toString() {
-            return "DayEndRequestBean{" +
+            return "LicenseManagerRequestBean{" +
                     "ip='" + ip + '\'' +
-                    ", flag='" + flag + '\'' +
+                    ", cardno='" + cardno + '\'' +
                     '}';
         }
     }
-    public static class DayEndResponseBean{
-        String retflag; // 返回标志 0 正常 1异常
-        String retmsg; // 返回的信息
+    public static class LicenseManagerResponseBean{
+        private String retflag; // 返回标志(0 正常 1异常)
+        private String retmsg; // 返回的信息
 
-        public DayEndResponseBean() {
+        public LicenseManagerResponseBean() {
         }
 
-        public DayEndResponseBean(String retflag, String retmsg) {
+        public LicenseManagerResponseBean(String retflag, String retmsg) {
             this.retflag = retflag;
             this.retmsg = retmsg;
         }
@@ -70,7 +70,7 @@ public class DayEndBean {
 
         @Override
         public String toString() {
-            return "DayEndResponseBean{" +
+            return "LicenseManagerResponseBean{" +
                     "retflag='" + retflag + '\'' +
                     ", retmsg='" + retmsg + '\'' +
                     '}';

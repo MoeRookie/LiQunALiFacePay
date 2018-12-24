@@ -23,8 +23,14 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+
+import static com.liqun.www.liqunalifacepay.data.bean.CancelDealBean.CancelDealResponseBean;
+import static com.liqun.www.liqunalifacepay.data.bean.ScanGoodsBean.ScanGoodsRequestBean;
+import static com.liqun.www.liqunalifacepay.data.bean.ScanGoodsBean.ScanGoodsResponseBean;
 
 /**
  * 取消交易&输码|扫码->商品信息界面
@@ -62,11 +68,26 @@ implements View.OnClickListener {
                 case 1:
                     // 处理返回结果
                     if (msg.obj != null) {
+                        handlerServerResult(msg.obj);
                     }
+                    break;
+                case 2:
+                    // 连接服务器失败
                     break;
             }
         }
     };
+
+    /**
+     * 处理从服务端读取过来的返回结果
+     * @param obj
+     */
+    private void handlerServerResult(Object obj) {
+        if (obj instanceof CancelDealResponseBean) { // 取消交易
+        }
+        if (obj instanceof ScanGoodsResponseBean) { // 扫描商品
+        }
+    }
 
     public static Intent newIntent(Context packageContext) {
         Intent intent = new Intent(packageContext, SelfHelpPayActivity.class);
@@ -96,7 +117,7 @@ implements View.OnClickListener {
         // 商品信息
         mBtnPay.setOnClickListener(this);
         // 等待结果的服务端监听
-//        initNetWorkServer();
+        initNetWorkServer();
     }
 
     /**
@@ -229,7 +250,50 @@ implements View.OnClickListener {
                     mTvMessage.setText(R.string.bar_code_digit_err);
                     return;
                 }
+                requestNetWorkServer(
+                        ConstantValue.TAG_SCAN_GOODS,
+                        new ScanGoodsRequestBean(
+                                ConstantValue.IP_SERVER_ADDRESS,
+                                barCodeStr,
+                                1
+                        )
+                );
             }
         });
+    }
+
+    /**
+     * 连接服务端,请求数据
+     */
+    private void requestNetWorkServer(final String tag, final Object requestBean) {
+        new Thread(){
+            @Override
+            public void run() {
+                super.run();
+                // 拼接请求串
+                String msg = JointDismantleUtils.jointRequest(
+                        tag,
+                        requestBean
+                );
+                //建立tcp的服务
+                try {
+                    Socket socket = new Socket(
+                            ConstantValue.IP_SERVER_ADDRESS,
+                            ConstantValue.PORT_SERVER_RECEIVE);
+                    //获取到Socket的输出流对象
+                    OutputStream outputStream = socket.getOutputStream();
+                    // 将输出流包装成打印流
+                    PrintWriter printWriter=new PrintWriter(outputStream);
+                    printWriter.print(msg);
+                    printWriter.flush();
+                    socket.close();
+                } catch (IOException e) {
+                    mMessage = Message.obtain();
+                    mMessage.what = 1;
+                    mHandler.sendMessage(mMessage);
+                    e.printStackTrace();
+                }
+            }
+        }.start();
     }
 }
