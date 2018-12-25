@@ -3,21 +3,28 @@ package com.liqun.www.liqunalifacepay.ui.activity;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.os.Handler;
 import android.os.Message;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.liqun.www.liqunalifacepay.R;
+import com.liqun.www.liqunalifacepay.application.ALiFacePayApplication;
 import com.liqun.www.liqunalifacepay.application.ConstantValue;
 import com.liqun.www.liqunalifacepay.data.utils.JointDismantleUtils;
 import com.liqun.www.liqunalifacepay.data.utils.L;
+import com.liqun.www.liqunalifacepay.ui.adapter.GoodsAdapter;
 import com.liqun.www.liqunalifacepay.ui.view.InputBarCodeDialog;
 import com.liqun.www.liqunalifacepay.ui.view.NumberKeyboardView;
+import com.liqun.www.liqunalifacepay.ui.view.WarnDialog;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -27,17 +34,20 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
 
+import static com.liqun.www.liqunalifacepay.data.bean.CancelDealBean.CancelDealRequestBean;
 import static com.liqun.www.liqunalifacepay.data.bean.CancelDealBean.CancelDealResponseBean;
 import static com.liqun.www.liqunalifacepay.data.bean.ScanGoodsBean.ScanGoodsRequestBean;
 import static com.liqun.www.liqunalifacepay.data.bean.ScanGoodsBean.ScanGoodsResponseBean;
 
 /**
  * 取消交易&输码|扫码->商品信息界面
- * 1.启用服务端监听
+ * 1.启用服务端监听(复用)
  * 2.取消交易->一次请求,成功后提示并点击"确认"|倒计时结束->主界面
  * 3.输码|扫码->商品信息界面
- *  多次请求,每次获取到返回结果后要重新启用服务端监听,请求结果显示在界面上
+ *  多次请求,每次获取到返回结果后显示在界面上
  * 4.复用客户端?
  *  4.1.客户端请求,重点在于拼接请求串;
  *  4.2.拼接请求串时涉及到的参数包括标识符+requestBean
@@ -57,6 +67,16 @@ implements View.OnClickListener {
     private NumberKeyboardView mNKV;
     private EditText mEtBarCode;
     private Message mMessage;
+    private WarnDialog mWarnDialog;
+    private final static int time = 10000;
+    private MyCountDownTimer cdt;
+    private LinearLayout mLLSelfPayFirst;
+    private LinearLayout mLLSelfPaySecond;
+    private TextView mTvResultHint;
+    private RecyclerView mRvGoods;
+    private LinearLayoutManager mLayoutManager;
+    private List<ScanGoodsResponseBean> mList = new ArrayList<>();
+    private GoodsAdapter mAdapter;
     private Handler mHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
@@ -64,6 +84,9 @@ implements View.OnClickListener {
             switch (msg.what) {
                 case 0:
                     // 读取服务器失败
+                    showWarnDialog(
+                            getString(R.string.connect_client_fail)
+                    );
                     break;
                 case 1:
                     // 处理返回结果
@@ -73,6 +96,10 @@ implements View.OnClickListener {
                     break;
                 case 2:
                     // 连接服务器失败
+                    // 弹出警告对话框,点击确定返回到主界面
+                    showWarnDialog(
+                            getString(R.string.connect_server_fail)
+                    );
                     break;
             }
         }
@@ -84,8 +111,46 @@ implements View.OnClickListener {
      */
     private void handlerServerResult(Object obj) {
         if (obj instanceof CancelDealResponseBean) { // 取消交易
+            CancelDealResponseBean cdrb = (CancelDealResponseBean) obj;
+            String retflag = cdrb.getRetflag();
+            String retmsg = null;
+            if ("0".equals(retflag)) {
+                retmsg = "POS交易取消成功!";
+            } else if ("1".equals(retflag)) {
+                retmsg = cdrb.getRetmsg();
+            }
+            showWarnDialog(retmsg);
+            // 一定秒数后跳转主界面
+            cdt.start();
         }
         if (obj instanceof ScanGoodsResponseBean) { // 扫描商品
+            ScanGoodsResponseBean sgrb = (ScanGoodsResponseBean) obj;
+            String retflag = sgrb.getRetflag();
+            String retmsg = sgrb.getRetmsg();
+            // 手输条码
+            if (mDialog.isShowing() && "1".equals(retflag)) {
+                mTvMessage.setVisibility(View.VISIBLE);
+                mTvMessage.setText(retmsg);
+            // 扫描商品
+            }else{
+                // 1.隐藏默认的自助收银界面&显示商品信息列表界面
+                mLLSelfPayFirst.setVisibility(View.GONE);
+                mLLSelfPaySecond.setVisibility(View.VISIBLE);
+                L.e("提示输入条码的对话框依然在显示中:"+ mDialog.isShowing());
+                if (mDialog.isShowing()) {
+                    mDialog.dismiss();
+                }
+                if ("".equals(retmsg)) {
+                    retmsg = "添加商品成功，请继续扫描添加下一个商品！";
+                }
+                // 2.显示retmsg
+                mTvResultHint.setText(retmsg);
+                // 3.若retflag==0,则将sgrb添加到集合(index = 0)中并刷新界面
+                if ("0".equals(retflag)) {
+                    mList.add(0, sgrb);
+                    mAdapter.notifyDataSetChanged();
+                }
+            }
         }
     }
 
@@ -108,9 +173,20 @@ implements View.OnClickListener {
         mBtnInput = findViewById(R.id.btn_input);
         // 商品信息
         mBtnPay = findViewById(R.id.btn_pay);
+        // 默认界面
+        mLLSelfPayFirst = findViewById(R.id.ll_self_pay_first);
+        // 商品信息界面
+        mLLSelfPaySecond = findViewById(R.id.ll_self_pay_second);
+        mTvResultHint = findViewById(R.id.tv_result_hint);
+        mRvGoods = findViewById(R.id.rv_goods);
+        mLayoutManager = new LinearLayoutManager(this);
+        mRvGoods.setLayoutManager(mLayoutManager);
+        mAdapter = new GoodsAdapter(this,mList);
+        mRvGoods.setAdapter(mAdapter);
     }
 
     private void setListener() {
+        cdt = new MyCountDownTimer(time,1000);
         // 默认
         mBtnCancelDeal.setOnClickListener(this);
         mBtnInput.setOnClickListener(this);
@@ -129,35 +205,14 @@ implements View.OnClickListener {
             public void run() {
                 super.run();
                 try {
-                    // 建立Tcp的服务端,并且监听一个端口
-                    ServerSocket serverSocket = new ServerSocket(
-                            ConstantValue.PORT_SERVER_RETURN);
-                    // 接受客户端的连接
-                    Socket socket  =  serverSocket.accept(); // 接受客户端的连接(该方法是一个阻塞型的方法,当没有客户端与其连接时会一直等待下去)
-                    // 获取输入流对象,读取客户端发送的内容
-                    InputStream inputStream = socket.getInputStream();
-                    InputStreamReader inputStreamReader=new InputStreamReader(inputStream);
-                    // 加入缓冲区
-                    BufferedReader bufferedReader=new BufferedReader(inputStreamReader);
-                    String temp=null;
-                    String info="";
-                    while((temp=bufferedReader.readLine())!=null){
-                        info+=temp;
+                    ServerSocket serverSocket = new ServerSocket(2001);
+                    while (true) {
+                        Socket socket = serverSocket.accept();// 侦听并接受到此套接字的连接,返回一个Socket对象
+                        SocketServerThread socketThread = new SocketServerThread(socket);
+                        socketThread.start();
                     }
-                    /**
-                     * 为了避免出现msg被重用的问题,每次的msg对象都要通过Message.obtain()方法获取
-                     */
-                    mMessage = Message.obtain();
-                    mMessage.what = 1;
-                    mMessage.obj = JointDismantleUtils.dismantleResponse(info);
-                    //关闭资源
-                    serverSocket.close();
                 } catch (IOException e) {
-                    mMessage = Message.obtain();
-                    mMessage.what = 0;
                     e.printStackTrace();
-                }finally {
-                    mHandler.sendMessage(mMessage);
                 }
             }
         }.start();
@@ -168,6 +223,14 @@ implements View.OnClickListener {
         switch (v.getId()) {
             case R.id.btn_cancel_deal:
                 // 取消交易
+                requestNetWorkServer(
+                        // 取消交易
+                        ConstantValue.TAG_CANCEL_DEAL,
+                        new CancelDealRequestBean(
+                                ALiFacePayApplication.getInstance().getHostIP(),
+                                "0"
+                        )
+                );
                 break;
             case R.id.btn_input:
                 // 手输条码
@@ -186,7 +249,7 @@ implements View.OnClickListener {
      */
     private void showInputBarCodeDialog() {
         if (mDialog == null) {
-            mDialog = new InputBarCodeDialog(this);
+        mDialog = new InputBarCodeDialog(this);
             setDialogListener();
         }
         mDialog.show();
@@ -240,7 +303,6 @@ implements View.OnClickListener {
                     mTvMessage.setText(R.string.bar_code_not_null);
                     return;
                 }
-                L.e("条码长度 = " + barCodeStr.length());
                 if (barCodeStr.length() != 7
                         && barCodeStr.length() != 8
                         && barCodeStr.length() != 13
@@ -251,9 +313,10 @@ implements View.OnClickListener {
                     return;
                 }
                 requestNetWorkServer(
+                        // 扫描商品
                         ConstantValue.TAG_SCAN_GOODS,
                         new ScanGoodsRequestBean(
-                                ConstantValue.IP_SERVER_ADDRESS,
+                                ALiFacePayApplication.getInstance().getHostIP(),
                                 barCodeStr,
                                 1
                         )
@@ -275,6 +338,7 @@ implements View.OnClickListener {
                         tag,
                         requestBean
                 );
+                L.e(msg);
                 //建立tcp的服务
                 try {
                     Socket socket = new Socket(
@@ -295,5 +359,92 @@ implements View.OnClickListener {
                 }
             }
         }.start();
+    }
+    /**
+     * 显示警告类型的对话框
+     * @param msg 报错信息串
+     */
+    private void showWarnDialog(String msg) {
+        if (mWarnDialog == null) {
+            mWarnDialog = new WarnDialog(this);
+        }
+        mWarnDialog.setMessage(msg);
+        if (!isFinishing()) {
+            mWarnDialog.show();
+        }
+        mWarnDialog.setOnConfirmClickListener(new WarnDialog.OnConfirmClickListener() {
+            @Override
+            public void onConfirmClicked() {
+                if (mWarnDialog.isShowing()) {
+                    cdt.cancel();
+                    mWarnDialog.dismiss();
+                    finish();
+                }
+            }
+        });
+    }
+    class MyCountDownTimer extends CountDownTimer {
+
+        /**
+         * @param millisInFuture    The number of millis in the future from the call
+         *                          to {@link #start()} until the countdown is done and {@link #onFinish()}
+         *                          is called.
+         * @param countDownInterval The interval along the way to receive
+         *                          {@link #onTick(long)} callbacks.
+         */
+        public MyCountDownTimer(long millisInFuture, long countDownInterval) {
+            super(millisInFuture, countDownInterval);
+        }
+
+        @Override
+        public void onTick(long millisUntilFinished) {
+        }
+
+        @Override
+        public void onFinish() {
+            finish();
+        }
+    }
+    /**
+     * Socket多线程处理类 用来处理服务端接收到的客户端请求(处理Socket对象)
+     */
+    class SocketServerThread extends Thread {
+        private Socket socket;
+        public SocketServerThread(Socket socket) {
+            this.socket = socket;
+        }
+        @Override
+        public void run() {
+            super.run();
+            // 根据输入输出流和客户端连接
+            try {
+                // 得到一个输入流，接收客户端传递的信息
+                InputStream inputStream = socket.getInputStream();
+                // 提高效率，将自己字节流转为字符流
+                InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
+                // 加入缓冲区
+                BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
+                String temp = null;
+                String info = "";
+                while ((temp = bufferedReader.readLine()) != null) {
+                    info += temp;
+                }
+                L.e(info);
+                /**
+                 * 为了避免出现msg被重用的问题,每次的msg对象都要通过Message.obtain()方法获取
+                 */
+                mMessage = Message.obtain();
+                mMessage.what = 1;
+                mMessage.obj = JointDismantleUtils.dismantleResponse(info);
+                //关闭资源
+                socket.close();
+            } catch (IOException e) {
+                mMessage = Message.obtain();
+                mMessage.what = 0;
+                e.printStackTrace();
+            }finally {
+                mHandler.sendMessage(mMessage);
+            }
+        }
     }
 }

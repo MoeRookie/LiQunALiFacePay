@@ -25,6 +25,14 @@ public class InputBarCodeDialog extends Dialog {
     // 确定按钮被点击了的监听器
     private OnYesClickListener onYesClickListener;
 
+    public InputBarCodeDialog(Context context, int themeResId) {
+        super(context, themeResId);
+    }
+
+    public InputBarCodeDialog(Context context, boolean cancelable, OnCancelListener cancelListener) {
+        super(context, cancelable, cancelListener);
+    }
+
     /** 设置取消按钮的显示内容和监听 */
     public void setOnNoClickListener(OnNoClickListener OnNoClickListener) {
         this.onNoClickListener = OnNoClickListener;
@@ -38,6 +46,7 @@ public class InputBarCodeDialog extends Dialog {
     public InputBarCodeDialog(Context context) {
         super(context, R.style.GlobalDialogStyle);
     }
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

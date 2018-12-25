@@ -43,15 +43,17 @@
             android:layout_height="match_parent"
             android:orientation="vertical">
             <TextView
+                android:id="@+id/tv_result_hint"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="添加成功 , 请继续扫描下一件商品！"
-                android:padding="3dp"
-                android:textSize="10sp"/>
+                android:textColor="@color/gray"
+                android:padding="2dp"
+                android:textSize="6sp"/>
             <android.support.v7.widget.RecyclerView
                 android:id="@+id/rv_goods"
-                android:paddingLeft="10dp"
-                android:paddingRight="10dp"
+                android:paddingLeft="5dp"
+                android:paddingRight="5dp"
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
                 android:layout_weight="1">

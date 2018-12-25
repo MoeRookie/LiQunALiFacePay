@@ -8,6 +8,7 @@ import android.os.storage.StorageVolume;
 import android.widget.TextView;
 
 import com.liqun.www.liqunalifacepay.data.utils.L;
+import com.liqun.www.liqunalifacepay.ui.activity.SelfHelpPayActivity;
 
 import java.io.File;
 import java.io.FileInputStream;
