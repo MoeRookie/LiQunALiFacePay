@@ -1,5 +1,7 @@
 package com.liqun.www.liqunalifacepay.data.bean;
 
+import java.io.Serializable;
+
 /**
  * 扫描商品
  */
@@ -51,7 +53,7 @@ public class ScanGoodsBean {
                     '}';
         }
     }
-    public static class ScanGoodsResponseBean{
+    public static class ScanGoodsResponseBean implements Serializable {
         private String incode; // 商品编码
         private String barcode; // 商品条码(前端扫描条码)
         private String fname; // 商品名称

@@ -11,9 +11,7 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.LinearLayout;
-import android.widget.TextView;
 
 import com.liqun.www.liqunalifacepay.R;
 import com.liqun.www.liqunalifacepay.application.ALiFacePayApplication;
@@ -21,9 +19,6 @@ import com.liqun.www.liqunalifacepay.application.ConstantValue;
 import com.liqun.www.liqunalifacepay.data.utils.JointDismantleUtils;
 import com.liqun.www.liqunalifacepay.data.utils.L;
 import com.liqun.www.liqunalifacepay.ui.adapter.GoodsAdapter;
-import com.liqun.www.liqunalifacepay.ui.view.InputBarCodeDialog;
-import com.liqun.www.liqunalifacepay.ui.view.NumberKeyboardView;
-import com.liqun.www.liqunalifacepay.ui.view.WarnDialog;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -38,7 +33,6 @@ import java.util.List;
 
 import static com.liqun.www.liqunalifacepay.data.bean.CancelDealBean.CancelDealRequestBean;
 import static com.liqun.www.liqunalifacepay.data.bean.CancelDealBean.CancelDealResponseBean;
-import static com.liqun.www.liqunalifacepay.data.bean.ScanGoodsBean.ScanGoodsRequestBean;
 import static com.liqun.www.liqunalifacepay.data.bean.ScanGoodsBean.ScanGoodsResponseBean;
 
 /**
@@ -57,25 +51,19 @@ import static com.liqun.www.liqunalifacepay.data.bean.ScanGoodsBean.ScanGoodsRes
 public class SelfHelpPayActivity extends AppCompatActivity
 implements View.OnClickListener {
     public static SelfHelpPayActivity mActivity;
-    private static final int MAX_LENGTH = 20;
+    public static Thread sServerSocketThread;
+    public static ServerSocket sServerSocket;
     private Button mBtnCancelDeal;
-    private Button mBtnPay;
     private Button mBtnInput;
-    private InputBarCodeDialog mDialog;
-    private TextView mTvMessage;
-    private NumberKeyboardView mNKV;
-    private EditText mEtBarCode;
+    private Button mBtnPay;
     private Message mMessage;
-    private WarnDialog mWarnDialog;
-    private final static int time = 10000;
-//    private MyCountDownTimer cdt;
     private LinearLayout mLLSelfPayFirst;
     private LinearLayout mLLSelfPaySecond;
-    private TextView mTvResultHint;
     private RecyclerView mRvGoods;
     private LinearLayoutManager mLayoutManager;
     private List<ScanGoodsResponseBean> mList = new ArrayList<>();
     private GoodsAdapter mAdapter;
+    private final int REQUEST_CODE_INPUT_BAR_CODE_DIALOG = 0;
     private Handler mHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
@@ -105,6 +93,15 @@ implements View.OnClickListener {
     };
 
     /**
+     * 显示警告类型的对话框
+     * @param msg 警告内容串
+     */
+    private void showWarnDialog(String msg) {
+        Intent intent = WarnDialogActivity.newIntent(this,msg);
+        startActivity(intent);
+    }
+
+    /**
      * 处理从服务端读取过来的返回结果
      * @param obj
      */
@@ -118,39 +115,19 @@ implements View.OnClickListener {
             } else if ("1".equals(retflag)) {
                 retmsg = cdrb.getRetmsg();
             }
-            Intent intent = WarnDialogActivity.newIntent(this,retmsg);
-            startActivity(intent);
-            // 一定秒数后跳转主界面
-//            cdt.start();
+            showWarnDialog(retmsg);
         }
         if (obj instanceof ScanGoodsResponseBean) { // 扫描商品
             ScanGoodsResponseBean sgrb = (ScanGoodsResponseBean) obj;
             String retflag = sgrb.getRetflag();
             String retmsg = sgrb.getRetmsg();
-            // 手输条码
-            if (mDialog.isShowing() && "1".equals(retflag)) {
-                mTvMessage.setVisibility(View.VISIBLE);
-                mTvMessage.setText(retmsg);
-            // 扫描商品
-            }else{
-                // 1.隐藏默认的自助收银界面&显示商品信息列表界面
+            if (mList.size() <= 0) {
+                // 隐藏默认界面,显示商品信息界面
                 mLLSelfPayFirst.setVisibility(View.GONE);
                 mLLSelfPaySecond.setVisibility(View.VISIBLE);
-                L.e("提示输入条码的对话框依然在显示中:"+ mDialog.isShowing());
-                if (mDialog.isShowing()) {
-                    mDialog.dismiss();
-                }
-                if ("".equals(retmsg)) {
-                    retmsg = "添加商品成功，请继续扫描添加下一个商品！";
-                }
-                // 2.显示retmsg
-                mTvResultHint.setText(retmsg);
-                // 3.若retflag==0,则将sgrb添加到集合(index = 0)中并刷新界面
-                if ("0".equals(retflag)) {
-                    mList.add(0, sgrb);
-                    mAdapter.notifyDataSetChanged();
-                }
             }
+            mList.add(sgrb);
+            mAdapter.notifyDataSetChanged();
         }
     }
 
@@ -178,7 +155,6 @@ implements View.OnClickListener {
         mLLSelfPayFirst = findViewById(R.id.ll_self_pay_first);
         // 商品信息界面
         mLLSelfPaySecond = findViewById(R.id.ll_self_pay_second);
-        mTvResultHint = findViewById(R.id.tv_result_hint);
         mRvGoods = findViewById(R.id.rv_goods);
         mLayoutManager = new LinearLayoutManager(this);
         mRvGoods.setLayoutManager(mLayoutManager);
@@ -187,7 +163,6 @@ implements View.OnClickListener {
     }
 
     private void setListener() {
-//        cdt = new MyCountDownTimer(time,1000);
         // 默认
         mBtnCancelDeal.setOnClickListener(this);
         mBtnInput.setOnClickListener(this);
@@ -196,19 +171,31 @@ implements View.OnClickListener {
         // 等待结果的服务端监听
         initNetWorkServer();
     }
-
+    public static void closeServer(){
+        if (sServerSocket != null) {
+            try {
+                sServerSocket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+                L.e("=======================哎呀,关闭服务端侦听失败啦=======================");
+            }
+        }
+        if (sServerSocketThread != null) {
+            sServerSocketThread.interrupt();
+        }
+    }
     /**
      * 开启本地服务端,以监听此时作为客户端的服务器返回数据
      */
     private void initNetWorkServer() {
-        new Thread(){
+        sServerSocketThread = new Thread(){
             @Override
             public void run() {
                 super.run();
                 try {
-                    ServerSocket serverSocket = new ServerSocket(2001);
+                     sServerSocket = new ServerSocket(2001);
                     while (true) {
-                        Socket socket = serverSocket.accept();// 侦听并接受到此套接字的连接,返回一个Socket对象
+                        Socket socket = sServerSocket.accept();// 侦听并接受到此套接字的连接,返回一个Socket对象
                         SocketServerThread socketThread = new SocketServerThread(socket);
                         socketThread.start();
                     }
@@ -216,7 +203,8 @@ implements View.OnClickListener {
                     e.printStackTrace();
                 }
             }
-        }.start();
+        };
+        sServerSocketThread.start();
     }
 
     @Override
@@ -244,86 +232,12 @@ implements View.OnClickListener {
                 break;
         }
     }
-
     /**
      * 弹出条码号输入对话框
      */
     private void showInputBarCodeDialog() {
-        if (mDialog == null) {
-        mDialog = new InputBarCodeDialog(this);
-            setDialogListener();
-        }
-        mDialog.show();
-        if (mTvMessage == null) {
-            mTvMessage = mDialog.findViewById(R.id.tv_message);
-        }
-        if (mTvMessage.getVisibility() == View.VISIBLE) {
-            mTvMessage.setVisibility(View.GONE);
-        }
-        if (mEtBarCode == null) {
-            mEtBarCode = mDialog.findViewById(R.id.et_bar_code);
-        }
-        mEtBarCode.setCursorVisible(false);
-        mEtBarCode.setFocusable(false);
-        mEtBarCode.setFocusableInTouchMode(false);
-        mEtBarCode.setText("");
-        if (mNKV == null) {
-            mNKV = mDialog.findViewById(R.id.nkv);
-        }
-        mNKV.setIOnKeyboardListener(new NumberKeyboardView.IOnKeyboardListener() {
-            @Override
-            public void onInsertKeyEvent(String text) {
-                if (mEtBarCode.getText().length() <= MAX_LENGTH) {
-                    mEtBarCode.append(text);
-                }
-            }
-
-            @Override
-            public void onDeleteKeyEvent() {
-                int start = mEtBarCode.length() - 1;
-                if (start >= 0) {
-                    mEtBarCode.getText().delete(start, start + 1);
-                }
-            }
-        });
-    }
-
-    private void setDialogListener() {
-        mDialog.setOnNoClickListener(new InputBarCodeDialog.OnNoClickListener() {
-            @Override
-            public void onNoClick() {
-                mDialog.dismiss();
-            }
-        });
-        mDialog.setOnYesClickListener(new InputBarCodeDialog.OnYesClickListener() {
-            @Override
-            public void onYesClicked() {
-                String barCodeStr = mEtBarCode.getText().toString().trim();
-                if ("".equals(barCodeStr)) {
-                    mTvMessage.setVisibility(View.VISIBLE);
-                    mTvMessage.setText(R.string.bar_code_not_null);
-                    return;
-                }
-                if (barCodeStr.length() != 7
-                        && barCodeStr.length() != 8
-                        && barCodeStr.length() != 13
-                        && barCodeStr.length() != 15
-                        && barCodeStr.length() != 20) {
-                    mTvMessage.setVisibility(View.VISIBLE);
-                    mTvMessage.setText(R.string.bar_code_digit_err);
-                    return;
-                }
-                requestNetWorkServer(
-                        // 扫描商品
-                        ConstantValue.TAG_SCAN_GOODS,
-                        new ScanGoodsRequestBean(
-                                ALiFacePayApplication.getInstance().getHostIP(),
-                                barCodeStr,
-                                1
-                        )
-                );
-            }
-        });
+        Intent intent = InputBarCodeDialogActivity.newIntent(this);
+        startActivityForResult(intent,REQUEST_CODE_INPUT_BAR_CODE_DIALOG);
     }
 
     /**
@@ -362,51 +276,6 @@ implements View.OnClickListener {
         }.start();
     }
     /**
-     * 显示警告类型的对话框
-     * @param msg 报错信息串
-     */
-    private void showWarnDialog(String msg) {
-        if (mWarnDialog == null) {
-            mWarnDialog = new WarnDialog(this);
-        }
-        mWarnDialog.setMessage(msg);
-        if (!isFinishing()) {
-            mWarnDialog.show();
-        }
-        mWarnDialog.setOnConfirmClickListener(new WarnDialog.OnConfirmClickListener() {
-            @Override
-            public void onConfirmClicked() {
-                if (mWarnDialog.isShowing()) {
-//                    cdt.cancel();
-                    mWarnDialog.dismiss();
-                    finish();
-                }
-            }
-        });
-    }
-//    class MyCountDownTimer extends CountDownTimer {
-//
-//        /**
-//         * @param millisInFuture    The number of millis in the future from the call
-//         *                          to {@link #start()} until the countdown is done and {@link #onFinish()}
-//         *                          is called.
-//         * @param countDownInterval The interval along the way to receive
-//         *                          {@link #onTick(long)} callbacks.
-//         */
-//        public MyCountDownTimer(long millisInFuture, long countDownInterval) {
-//            super(millisInFuture, countDownInterval);
-//        }
-//
-//        @Override
-//        public void onTick(long millisUntilFinished) {
-//        }
-//
-//        @Override
-//        public void onFinish() {
-//            finish();
-//        }
-//    }
-    /**
      * Socket多线程处理类 用来处理服务端接收到的客户端请求(处理Socket对象)
      */
     class SocketServerThread extends Thread {
@@ -441,10 +310,30 @@ implements View.OnClickListener {
                 socket.close();
             } catch (IOException e) {
                 mMessage = Message.obtain();
-                mMessage.what = 0;
+                mMessage.what = 2;
                 e.printStackTrace();
             }finally {
                 mHandler.sendMessage(mMessage);
+            }
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        initNetWorkServer();
+        if (requestCode == REQUEST_CODE_INPUT_BAR_CODE_DIALOG && resultCode == RESULT_OK) {
+            if (data != null) {
+                ScanGoodsResponseBean goodsBean =
+                        (ScanGoodsResponseBean) data.
+                                getSerializableExtra(InputBarCodeDialogActivity.EXTRA_RET_MSG);
+                if (mList.size() <= 0) {
+                    // 隐藏默认界面,显示商品信息界面
+                    mLLSelfPayFirst.setVisibility(View.GONE);
+                    mLLSelfPaySecond.setVisibility(View.VISIBLE);
+                }
+                mList.add(goodsBean);
+                mAdapter.notifyDataSetChanged();
             }
         }
     }
