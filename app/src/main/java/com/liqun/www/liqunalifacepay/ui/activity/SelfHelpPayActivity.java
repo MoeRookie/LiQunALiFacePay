@@ -17,9 +17,14 @@ import android.widget.TextView;
 import com.liqun.www.liqunalifacepay.R;
 import com.liqun.www.liqunalifacepay.application.ALiFacePayApplication;
 import com.liqun.www.liqunalifacepay.application.ConstantValue;
+import com.liqun.www.liqunalifacepay.data.bean.ShoppingBagBean;
 import com.liqun.www.liqunalifacepay.data.utils.JointDismantleUtils;
 import com.liqun.www.liqunalifacepay.data.utils.L;
+import com.liqun.www.liqunalifacepay.data.utils.SpUtils;
 import com.liqun.www.liqunalifacepay.ui.adapter.GoodsAdapter;
+import com.liqun.www.liqunalifacepay.ui.adapter.ShoppingBag1Adapter;
+import com.liqun.www.liqunalifacepay.ui.adapter.ShoppingBag2Adapter;
+import com.liqun.www.liqunalifacepay.ui.view.MultipleDialog;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -32,6 +37,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.alibaba.fastjson.JSONArray.*;
 import static com.liqun.www.liqunalifacepay.data.bean.CancelDealBean.CancelDealRequestBean;
 import static com.liqun.www.liqunalifacepay.data.bean.CancelDealBean.CancelDealResponseBean;
 import static com.liqun.www.liqunalifacepay.data.bean.ScanGoodsBean.ScanGoodsResponseBean;
@@ -62,6 +68,7 @@ implements View.OnClickListener {
     private LinearLayout mLLSelfPaySecond;
     private TextView mTvResultHint;
     private RecyclerView mRvGoods;
+    private Button mBtnAddBag;
     private LinearLayoutManager mLayoutManager;
     private List<ScanGoodsResponseBean> mList = new ArrayList<>();
     private GoodsAdapter mAdapter;
@@ -93,6 +100,9 @@ implements View.OnClickListener {
             }
         }
     };
+    private MultipleDialog mMultipleDialog;
+    private List<ShoppingBagBean> mBagList;
+    private ShoppingBag2Adapter mBagAdapter;
 
     /**
      * 显示警告类型的对话框
@@ -166,6 +176,7 @@ implements View.OnClickListener {
         mRvGoods.setLayoutManager(mLayoutManager);
         mAdapter = new GoodsAdapter(this,mList);
         mRvGoods.setAdapter(mAdapter);
+        mBtnAddBag = findViewById(R.id.btn_add_bag);
     }
 
     private void setListener() {
@@ -173,6 +184,7 @@ implements View.OnClickListener {
         mBtnCancelDeal.setOnClickListener(this);
         mBtnInput.setOnClickListener(this);
         // 商品信息
+        mBtnAddBag.setOnClickListener(this);
         mBtnPay.setOnClickListener(this);
         // 等待结果的服务端监听
         initNetWorkServer();
@@ -231,6 +243,10 @@ implements View.OnClickListener {
                 // 手输条码
                 showInputBarCodeDialog();
                 break;
+            case R.id.btn_add_bag: // 添加购物袋
+                String title = mBtnAddBag.getText().toString().trim();
+                showShoppingBagDialog(title);
+                break;
             case R.id.btn_pay:
                 // 跳转到选择支付方式界面
                 Intent intent = SelectPayTypeActivity.newIntent(this);
@@ -238,6 +254,42 @@ implements View.OnClickListener {
                 break;
         }
     }
+
+    /**
+     * 显示添加购物袋的对话框
+     */
+    private void showShoppingBagDialog(String title) {
+        if (mMultipleDialog == null) {
+            mMultipleDialog = new MultipleDialog(this);
+            mMultipleDialog.setTitle(title);
+            mBagList = new ArrayList<>();
+            // 将Sp中保存的购物袋信息保存为集合数据
+            if (mBagList != null && mBagList.size() > 0) {
+                mBagList.clear();
+            }
+            List<ShoppingBagBean> bagBeanList = parseArray(
+                    SpUtils.getString(
+                            this,
+                            ConstantValue.KEY_SHOPPING_BAG_MSG,
+                            ""
+                    ), ShoppingBagBean.class
+            );
+            mBagList.addAll(bagBeanList);
+            mBagAdapter = new ShoppingBag2Adapter(this, mBagList);
+            mMultipleDialog.setAdapter(mBagAdapter);
+            mBagAdapter.setOnItemCheckedChangeListener(new ShoppingBag2Adapter.OnItemCheckedChangeListener() {
+                @Override
+                public void onItemCheckedChanged(int i) {
+//                    ShoppingBagBean bagBean = mBagList.get(i);
+//                    bagBean.setSelected(!bagBean.isSelected());
+//                    mBagAdapter.notifyDataSetChanged();
+                }
+            });
+//            setMultipleDialogListener(itemBean);
+        }
+        mMultipleDialog.show();
+    }
+
     /**
      * 弹出条码号输入对话框
      */

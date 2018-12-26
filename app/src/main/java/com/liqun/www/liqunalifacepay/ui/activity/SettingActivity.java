@@ -19,10 +19,9 @@ import com.liqun.www.liqunalifacepay.application.ALiFacePayApplication;
 import com.liqun.www.liqunalifacepay.application.ConstantValue;
 import com.liqun.www.liqunalifacepay.data.bean.SettingItemBean;
 import com.liqun.www.liqunalifacepay.data.bean.ShoppingBagBean;
-import com.liqun.www.liqunalifacepay.data.utils.L;
 import com.liqun.www.liqunalifacepay.data.utils.SpUtils;
 import com.liqun.www.liqunalifacepay.ui.adapter.SettingAdapter;
-import com.liqun.www.liqunalifacepay.ui.adapter.ShoppingBagAdapter;
+import com.liqun.www.liqunalifacepay.ui.adapter.ShoppingBag1Adapter;
 import com.liqun.www.liqunalifacepay.ui.view.GlobalDialog;
 import com.liqun.www.liqunalifacepay.ui.view.MultipleDialog;
 import com.liqun.www.liqunalifacepay.ui.view.WarnDialog;
@@ -69,7 +68,7 @@ public class SettingActivity extends AppCompatActivity {
     private SettingItemBean mItemBean;
     private WarnDialog mWarnDialog;
     private MultipleDialog mMultipleDialog;
-    private ShoppingBagAdapter mBagAdapter;
+    private ShoppingBag1Adapter mBagAdapter;
     private StringBuilder mSb = new StringBuilder();
 
     public static Intent newIntent(Context packageContext) {
@@ -165,9 +164,9 @@ public class SettingActivity extends AppCompatActivity {
         if (mMultipleDialog == null) {
             mMultipleDialog = new MultipleDialog(this);
             mMultipleDialog.setTitle(itemBean.getTitle());
-            mBagAdapter = new ShoppingBagAdapter(this, mBagList);
+            mBagAdapter = new ShoppingBag1Adapter(this, mBagList);
             mMultipleDialog.setAdapter(mBagAdapter);
-            mBagAdapter.setOnItemCheckedChangeListener(new ShoppingBagAdapter.OnItemCheckedChangeListener() {
+            mBagAdapter.setOnItemCheckedChangeListener(new ShoppingBag1Adapter.OnItemCheckedChangeListener() {
                 @Override
                 public void onItemCheckedChanged(int i) {
                     ShoppingBagBean bagBean = mBagList.get(i);

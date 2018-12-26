@@ -12,17 +12,15 @@ import android.widget.TextView;
 
 import com.liqun.www.liqunalifacepay.R;
 import com.liqun.www.liqunalifacepay.data.bean.ShoppingBagBean;
-import com.liqun.www.liqunalifacepay.ui.activity.SettingActivity;
 
 import java.util.List;
-import java.util.zip.Inflater;
 
-public class ShoppingBagAdapter extends RecyclerView.Adapter<ShoppingBagAdapter.BagItemHolder> {
+public class ShoppingBag2Adapter extends RecyclerView.Adapter<ShoppingBag2Adapter.BagItemHolder> {
     private final LayoutInflater mInflater;
     private Context mCtx;
     private List<ShoppingBagBean> mBagList;
     private OnItemCheckedChangeListener onItemCheckedChangeListener;
-    public ShoppingBagAdapter(Context ctx, List<ShoppingBagBean> bagList) {
+    public ShoppingBag2Adapter(Context ctx, List<ShoppingBagBean> bagList) {
         mCtx = ctx;
         mBagList = bagList;
         mInflater = LayoutInflater.from(ctx);
@@ -35,7 +33,7 @@ public class ShoppingBagAdapter extends RecyclerView.Adapter<ShoppingBagAdapter.
     @NonNull
     @Override
     public BagItemHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int i) {
-        View view = mInflater.inflate(R.layout.item_multiple, viewGroup, false);
+        View view = mInflater.inflate(R.layout.item_shopping_bag, viewGroup, false);
         return new BagItemHolder(view);
     }
 
@@ -44,6 +42,7 @@ public class ShoppingBagAdapter extends RecyclerView.Adapter<ShoppingBagAdapter.
         ShoppingBagBean bagBean = mBagList.get(i);
         holder.cbMultiple.setChecked(bagBean.isSelected());
         holder.cbMultiple.setText(bagBean.getType());
+        holder.tvPrice.setText("￥ "+bagBean.getPrice());
         holder.cbMultiple.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
@@ -60,10 +59,12 @@ public class ShoppingBagAdapter extends RecyclerView.Adapter<ShoppingBagAdapter.
     class BagItemHolder extends RecyclerView.ViewHolder{
 
         private CheckBox cbMultiple;
+        private TextView tvPrice;
 
         public BagItemHolder(@NonNull View itemView) {
             super(itemView);
             cbMultiple = itemView.findViewById(R.id.cb_multiple);
+            tvPrice = itemView.findViewById(R.id.tv_price);
         }
     }
     public interface OnItemCheckedChangeListener{
