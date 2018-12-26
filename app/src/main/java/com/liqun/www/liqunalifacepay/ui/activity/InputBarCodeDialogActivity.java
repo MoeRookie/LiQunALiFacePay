@@ -113,6 +113,11 @@ public class InputBarCodeDialogActivity extends AppCompatActivity {
     private void initUI() {
         mBtnNo = findViewById(R.id.btn_no);
         mEtBarCode = findViewById(R.id.et_bar_code);
+        // 设置光标不显示
+        mEtBarCode.setCursorVisible(false);
+        // 设置不可编辑
+        mEtBarCode.setFocusable(false);
+        mEtBarCode.setFocusableInTouchMode(false);
         mNkv = findViewById(R.id.nkv);
         mBtnYes = findViewById(R.id.btn_yes);
         mTvMessage = findViewById(R.id.tv_message);
