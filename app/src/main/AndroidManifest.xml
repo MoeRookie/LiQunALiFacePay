@@ -25,8 +25,10 @@
         </activity>
         <activity android:name=".ui.activity.DayEndActivity"/>
         <activity android:name=".ui.activity.SettingActivity"/>
-        <activity android:name=".ui.activity.SelfHelpPayActivity"/>
+        <activity android:name=".ui.activity.SelfHelpPayActivity"
+            android:theme="@style/ActivityTranslucentStyle"/>
         <activity android:name=".ui.activity.SelectPayTypeActivity"/>
+        <activity android:name=".ui.activity.WarnDialogActivity"
+            android:theme="@style/DialogBgStyle"/>
     </application>
-
 </manifest>

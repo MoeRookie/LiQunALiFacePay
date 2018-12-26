@@ -3,7 +3,6 @@ package com.liqun.www.liqunalifacepay.ui.activity;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.CountDownTimer;
 import android.os.Handler;
 import android.os.Message;
 import android.support.annotation.Nullable;
@@ -57,7 +56,7 @@ import static com.liqun.www.liqunalifacepay.data.bean.ScanGoodsBean.ScanGoodsRes
  */
 public class SelfHelpPayActivity extends AppCompatActivity
 implements View.OnClickListener {
-
+    public static SelfHelpPayActivity mActivity;
     private static final int MAX_LENGTH = 20;
     private Button mBtnCancelDeal;
     private Button mBtnPay;
@@ -69,7 +68,7 @@ implements View.OnClickListener {
     private Message mMessage;
     private WarnDialog mWarnDialog;
     private final static int time = 10000;
-    private MyCountDownTimer cdt;
+//    private MyCountDownTimer cdt;
     private LinearLayout mLLSelfPayFirst;
     private LinearLayout mLLSelfPaySecond;
     private TextView mTvResultHint;
@@ -119,9 +118,10 @@ implements View.OnClickListener {
             } else if ("1".equals(retflag)) {
                 retmsg = cdrb.getRetmsg();
             }
-            showWarnDialog(retmsg);
+            Intent intent = WarnDialogActivity.newIntent(this,retmsg);
+            startActivity(intent);
             // 一定秒数后跳转主界面
-            cdt.start();
+//            cdt.start();
         }
         if (obj instanceof ScanGoodsResponseBean) { // 扫描商品
             ScanGoodsResponseBean sgrb = (ScanGoodsResponseBean) obj;
@@ -158,14 +158,15 @@ implements View.OnClickListener {
         Intent intent = new Intent(packageContext, SelfHelpPayActivity.class);
         return intent;
     }
-
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        mActivity = this;
         setContentView(R.layout.activity_self_help_pay);
         initUI();
         setListener();
     }
+
 
     private void initUI() {
         // 默认
@@ -186,7 +187,7 @@ implements View.OnClickListener {
     }
 
     private void setListener() {
-        cdt = new MyCountDownTimer(time,1000);
+//        cdt = new MyCountDownTimer(time,1000);
         // 默认
         mBtnCancelDeal.setOnClickListener(this);
         mBtnInput.setOnClickListener(this);
@@ -376,35 +377,35 @@ implements View.OnClickListener {
             @Override
             public void onConfirmClicked() {
                 if (mWarnDialog.isShowing()) {
-                    cdt.cancel();
+//                    cdt.cancel();
                     mWarnDialog.dismiss();
                     finish();
                 }
             }
         });
     }
-    class MyCountDownTimer extends CountDownTimer {
-
-        /**
-         * @param millisInFuture    The number of millis in the future from the call
-         *                          to {@link #start()} until the countdown is done and {@link #onFinish()}
-         *                          is called.
-         * @param countDownInterval The interval along the way to receive
-         *                          {@link #onTick(long)} callbacks.
-         */
-        public MyCountDownTimer(long millisInFuture, long countDownInterval) {
-            super(millisInFuture, countDownInterval);
-        }
-
-        @Override
-        public void onTick(long millisUntilFinished) {
-        }
-
-        @Override
-        public void onFinish() {
-            finish();
-        }
-    }
+//    class MyCountDownTimer extends CountDownTimer {
+//
+//        /**
+//         * @param millisInFuture    The number of millis in the future from the call
+//         *                          to {@link #start()} until the countdown is done and {@link #onFinish()}
+//         *                          is called.
+//         * @param countDownInterval The interval along the way to receive
+//         *                          {@link #onTick(long)} callbacks.
+//         */
+//        public MyCountDownTimer(long millisInFuture, long countDownInterval) {
+//            super(millisInFuture, countDownInterval);
+//        }
+//
+//        @Override
+//        public void onTick(long millisUntilFinished) {
+//        }
+//
+//        @Override
+//        public void onFinish() {
+//            finish();
+//        }
+//    }
     /**
      * Socket多线程处理类 用来处理服务端接收到的客户端请求(处理Socket对象)
      */
