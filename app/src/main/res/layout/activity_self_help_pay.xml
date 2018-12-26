@@ -10,7 +10,7 @@
         android:background="@color/white">
         <LinearLayout
             android:id="@+id/ll_self_pay_first"
-            android:visibility="visible"
+            android:visibility="gone"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical">
@@ -38,7 +38,7 @@
         </LinearLayout>
         <LinearLayout
             android:id="@+id/ll_self_pay_second"
-            android:visibility="gone"
+            android:visibility="visible"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical">
@@ -71,7 +71,9 @@
                     android:layout_height="wrap_content"
                     android:background="@drawable/bg_self_pay_btn_add_bag"
                     android:minWidth="0dp"
-                    android:minHeight="0dp"/>
+                    android:minHeight="0dp"
+                    android:textSize="10sp"
+                    android:textStyle="bold"/>
                 <View
                     android:layout_width="0dp"
                     android:layout_weight="1"
@@ -83,7 +85,7 @@
                     android:layout_height="wrap_content"
                     android:padding="4dp"
                     android:text="扫码有问题?手输条码>"
-                    android:textSize="14sp"
+                    android:textSize="10sp"
                     android:textColor="@color/black"
                     android:textStyle="bold"
                     android:minWidth="0dp"
@@ -97,7 +99,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="共1件商品"
-                android:textSize="14sp"
+                android:textSize="10sp"
                 android:textColor="@color/black"
                 android:textStyle="bold"/>
             <TextView
@@ -107,7 +109,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="￥0.6"
-                android:textSize="17sp"
+                android:textSize="12sp"
                 android:textColor="@color/black"
                 android:textStyle="bold"/>
             <Button
