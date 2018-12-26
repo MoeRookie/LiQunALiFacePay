@@ -12,6 +12,7 @@ import android.support.v7.widget.RecyclerView;
 import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import com.liqun.www.liqunalifacepay.R;
 import com.liqun.www.liqunalifacepay.application.ALiFacePayApplication;
@@ -59,6 +60,7 @@ implements View.OnClickListener {
     private Message mMessage;
     private LinearLayout mLLSelfPayFirst;
     private LinearLayout mLLSelfPaySecond;
+    private TextView mTvResultHint;
     private RecyclerView mRvGoods;
     private LinearLayoutManager mLayoutManager;
     private List<ScanGoodsResponseBean> mList = new ArrayList<>();
@@ -121,16 +123,19 @@ implements View.OnClickListener {
             ScanGoodsResponseBean sgrb = (ScanGoodsResponseBean) obj;
             String retflag = sgrb.getRetflag();
             String retmsg = sgrb.getRetmsg();
-            if (mList.size() <= 0) {
-                // 隐藏默认界面,显示商品信息界面
-                mLLSelfPayFirst.setVisibility(View.GONE);
-                mLLSelfPaySecond.setVisibility(View.VISIBLE);
+            if ("0".equals(retflag)) {
+                retmsg = "添加成功 , 请继续扫描下一件商品！";
+                if (mList.size() <= 0) {
+                    // 隐藏默认界面,显示商品信息界面
+                    mLLSelfPayFirst.setVisibility(View.GONE);
+                    mLLSelfPaySecond.setVisibility(View.VISIBLE);
+                }
+                mList.add(sgrb);
+                mAdapter.notifyDataSetChanged();
             }
-            mList.add(sgrb);
-            mAdapter.notifyDataSetChanged();
+            mTvResultHint.setText(retmsg);
         }
     }
-
     public static Intent newIntent(Context packageContext) {
         Intent intent = new Intent(packageContext, SelfHelpPayActivity.class);
         return intent;
@@ -155,6 +160,7 @@ implements View.OnClickListener {
         mLLSelfPayFirst = findViewById(R.id.ll_self_pay_first);
         // 商品信息界面
         mLLSelfPaySecond = findViewById(R.id.ll_self_pay_second);
+        mTvResultHint = findViewById(R.id.tv_result_hint);
         mRvGoods = findViewById(R.id.rv_goods);
         mLayoutManager = new LinearLayoutManager(this);
         mRvGoods.setLayoutManager(mLayoutManager);
