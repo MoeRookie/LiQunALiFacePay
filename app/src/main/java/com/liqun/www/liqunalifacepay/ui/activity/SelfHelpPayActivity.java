@@ -332,7 +332,7 @@ implements View.OnClickListener {
                     mLLSelfPayFirst.setVisibility(View.GONE);
                     mLLSelfPaySecond.setVisibility(View.VISIBLE);
                 }
-                mList.add(goodsBean);
+                mList.add(0,goodsBean);
                 mAdapter.notifyDataSetChanged();
             }
         }
