@@ -22,7 +22,6 @@ import com.liqun.www.liqunalifacepay.data.utils.JointDismantleUtils;
 import com.liqun.www.liqunalifacepay.data.utils.L;
 import com.liqun.www.liqunalifacepay.data.utils.SpUtils;
 import com.liqun.www.liqunalifacepay.ui.adapter.GoodsAdapter;
-import com.liqun.www.liqunalifacepay.ui.adapter.ShoppingBag1Adapter;
 import com.liqun.www.liqunalifacepay.ui.adapter.ShoppingBag2Adapter;
 import com.liqun.www.liqunalifacepay.ui.view.MultipleDialog;
 
@@ -37,9 +36,10 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.alibaba.fastjson.JSONArray.*;
+import static com.alibaba.fastjson.JSONArray.parseArray;
 import static com.liqun.www.liqunalifacepay.data.bean.CancelDealBean.CancelDealRequestBean;
 import static com.liqun.www.liqunalifacepay.data.bean.CancelDealBean.CancelDealResponseBean;
+import static com.liqun.www.liqunalifacepay.data.bean.ScanGoodsBean.ScanGoodsRequestBean;
 import static com.liqun.www.liqunalifacepay.data.bean.ScanGoodsBean.ScanGoodsResponseBean;
 
 /**
@@ -103,6 +103,7 @@ implements View.OnClickListener {
     private MultipleDialog mMultipleDialog;
     private List<ShoppingBagBean> mBagList;
     private ShoppingBag2Adapter mBagAdapter;
+    private Button mBtnNO,mBtnYes;
 
     /**
      * 显示警告类型的对话框
@@ -261,7 +262,7 @@ implements View.OnClickListener {
     private void showShoppingBagDialog(String title) {
         if (mMultipleDialog == null) {
             mMultipleDialog = new MultipleDialog(this);
-            mMultipleDialog.setTitle(title);
+            mMultipleDialog.setTitle("添加购物袋");
             mBagList = new ArrayList<>();
             // 将Sp中保存的购物袋信息保存为集合数据
             if (mBagList != null && mBagList.size() > 0) {
@@ -274,20 +275,58 @@ implements View.OnClickListener {
                             ""
                     ), ShoppingBagBean.class
             );
-            mBagList.addAll(bagBeanList);
+            // 筛选出被选中的,更新其选中状态为false并添加到集合中
+            for (int i = 0; i < bagBeanList.size(); i++) {
+                ShoppingBagBean bagBean = bagBeanList.get(i);
+                if (bagBean.isSelected()) {
+                    bagBean.setSelected(false);
+                    mBagList.add(bagBean);
+                }
+            }
             mBagAdapter = new ShoppingBag2Adapter(this, mBagList);
             mMultipleDialog.setAdapter(mBagAdapter);
             mBagAdapter.setOnItemCheckedChangeListener(new ShoppingBag2Adapter.OnItemCheckedChangeListener() {
                 @Override
                 public void onItemCheckedChanged(int i) {
-//                    ShoppingBagBean bagBean = mBagList.get(i);
-//                    bagBean.setSelected(!bagBean.isSelected());
-//                    mBagAdapter.notifyDataSetChanged();
+                    ShoppingBagBean bagBean = mBagList.get(i);
+                    bagBean.setSelected(!bagBean.isSelected());
+                    mBagAdapter.notifyDataSetChanged();
                 }
             });
-//            setMultipleDialogListener(itemBean);
+            setMultipleDialogListener();
         }
         mMultipleDialog.show();
+    }
+
+    /**
+     * 设置多选对话框监听
+     */
+    private void setMultipleDialogListener() {
+        mMultipleDialog.setOnNoClickListener("取消", new MultipleDialog.OnNoClickListener() {
+            @Override
+            public void onNoClick() {
+                mMultipleDialog.dismiss();
+            }
+        });
+        mMultipleDialog.setOnYesClickListener("确定", new MultipleDialog.OnYesClickListener() {
+            @Override
+            public void onYesClicked() {
+                // 筛选出用户选中的购物袋并发起扫描商品请求
+                for (int i = 0; i < mBagList.size(); i++) {
+                    ShoppingBagBean bagBean = mBagList.get(i);
+                    if (bagBean.isSelected()) {
+                        requestNetWorkServer(
+                                ConstantValue.TAG_SCAN_GOODS,
+                                new ScanGoodsRequestBean(
+                                        ALiFacePayApplication.getInstance().getHostIP(),
+                                        bagBean.getProductNo(),
+                                        1
+                                )
+                        );
+                    }
+                }
+            }
+        });
     }
 
     /**

@@ -79,7 +79,7 @@ public class ALiFacePayApplication extends Application {
             // 1. 判断sd卡是否可用,是否挂载上
             if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
                 File rootDir = Environment.getExternalStorageDirectory();
-                File file = new File(rootDir,"pocket.txt");
+                File file = new File(rootDir,"ShoppingBag.txt");
                 FileInputStream fis = null;
                 InputStreamReader isr = null;
                 try {
