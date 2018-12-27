@@ -9,6 +9,7 @@ import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
@@ -60,15 +61,16 @@ implements View.OnClickListener {
     public static SelfHelpPayActivity mActivity;
     public static Thread sServerSocketThread;
     public static ServerSocket sServerSocket;
-    private Button mBtnCancelDeal;
-    private Button mBtnInput;
-    private Button mBtnPay;
+    private StringBuffer mSb = new StringBuffer();
+    private TextView mBtnCancelDeal;
+    private TextView mBtnInput;
+    private TextView mBtnPay;
     private Message mMessage;
     private LinearLayout mLLSelfPayFirst;
     private LinearLayout mLLSelfPaySecond;
     private TextView mTvResultHint;
     private RecyclerView mRvGoods;
-    private Button mBtnAddBag;
+    private TextView mBtnAddBag;
     private LinearLayoutManager mLayoutManager;
     private List<ScanGoodsResponseBean> mList = new ArrayList<>();
     private GoodsAdapter mAdapter;
@@ -103,7 +105,6 @@ implements View.OnClickListener {
     private MultipleDialog mMultipleDialog;
     private List<ShoppingBagBean> mBagList;
     private ShoppingBag2Adapter mBagAdapter;
-    private Button mBtnNO,mBtnYes;
 
     /**
      * 显示警告类型的对话框
@@ -141,7 +142,7 @@ implements View.OnClickListener {
                     mLLSelfPayFirst.setVisibility(View.GONE);
                     mLLSelfPaySecond.setVisibility(View.VISIBLE);
                 }
-                mList.add(sgrb);
+                mList.add(0,sgrb);
                 mAdapter.notifyDataSetChanged();
             }
             mTvResultHint.setText(retmsg);
@@ -180,6 +181,45 @@ implements View.OnClickListener {
         mBtnAddBag = findViewById(R.id.btn_add_bag);
     }
 
+    /**
+     * ascii码转换为字符串
+     * @param paramString ascii码值
+     * @return 对应的字符串
+     */
+    public static String asciiToString(String paramString) {
+        StringBuffer localStringBuffer = new StringBuffer();
+        localStringBuffer.append((char) Integer.parseInt(paramString));
+        return localStringBuffer.toString();
+
+    }
+    // 监听键盘按下
+    public boolean onKeyDown(int paramInt, KeyEvent paramKeyEvent){
+        // 每次按下获取键值后存贮(如果不是回车,则拼接)
+        if (paramKeyEvent.getKeyCode() != KeyEvent.KEYCODE_ENTER) {
+            mSb.append(asciiToString(String.valueOf(paramKeyEvent.getUnicodeChar())));
+        }else{
+            String barCode = mSb.toString().trim();
+            // 检测到回车后获取到商品码
+            if ((barCode.length() == 7
+                    || barCode.length() == 8
+                    || barCode.length() == 13
+                    || barCode.length() == 15
+                    || barCode.length() == 20)) {
+                // 请求扫描商品
+                requestNetWorkServer(
+                        ConstantValue.TAG_SCAN_GOODS,
+                        new ScanGoodsRequestBean(
+                                ALiFacePayApplication.getInstance().getHostIP(),
+                                barCode,
+                                1
+                        )
+                );
+                mSb.delete(0,mSb.length());
+            }
+        }
+        return super.onKeyDown(paramInt, paramKeyEvent);
+    }
+
     private void setListener() {
         // 默认
         mBtnCancelDeal.setOnClickListener(this);
@@ -187,6 +227,12 @@ implements View.OnClickListener {
         // 商品信息
         mBtnAddBag.setOnClickListener(this);
         mBtnPay.setOnClickListener(this);
+        mAdapter.setOnItemDeleteClickListener(new GoodsAdapter.OnItemDeleteClickListener() {
+            @Override
+            public void onItemDeleteClicked(int i) {
+                L.e("===========================该条目将要被删除=========================");
+            }
+        });
         // 等待结果的服务端监听
         initNetWorkServer();
     }
@@ -325,6 +371,7 @@ implements View.OnClickListener {
                         );
                     }
                 }
+                mMultipleDialog.dismiss();
             }
         });
     }

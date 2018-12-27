@@ -35,7 +35,7 @@
         android:textSize="8sp"
         android:textColor="@color/black"
         android:textStyle="bold"/>
-    <ImageButton
+    <TextView
         android:id="@+id/ib_delete"
         android:layout_alignParentRight="true"
         android:layout_centerVertical="true"

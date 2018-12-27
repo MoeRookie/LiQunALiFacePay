@@ -67,7 +67,7 @@ public class GoodsAdapter extends RecyclerView.Adapter<GoodsAdapter.GoodsViewHol
         private TextView mTvPrice1;
         private TextView mTvCount;
         private TextView mTvPrice2;
-        private ImageButton mIbDelete;
+        private TextView mIbDelete;
 
         public GoodsViewHolder(@NonNull View itemView) {
             super(itemView);

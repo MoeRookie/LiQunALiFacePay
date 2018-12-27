@@ -22,7 +22,7 @@
             android:text="@string/title_self_help_pay"
             android:textSize="14sp"
             android:textColor="@color/white"/>
-        <Button
+        <TextView
             android:id="@+id/btn_cancel_deal"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
