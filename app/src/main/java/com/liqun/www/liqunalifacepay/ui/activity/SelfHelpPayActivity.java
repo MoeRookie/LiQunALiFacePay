@@ -18,6 +18,9 @@ import android.widget.TextView;
 import com.liqun.www.liqunalifacepay.R;
 import com.liqun.www.liqunalifacepay.application.ALiFacePayApplication;
 import com.liqun.www.liqunalifacepay.application.ConstantValue;
+import com.liqun.www.liqunalifacepay.data.bean.CancelGoodsBean;
+import com.liqun.www.liqunalifacepay.data.bean.DealRecordBean;
+import com.liqun.www.liqunalifacepay.data.bean.ReObtainDealDetailsBean;
 import com.liqun.www.liqunalifacepay.data.bean.ShoppingBagBean;
 import com.liqun.www.liqunalifacepay.data.utils.JointDismantleUtils;
 import com.liqun.www.liqunalifacepay.data.utils.L;
@@ -40,6 +43,9 @@ import java.util.List;
 import static com.alibaba.fastjson.JSONArray.parseArray;
 import static com.liqun.www.liqunalifacepay.data.bean.CancelDealBean.CancelDealRequestBean;
 import static com.liqun.www.liqunalifacepay.data.bean.CancelDealBean.CancelDealResponseBean;
+import static com.liqun.www.liqunalifacepay.data.bean.CancelGoodsBean.*;
+import static com.liqun.www.liqunalifacepay.data.bean.DealRecordBean.*;
+import static com.liqun.www.liqunalifacepay.data.bean.ReObtainDealDetailsBean.*;
 import static com.liqun.www.liqunalifacepay.data.bean.ScanGoodsBean.ScanGoodsRequestBean;
 import static com.liqun.www.liqunalifacepay.data.bean.ScanGoodsBean.ScanGoodsResponseBean;
 
@@ -105,6 +111,7 @@ implements View.OnClickListener {
     private MultipleDialog mMultipleDialog;
     private List<ShoppingBagBean> mBagList;
     private ShoppingBag2Adapter mBagAdapter;
+    private int mIndex = -1;
 
     /**
      * 显示警告类型的对话框
@@ -145,8 +152,22 @@ implements View.OnClickListener {
                 }
                 mList.add(0,sgrb);
                 mAdapter.notifyDataSetChanged();
+                // 获取商品交易明细
+
             }
             mTvResultHint.setText(retmsg);
+        }
+        if (obj instanceof CancelGoodsResponseBean) { // 取消商品
+            CancelGoodsResponseBean cgrb = (CancelGoodsResponseBean) obj;
+            L.e("序号:" + mIndex + ",商品码:" + cgrb.getBarcode());
+            String retflag = cgrb.getRetflag();
+            String retmsg = cgrb.getRetmsg();
+            if ("0".equals(retflag)) {
+                mList.remove(mIndex);
+                mAdapter.notifyDataSetChanged();
+            } else if ("1".equals(retflag)) {
+                mTvResultHint.setText(retmsg);
+            }
         }
     }
     public static Intent newIntent(Context packageContext) {
@@ -231,12 +252,30 @@ implements View.OnClickListener {
         mAdapter.setOnItemDeleteClickListener(new GoodsAdapter.OnItemDeleteClickListener() {
             @Override
             public void onItemDeleteClicked(int i) {
-                L.e("===========================该条目将要被删除=========================");
+                /**
+                 * 从前添加,序号从1开始
+                 */
+                if (mList != null && mList.size() > 0) {
+                    // 1.获取到当前要删除的goods
+                    ScanGoodsResponseBean goodsBean = mList.get(i);
+                    // 2.发起取消商品的请求(tag,ip、序号、barCode)
+                    mIndex = i + 1;
+                    L.e("序号:" + mIndex + ",商品码:" + goodsBean.getBarcode());
+                    requestNetWorkServer(
+                            ConstantValue.TAG_CANCEL_GOODS,
+                            new CancelGoodsRequestBean(
+                                    ALiFacePayApplication.getInstance().getHostIP(),
+                                    mIndex,
+                                    goodsBean.getBarcode()
+                            )
+                    );
+                }
             }
         });
         // 等待结果的服务端监听
         initNetWorkServer();
     }
+
     public static void closeServer(){
         if (sServerSocket != null) {
             try {
@@ -479,6 +518,11 @@ implements View.OnClickListener {
                 }
                 mList.add(0,goodsBean);
                 mAdapter.notifyDataSetChanged();
+                // 获取商品交易明细
+                requestNetWorkServer(
+                        ConstantValue.TAG_RE_OBTAIN_DEAL_DETAILS,
+                        new ReObtainDealDetailsRequestBean()
+                );
             }
         }
     }

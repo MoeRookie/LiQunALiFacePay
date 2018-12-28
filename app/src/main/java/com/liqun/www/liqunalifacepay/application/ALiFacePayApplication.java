@@ -28,8 +28,19 @@ import static android.os.Environment.DIRECTORY_DOWNLOADS;
 
 public class ALiFacePayApplication extends Application {
     private static ALiFacePayApplication instance;
-    private String hostIP;
-    private String shoppingBagMsg;
+    private String hostIP; // 本机ip地址
+    private String shoppingBagMsg; // 购物袋信息
+
+    public String getFlowNo() {
+        return flowNo;
+    }
+
+    public void setFlowNo(String flowNo) {
+        this.flowNo = flowNo;
+    }
+
+    private String flowNo; // 流水号
+
     @Override
     public void onCreate() {
         super.onCreate();
