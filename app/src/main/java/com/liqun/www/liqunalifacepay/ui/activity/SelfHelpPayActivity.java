@@ -129,6 +129,7 @@ implements View.OnClickListener {
             } else if ("1".equals(retflag)) {
                 retmsg = cdrb.getRetmsg();
             }
+            closeServer();
             showWarnDialog(retmsg);
         }
         if (obj instanceof ScanGoodsResponseBean) { // 扫描商品
