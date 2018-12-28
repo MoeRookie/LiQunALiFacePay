@@ -150,16 +150,15 @@ implements View.OnClickListener {
                     mLLSelfPayFirst.setVisibility(View.GONE);
                     mLLSelfPaySecond.setVisibility(View.VISIBLE);
                 }
-                mList.add(0,sgrb);
+                mList.add(0,
+                        sgrb);
                 mAdapter.notifyDataSetChanged();
-                // 获取商品交易明细
 
             }
             mTvResultHint.setText(retmsg);
         }
         if (obj instanceof CancelGoodsResponseBean) { // 取消商品
             CancelGoodsResponseBean cgrb = (CancelGoodsResponseBean) obj;
-            L.e("序号:" + mIndex + ",商品码:" + cgrb.getBarcode());
             String retflag = cgrb.getRetflag();
             String retmsg = cgrb.getRetmsg();
             if ("0".equals(retflag)) {
@@ -259,13 +258,13 @@ implements View.OnClickListener {
                     // 1.获取到当前要删除的goods
                     ScanGoodsResponseBean goodsBean = mList.get(i);
                     // 2.发起取消商品的请求(tag,ip、序号、barCode)
-                    mIndex = i + 1;
+                    mIndex = i;
                     L.e("序号:" + mIndex + ",商品码:" + goodsBean.getBarcode());
                     requestNetWorkServer(
                             ConstantValue.TAG_CANCEL_GOODS,
                             new CancelGoodsRequestBean(
                                     ALiFacePayApplication.getInstance().getHostIP(),
-                                    mIndex,
+                                    mList.size()-i,
                                     goodsBean.getBarcode()
                             )
                     );
@@ -331,8 +330,7 @@ implements View.OnClickListener {
                 showInputBarCodeDialog();
                 break;
             case R.id.btn_add_bag: // 添加购物袋
-                String title = mBtnAddBag.getText().toString().trim();
-                showShoppingBagDialog(title);
+                showShoppingBagDialog();
                 break;
             case R.id.btn_pay:
                 // 跳转到选择支付方式界面
@@ -345,7 +343,7 @@ implements View.OnClickListener {
     /**
      * 显示添加购物袋的对话框
      */
-    private void showShoppingBagDialog(String title) {
+    private void showShoppingBagDialog() {
         if (mMultipleDialog == null) {
             mMultipleDialog = new MultipleDialog(this);
             mMultipleDialog.setTitle("添加购物袋");
@@ -518,11 +516,6 @@ implements View.OnClickListener {
                 }
                 mList.add(0,goodsBean);
                 mAdapter.notifyDataSetChanged();
-                // 获取商品交易明细
-                requestNetWorkServer(
-                        ConstantValue.TAG_RE_OBTAIN_DEAL_DETAILS,
-                        new ReObtainDealDetailsRequestBean()
-                );
             }
         }
     }

@@ -17,6 +17,7 @@ import com.liqun.www.liqunalifacepay.R;
 import com.liqun.www.liqunalifacepay.application.ALiFacePayApplication;
 import com.liqun.www.liqunalifacepay.application.ConstantValue;
 import com.liqun.www.liqunalifacepay.data.bean.DealRecordBean;
+import com.liqun.www.liqunalifacepay.data.utils.CommonUtils;
 import com.liqun.www.liqunalifacepay.data.utils.JointDismantleUtils;
 import com.liqun.www.liqunalifacepay.data.utils.L;
 import com.liqun.www.liqunalifacepay.ui.view.WarnDialog;
@@ -45,8 +46,7 @@ public class HomeActivity extends AppCompatActivity
 implements View.OnClickListener {
     private Display mDefaultDisplay;
     private ImageView mIvHead;
-    private Button mBtnVip;
-    private Button mBtnNoVip;
+    private Button mBtnVip,mBtnNoVip;
     private long[] mHits = new long[5]; // 设置多击时需要的点击次数
     private ImageView mIvLiQun;
     private ImageView mIvRt;
@@ -65,7 +65,7 @@ implements View.OnClickListener {
                     showWarnDialog(
                             getString(R.string.connect_client_fail)
                     );
-                    break;
+                break;
                 case 1:
                     // 处理返回结果
                     if (msg.obj != null) {
@@ -97,7 +97,6 @@ implements View.OnClickListener {
             } else if ("0".equals(retflag)) {
                 // 保存流水号
                 ALiFacePayApplication.getInstance().setFlowNo(drrb.getFlow_no());
-                L.e("当前交易的流水号:" + drrb.getFlow_no());
                 // 跳转SelfHelpPayActivity界面
                 Intent intent = SelfHelpPayActivity.newIntent(HomeActivity.this);
                 startActivity(intent);
@@ -111,11 +110,19 @@ implements View.OnClickListener {
      */
     private void showWarnDialog(String msg) {
         if (mDialog == null) {
-            mDialog = new WarnDialog(this);
+            mDialog = new WarnDialog(HomeActivity.this);
+            mDialog.setOnConfirmClickListener(new WarnDialog.OnConfirmClickListener() {
+                @Override
+                public void onConfirmClicked() {
+                    mDialog.dismiss();
+                }
+            });
+        }
+        mDialog.show();
+        if (mTvMsg == null) {
             mTvMsg = mDialog.findViewById(R.id.tv_message);
         }
         mTvMsg.setText(msg);
-        mDialog.show();
     }
 
     @Override
@@ -130,7 +137,6 @@ implements View.OnClickListener {
     private void setListener() {
         mIvLiQun.setOnClickListener(this);
         mIvRt.setOnClickListener(this);
-
         mBtnNoVip.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -144,6 +150,12 @@ implements View.OnClickListener {
                 );
             }
         });
+        mBtnVip.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                L.e("======================先什么都不做========================");
+            }
+        });
     }
 
 
@@ -155,6 +167,7 @@ implements View.OnClickListener {
         mIvLiQun = findViewById(R.id.iv_liqun);
         mIvRt = findViewById(R.id.iv_rt);
         // 会员结账&非会员结账
+        mBtnVip = findViewById(R.id.btn_vip);
         mBtnNoVip = findViewById(R.id.btn_novip);
         /**
          * 1.编写"自助收银"界面布局
@@ -275,7 +288,7 @@ implements View.OnClickListener {
                     socket.close();
                 } catch (IOException e) {
                     mMessage = Message.obtain();
-                    mMessage.what = 1;
+                    mMessage.what = 2;
                     mHandler.sendMessage(mMessage);
                     e.printStackTrace();
                 }
@@ -324,7 +337,7 @@ implements View.OnClickListener {
                 socket.close();
             } catch (IOException e) {
                 mMessage = Message.obtain();
-                mMessage.what = 2;
+                mMessage.what = 0;
                 e.printStackTrace();
             }finally {
                 mHandler.sendMessage(mMessage);
