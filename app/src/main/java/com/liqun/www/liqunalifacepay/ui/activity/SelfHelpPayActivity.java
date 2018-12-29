@@ -112,6 +112,7 @@ implements View.OnClickListener {
     private List<ShoppingBagBean> mBagList;
     private ShoppingBag2Adapter mBagAdapter;
     private int mIndex = -1;
+    private TextView mBtnInputBarCode;
 
     /**
      * 显示警告类型的对话框
@@ -194,12 +195,15 @@ implements View.OnClickListener {
         // 商品信息界面
         mLLSelfPaySecond = findViewById(R.id.ll_self_pay_second);
         mTvResultHint = findViewById(R.id.tv_result_hint);
+        
         mRvGoods = findViewById(R.id.rv_goods);
         mLayoutManager = new LinearLayoutManager(this);
         mRvGoods.setLayoutManager(mLayoutManager);
         mAdapter = new GoodsAdapter(this,mList);
         mRvGoods.setAdapter(mAdapter);
         mBtnAddBag = findViewById(R.id.btn_add_bag);
+
+        mBtnInputBarCode = findViewById(R.id.btn_input_bar_code);
     }
 
     /**
@@ -271,6 +275,7 @@ implements View.OnClickListener {
                 }
             }
         });
+        mBtnInputBarCode.setOnClickListener(this);
         // 等待结果的服务端监听
         initNetWorkServer();
     }
@@ -331,6 +336,10 @@ implements View.OnClickListener {
                 break;
             case R.id.btn_add_bag: // 添加购物袋
                 showShoppingBagDialog();
+                break;
+            case R.id.btn_input_bar_code:
+                // 手输条码
+                showInputBarCodeDialog();
                 break;
             case R.id.btn_pay:
                 // 跳转到选择支付方式界面
