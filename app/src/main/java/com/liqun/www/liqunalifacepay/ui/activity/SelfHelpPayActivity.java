@@ -170,7 +170,7 @@ implements View.OnClickListener {
             // 关闭服务端侦听
             closeServer();
             // 跳转选择支付方式界面
-            Intent intent = SelectPayTypeActivity.newIntent(this, retmsg);
+            Intent intent = SelectPayTypeActivity.newIntent(this, retmsg,mTotalPrice);
             startActivity(intent);
         }
     }

@@ -35,6 +35,7 @@ import static com.liqun.www.liqunalifacepay.data.bean.CancelPaymentBean.*;
 public class SelectPayTypeActivity extends AppCompatActivity
 implements View.OnClickListener {
     private static final String EXTRA_RETMSG = "com.liqun.www.liqunalifacepay.retmsg";
+    private static final String EXTRA_TOTAL_PRICE = "com.liqun.www.liqunalifacepay.total_price";
     private WarnDialog mWarnDialog;
     private TextView mTvMessage;
     private static Thread sServerSocketThread;
@@ -67,6 +68,7 @@ implements View.OnClickListener {
             }
         }
     };
+    private float mTotalPrice;
 
     /**
      * 处理请求结果
@@ -103,9 +105,10 @@ implements View.OnClickListener {
     private Button mBtnClose;
     private ImageButton mIbScanCode,mIbSmile;
 
-    public static Intent newIntent(Context packageContext, String retmsg) {
+    public static Intent newIntent(Context packageContext, String retmsg, float totalPrice) {
         Intent intent = new Intent(packageContext, SelectPayTypeActivity.class);
         intent.putExtra(EXTRA_RETMSG, retmsg);
+        intent.putExtra(EXTRA_TOTAL_PRICE,totalPrice);
         return intent;
     }
 
@@ -142,7 +145,11 @@ implements View.OnClickListener {
                         )
                 );
                 break;
-            case R.id.ib_scan_code:
+            case R.id.ib_scan_code: // 扫码支付
+                Intent intent = ScanCodePayActivity.newIntent(this,mTotalPrice);
+                startActivity(intent);
+                closeServer();
+                finish();
                 break;
             case R.id.ib_smile:
                 break;
@@ -194,6 +201,7 @@ implements View.OnClickListener {
             if (!TextUtils.isEmpty(errStr)) {
                 showWarnDialog(errStr);
             }else{
+                mTotalPrice = intent.getFloatExtra(EXTRA_TOTAL_PRICE, 0);
                 // 1.开启服务端侦听
                 initNetWorkServer();
             }

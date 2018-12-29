@@ -41,4 +41,7 @@
     <string name="bar_code_not_null">商品码不可为空！</string>
     <string name="bar_code_digit_err">商品码位数有误，请重新输入！</string>
     <string name="hint_goods_number_err">您没有选择任何商品！</string>
+    <string name="cancel_pay">取消支付</string>
+    <string name="hint_please_open_pay_code">请打开支付宝[付款码]</string>
+    <string name="hint_alignment_the_bottom_of_mouth">对准下方扫码口</string>
 </resources>
