@@ -183,7 +183,7 @@ implements View.OnClickListener {
                     socket.close();
                 } catch (IOException e) {
                     mMessage = Message.obtain();
-                    mMessage.what = 2;
+                    mMessage.what = 0;
                     mHandler.sendMessage(mMessage);
                     e.printStackTrace();
                 }
