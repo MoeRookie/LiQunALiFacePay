@@ -11,16 +11,12 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.KeyEvent;
 import android.view.View;
-import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.liqun.www.liqunalifacepay.R;
 import com.liqun.www.liqunalifacepay.application.ALiFacePayApplication;
 import com.liqun.www.liqunalifacepay.application.ConstantValue;
-import com.liqun.www.liqunalifacepay.data.bean.CancelGoodsBean;
-import com.liqun.www.liqunalifacepay.data.bean.DealRecordBean;
-import com.liqun.www.liqunalifacepay.data.bean.ReObtainDealDetailsBean;
 import com.liqun.www.liqunalifacepay.data.bean.ShoppingBagBean;
 import com.liqun.www.liqunalifacepay.data.utils.JointDismantleUtils;
 import com.liqun.www.liqunalifacepay.data.utils.L;
@@ -35,6 +31,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.math.BigDecimal;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -44,8 +41,6 @@ import static com.alibaba.fastjson.JSONArray.parseArray;
 import static com.liqun.www.liqunalifacepay.data.bean.CancelDealBean.CancelDealRequestBean;
 import static com.liqun.www.liqunalifacepay.data.bean.CancelDealBean.CancelDealResponseBean;
 import static com.liqun.www.liqunalifacepay.data.bean.CancelGoodsBean.*;
-import static com.liqun.www.liqunalifacepay.data.bean.DealRecordBean.*;
-import static com.liqun.www.liqunalifacepay.data.bean.ReObtainDealDetailsBean.*;
 import static com.liqun.www.liqunalifacepay.data.bean.ScanGoodsBean.ScanGoodsRequestBean;
 import static com.liqun.www.liqunalifacepay.data.bean.ScanGoodsBean.ScanGoodsResponseBean;
 
@@ -81,6 +76,10 @@ implements View.OnClickListener {
     private List<ScanGoodsResponseBean> mList = new ArrayList<>();
     private GoodsAdapter mAdapter;
     private final int REQUEST_CODE_INPUT_BAR_CODE_DIALOG = 0;
+    private int mCount; // 记录商品数量
+    private float mTotalPrice = 0.00f; // 记录商品的总价格
+    private TextView mTvGoodsNum;
+    private TextView mTvGoodsTotalPrice;
     private Handler mHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
@@ -146,15 +145,7 @@ implements View.OnClickListener {
             String retmsg = sgrb.getRetmsg();
             if ("0".equals(retflag)) {
                 retmsg = "添加成功 , 请继续扫描下一件商品！";
-                if (mList.size() <= 0) {
-                    // 隐藏默认界面,显示商品信息界面
-                    mLLSelfPayFirst.setVisibility(View.GONE);
-                    mLLSelfPaySecond.setVisibility(View.VISIBLE);
-                }
-                mList.add(0,
-                        sgrb);
-                mAdapter.notifyDataSetChanged();
-
+                setGoodsListMsg("+",sgrb);
             }
             mTvResultHint.setText(retmsg);
         }
@@ -163,11 +154,11 @@ implements View.OnClickListener {
             String retflag = cgrb.getRetflag();
             String retmsg = cgrb.getRetmsg();
             if ("0".equals(retflag)) {
-                mList.remove(mIndex);
-                mAdapter.notifyDataSetChanged();
-            } else if ("1".equals(retflag)) {
-                mTvResultHint.setText(retmsg);
+                retmsg = "删除成功 , 请继续扫描下一件商品！";
+                ScanGoodsResponseBean goodsBean = mList.get(mIndex);
+                setGoodsListMsg("-",goodsBean);
             }
+            mTvResultHint.setText(retmsg);
         }
     }
     public static Intent newIntent(Context packageContext) {
@@ -204,6 +195,8 @@ implements View.OnClickListener {
         mBtnAddBag = findViewById(R.id.btn_add_bag);
 
         mBtnInputBarCode = findViewById(R.id.btn_input_bar_code);
+        mTvGoodsNum = findViewById(R.id.tv_goods_num);
+        mTvGoodsTotalPrice = findViewById(R.id.tv_goods_total_price);
     }
 
     /**
@@ -518,14 +511,41 @@ implements View.OnClickListener {
                 ScanGoodsResponseBean goodsBean =
                         (ScanGoodsResponseBean) data.
                                 getSerializableExtra(InputBarCodeDialogActivity.EXTRA_RET_MSG);
+                // 设置商品信息
+                setGoodsListMsg("+",goodsBean);
+            }
+        }
+    }
+
+    /**
+     * 设置商品列表信息
+     * @param operator 操作符
+     * @param goodsBean 商品
+     */
+    private void setGoodsListMsg(String operator, ScanGoodsResponseBean goodsBean) {
+        switch (operator) {
+            case "+":
                 if (mList.size() <= 0) {
                     // 隐藏默认界面,显示商品信息界面
                     mLLSelfPayFirst.setVisibility(View.GONE);
                     mLLSelfPaySecond.setVisibility(View.VISIBLE);
                 }
                 mList.add(0,goodsBean);
-                mAdapter.notifyDataSetChanged();
-            }
+                mCount++;
+                mTotalPrice += goodsBean.getPrice();
+                break;
+            case "-":
+                mList.remove(goodsBean);
+                mCount--;
+                mTotalPrice -= goodsBean.getPrice();
+                break;
         }
+        // 设置商品个数
+        mTvGoodsNum.setText("共"+(mCount)+"件商品");
+        // 设置商品总价格
+        BigDecimal bd = new BigDecimal(mTotalPrice);
+        mTotalPrice = bd.setScale(1,   BigDecimal.ROUND_HALF_UP).floatValue();
+        mTvGoodsTotalPrice.setText("￥ " + mTotalPrice);
+        mAdapter.notifyDataSetChanged();
     }
 }
