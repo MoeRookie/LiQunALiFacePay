@@ -17,6 +17,7 @@ import android.widget.TextView;
 import com.liqun.www.liqunalifacepay.R;
 import com.liqun.www.liqunalifacepay.application.ALiFacePayApplication;
 import com.liqun.www.liqunalifacepay.application.ConstantValue;
+import com.liqun.www.liqunalifacepay.data.bean.PreparePaymentBean;
 import com.liqun.www.liqunalifacepay.data.bean.ShoppingBagBean;
 import com.liqun.www.liqunalifacepay.data.utils.JointDismantleUtils;
 import com.liqun.www.liqunalifacepay.data.utils.L;
@@ -24,6 +25,7 @@ import com.liqun.www.liqunalifacepay.data.utils.SpUtils;
 import com.liqun.www.liqunalifacepay.ui.adapter.GoodsAdapter;
 import com.liqun.www.liqunalifacepay.ui.adapter.ShoppingBag2Adapter;
 import com.liqun.www.liqunalifacepay.ui.view.MultipleDialog;
+import com.liqun.www.liqunalifacepay.ui.view.WarnDialog;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -41,6 +43,7 @@ import static com.alibaba.fastjson.JSONArray.parseArray;
 import static com.liqun.www.liqunalifacepay.data.bean.CancelDealBean.CancelDealRequestBean;
 import static com.liqun.www.liqunalifacepay.data.bean.CancelDealBean.CancelDealResponseBean;
 import static com.liqun.www.liqunalifacepay.data.bean.CancelGoodsBean.*;
+import static com.liqun.www.liqunalifacepay.data.bean.PreparePaymentBean.*;
 import static com.liqun.www.liqunalifacepay.data.bean.ScanGoodsBean.ScanGoodsRequestBean;
 import static com.liqun.www.liqunalifacepay.data.bean.ScanGoodsBean.ScanGoodsResponseBean;
 
@@ -87,7 +90,7 @@ implements View.OnClickListener {
             switch (msg.what) {
                 case 0:
                     // 读取服务器失败
-                    showWarnDialog(
+                    showWarnDialogActivity(
                             getString(R.string.connect_client_fail)
                     );
                     break;
@@ -100,7 +103,7 @@ implements View.OnClickListener {
                 case 2:
                     // 连接服务器失败
                     // 弹出警告对话框,点击确定返回到主界面
-                    showWarnDialog(
+                    showWarnDialogActivity(
                             getString(R.string.connect_server_fail)
                     );
                     break;
@@ -112,12 +115,13 @@ implements View.OnClickListener {
     private ShoppingBag2Adapter mBagAdapter;
     private int mIndex = -1;
     private TextView mBtnInputBarCode;
+    private WarnDialog mWarnDialog;
 
     /**
      * 显示警告类型的对话框
      * @param msg 警告内容串
      */
-    private void showWarnDialog(String msg) {
+    private void showWarnDialogActivity(String msg) {
         Intent intent = WarnDialogActivity.newIntent(this,msg);
         startActivity(intent);
     }
@@ -137,7 +141,7 @@ implements View.OnClickListener {
                 retmsg = cdrb.getRetmsg();
             }
             closeServer();
-            showWarnDialog(retmsg);
+            showWarnDialogActivity(retmsg);
         }
         if (obj instanceof ScanGoodsResponseBean) { // 扫描商品
             ScanGoodsResponseBean sgrb = (ScanGoodsResponseBean) obj;
@@ -159,6 +163,15 @@ implements View.OnClickListener {
                 setGoodsListMsg("-",goodsBean);
             }
             mTvResultHint.setText(retmsg);
+        }
+        if (obj instanceof PreparePaymentResponseBean) { // 准备付款
+            PreparePaymentResponseBean pprb = (PreparePaymentResponseBean) obj;
+            String retmsg = pprb.getRetmsg();
+            // 关闭服务端侦听
+            closeServer();
+            // 跳转选择支付方式界面
+            Intent intent = SelectPayTypeActivity.newIntent(this, retmsg);
+            startActivity(intent);
         }
     }
     public static Intent newIntent(Context packageContext) {
@@ -269,6 +282,11 @@ implements View.OnClickListener {
             }
         });
         mBtnInputBarCode.setOnClickListener(this);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
         // 等待结果的服务端监听
         initNetWorkServer();
     }
@@ -336,10 +354,48 @@ implements View.OnClickListener {
                 break;
             case R.id.btn_pay:
                 // 跳转到选择支付方式界面
-                Intent intent = SelectPayTypeActivity.newIntent(this);
-                startActivity(intent);
+                /**
+                 * 1.判断用户是否没有选择任何商品
+                 *  DialogActivity提示"您没有选择任何商品！"
+                 *  选择确定关闭当前dialog
+                 * 2.判断是否存在前后端返回总金额差值
+                 *  不存在差值,->跳转支付方式界面
+                 *  存在差值,->跳转支付方式界面+弹出dialog提示("服务端返回的内容")
+                 *  关闭dialog时则关闭当前界面;
+                 */
+                if (mCount == 0) {
+                    showWarnDialog();
+                }else{
+                    // 发起准备付款的请求
+                    requestNetWorkServer(
+                            ConstantValue.TAG_PREPARE_PAYMENT,
+                            new PreparePaymentRequestBean(
+                                    ALiFacePayApplication.getInstance().getHostIP(),
+                                    mCount,
+                                    mCount,
+                                    mTotalPrice
+                            )
+                    );
+                }
                 break;
         }
+    }
+
+    /**
+     * 弹出警告类型的对话框
+     */
+    private void showWarnDialog() {
+        if (mWarnDialog == null) {
+            mWarnDialog = new WarnDialog(this);
+            mWarnDialog.setMessage(getString(R.string.hint_goods_number_err));
+            mWarnDialog.setOnConfirmClickListener(new WarnDialog.OnConfirmClickListener() {
+                @Override
+                public void onConfirmClicked() {
+                    mWarnDialog.dismiss();
+                }
+            });
+        }
+        mWarnDialog.show();
     }
 
     /**
@@ -452,7 +508,7 @@ implements View.OnClickListener {
                     socket.close();
                 } catch (IOException e) {
                     mMessage = Message.obtain();
-                    mMessage.what = 1;
+                    mMessage.what = 2;
                     mHandler.sendMessage(mMessage);
                     e.printStackTrace();
                 }
@@ -494,7 +550,7 @@ implements View.OnClickListener {
                 socket.close();
             } catch (IOException e) {
                 mMessage = Message.obtain();
-                mMessage.what = 2;
+                mMessage.what = 0;
                 e.printStackTrace();
             }finally {
                 mHandler.sendMessage(mMessage);

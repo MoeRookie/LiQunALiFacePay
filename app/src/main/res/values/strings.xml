@@ -40,4 +40,5 @@
     <string name="select_pay_type">选择支付方式</string>
     <string name="bar_code_not_null">商品码不可为空！</string>
     <string name="bar_code_digit_err">商品码位数有误，请重新输入！</string>
+    <string name="hint_goods_number_err">您没有选择任何商品！</string>
 </resources>
