@@ -11,6 +11,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.TextView;
 
+import com.alipay.xdevicemanager.api.XDeviceManager;
 import com.liqun.www.liqunalifacepay.R;
 import com.liqun.www.liqunalifacepay.application.ALiFacePayApplication;
 import com.liqun.www.liqunalifacepay.application.ConstantValue;
@@ -29,8 +30,11 @@ import java.net.Socket;
 
 import static com.liqun.www.liqunalifacepay.data.bean.CancelPaymentBean.CancelPaymentRequestBean;
 import static com.liqun.www.liqunalifacepay.data.bean.CancelPaymentBean.CancelPaymentResponseBean;
-
+//重要约定：在正常情况下，客户端代码需要保证这个Activity是整个App的生命周期
+//重要约定：在正常情况下，客户端代码需要保证这个Activity是整个App的生命周期
+//重要约定：在正常情况下，客户端代码需要保证这个Activity是整个App的生命周期
 public class ScanCodePayActivity extends AppCompatActivity {
+    private XDeviceManager mXDeviceManager = null;
     private static final String EXTRA_TOTAL_PRICE = "com.liqun.www.liqunalifacepay.total_price";
     private TextView mBtnCancelPay,mTvTotalPrice;
     private final static int time = 118000;
@@ -118,6 +122,9 @@ public class ScanCodePayActivity extends AppCompatActivity {
         setContentView(R.layout.activity_scan_code);
         cdt = new MyCountDownTimer(time,1000);
         cdt.start();
+        //Create the device manager
+        mXDeviceManager = new XDeviceManager(this);
+        mXDeviceManager.initContext();
         initUI();
         initData();
         setListener();
@@ -234,7 +241,11 @@ public class ScanCodePayActivity extends AppCompatActivity {
         public void onFinish() {
             // 关闭服务端监听
             closeServer();
-            finish();
+            /**
+             * 记住不要执行此句 super.finish(); 因为这是父类已经实现了改方法
+             * 设置该activity永不过期，即不执行onDestroy()
+             */
+            moveTaskToBack(true);
         }
     }
     public static void closeServer(){
@@ -291,5 +302,14 @@ public class ScanCodePayActivity extends AppCompatActivity {
                 mHandler.sendMessage(mMessage);
             }
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (mXDeviceManager != null) {
+            mXDeviceManager.uninitContext();
+            mXDeviceManager = null;
+        }
+        super.onDestroy();
     }
 }

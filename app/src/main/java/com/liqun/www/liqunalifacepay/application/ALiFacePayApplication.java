@@ -7,6 +7,7 @@ import android.os.storage.StorageManager;
 import android.os.storage.StorageVolume;
 import android.widget.TextView;
 
+import com.alipay.xdevicemanager.api.XDeviceManager;
 import com.liqun.www.liqunalifacepay.data.utils.L;
 import com.liqun.www.liqunalifacepay.ui.activity.SelfHelpPayActivity;
 
@@ -27,10 +28,11 @@ import java.util.Enumeration;
 import static android.os.Environment.DIRECTORY_DOWNLOADS;
 
 public class ALiFacePayApplication extends Application {
+    //这儿需要修改为您自己的包名
+    private static final String MAIN_PROCESS_NAME = "com.liqun.www.liqunalifacepay";
     private static ALiFacePayApplication instance;
     private String hostIP; // 本机ip地址
     private String shoppingBagMsg; // 购物袋信息
-
     public String getFlowNo() {
         return flowNo;
     }
@@ -44,7 +46,11 @@ public class ALiFacePayApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-        instance = this;
+        //因为管控SDK会导致Application的onCreate多次调用
+        if (ProccessChecker.isAppMainProcess(this, MAIN_PROCESS_NAME)) {
+            //所有初始化代码放在这里
+            instance = this;
+        }
     }
 
     public static ALiFacePayApplication getInstance() {
@@ -125,4 +131,5 @@ public class ALiFacePayApplication extends Application {
         }
         return shoppingBagMsg;
     }
+
 }
