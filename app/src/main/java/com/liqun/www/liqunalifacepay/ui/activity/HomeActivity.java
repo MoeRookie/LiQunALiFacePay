@@ -6,6 +6,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.os.SystemClock;
 import android.support.v7.app.AppCompatActivity;
+import android.text.TextUtils;
 import android.view.Display;
 import android.view.View;
 import android.widget.Button;
@@ -13,6 +14,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout.LayoutParams;
 import android.widget.TextView;
 
+import com.alipay.xdevicemanager.api.XDeviceManager;
 import com.liqun.www.liqunalifacepay.R;
 import com.liqun.www.liqunalifacepay.application.ALiFacePayApplication;
 import com.liqun.www.liqunalifacepay.application.ConstantValue;
@@ -20,6 +22,7 @@ import com.liqun.www.liqunalifacepay.data.bean.DealRecordBean;
 import com.liqun.www.liqunalifacepay.data.utils.CommonUtils;
 import com.liqun.www.liqunalifacepay.data.utils.JointDismantleUtils;
 import com.liqun.www.liqunalifacepay.data.utils.L;
+import com.liqun.www.liqunalifacepay.data.utils.SpUtils;
 import com.liqun.www.liqunalifacepay.ui.view.WarnDialog;
 
 import java.io.BufferedReader;
@@ -140,14 +143,24 @@ implements View.OnClickListener {
         mBtnNoVip.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                requestNetWorkServer(
-                        ConstantValue.TAG_DEAL_RECORD,
-                        new DealRecordRequestBean(
-                                ALiFacePayApplication.getInstance().getHostIP(),
-                                "90001",
-                                "0"
-                        )
+                // 获取设置信息
+                String settingMsg = SpUtils.getString(
+                        HomeActivity.this,
+                        ConstantValue.KEY_SETTING_CONTENT,
+                        ""
                 );
+                if (TextUtils.isEmpty(settingMsg)) {
+                    showWarnDialog("尚未设置信息,请联系管理员!");
+                }else{
+                    requestNetWorkServer(
+                            ConstantValue.TAG_DEAL_RECORD,
+                            new DealRecordRequestBean(
+                                    ALiFacePayApplication.getInstance().getHostIP(),
+                                    "90001",
+                                    "0"
+                            )
+                    );
+                }
             }
         });
         mBtnVip.setOnClickListener(new View.OnClickListener() {
@@ -343,5 +356,15 @@ implements View.OnClickListener {
                 mHandler.sendMessage(mMessage);
             }
         }
+    }
+    @Override
+    protected void onDestroy() {
+        XDeviceManager xDeviceManager =
+                ALiFacePayApplication.getInstance().getXDeviceManager();
+        if (xDeviceManager != null) {
+            xDeviceManager.uninitContext();
+            ALiFacePayApplication.getInstance().setXDeviceManager(null);
+        }
+        super.onDestroy();
     }
 }

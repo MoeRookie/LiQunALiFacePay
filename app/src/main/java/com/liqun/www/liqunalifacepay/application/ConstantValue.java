@@ -1,5 +1,7 @@
 package com.liqun.www.liqunalifacepay.application;
 
+import org.ksoap2.serialization.PropertyInfo;
+
 public class ConstantValue {
     /**
      * 日结确认密码
@@ -111,5 +113,40 @@ public class ConstantValue {
      * 购物袋信息的key
      */
     public static final String KEY_SHOPPING_BAG_MSG = "key_shopping_bag_msg";
-
+    /**
+     * 请求支付的接口根地址
+     */
+    public static final String REQUEST_URI = "http://10.5.3.43:9080/Alipay-RL/services/Alipay_Liqun_Bussiness/wsdl/Alipay_Liqun_Bussiness.wsdl";
+    /**
+     * 请求支付的名字空间
+     */
+    public static final String NAME_SPACE = "http://liqun.alipay.com";
+    /**
+     * 请求支付的方法名
+     */
+    public static final String METHOD_TRADE_PAY = "trade_pay";
+    /**
+     * 业态 - 利群百货
+     */
+    public static final String KEY_VALUE_LQBH = "lqbh";
+    /**
+     * 业态 - params
+     */
+    public static final String REQUEST_PARAMS_KEY = "key";
+    /**
+     * 方法名 - params
+     */
+    public static final String REQUEST_PARAMS_METHOD_NAME = "method";
+    /**
+     * 请求时间 - params
+     */
+    public static final String REQUEST_PARAMS_REQUEST_TIME = "resquesttime";
+    /**
+     * 签名 - params
+     */
+    public static final String REQUEST_PARAMS_SIGN = "sign";
+    /**
+     * json - params
+     */
+    public static final String REQUEST_PARAMS_JSON = "json";
 }

@@ -31,6 +31,16 @@ public class ALiFacePayApplication extends Application {
     //这儿需要修改为您自己的包名
     private static final String MAIN_PROCESS_NAME = "com.liqun.www.liqunalifacepay";
     private static ALiFacePayApplication instance;
+
+    public XDeviceManager getXDeviceManager() {
+        return mXDeviceManager;
+    }
+
+    public void setXDeviceManager(XDeviceManager XDeviceManager) {
+        mXDeviceManager = XDeviceManager;
+    }
+
+    private XDeviceManager mXDeviceManager;
     private String hostIP; // 本机ip地址
     private String shoppingBagMsg; // 购物袋信息
     public String getFlowNo() {
@@ -50,6 +60,9 @@ public class ALiFacePayApplication extends Application {
         if (ProccessChecker.isAppMainProcess(this, MAIN_PROCESS_NAME)) {
             //所有初始化代码放在这里
             instance = this;
+            //Create the device manager
+            mXDeviceManager = new XDeviceManager(this);
+            mXDeviceManager.initContext();
         }
     }
 

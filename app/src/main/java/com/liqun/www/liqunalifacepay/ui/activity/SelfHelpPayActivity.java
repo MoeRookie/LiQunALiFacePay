@@ -217,7 +217,7 @@ implements View.OnClickListener {
      * @param paramString ascii码值
      * @return 对应的字符串
      */
-    public static String asciiToString(String paramString) {
+    private String asciiToString(String paramString) {
         StringBuffer localStringBuffer = new StringBuffer();
         localStringBuffer.append((char) Integer.parseInt(paramString));
         return localStringBuffer.toString();
@@ -600,7 +600,7 @@ implements View.OnClickListener {
         mTvGoodsNum.setText("共"+(mCount)+"件商品");
         // 设置商品总价格
         BigDecimal bd = new BigDecimal(mTotalPrice);
-        mTotalPrice = bd.setScale(1,   BigDecimal.ROUND_HALF_UP).floatValue();
+        mTotalPrice = bd.setScale(2,   BigDecimal.ROUND_HALF_UP).floatValue();
         mTvGoodsTotalPrice.setText("￥ " + mTotalPrice);
         mAdapter.notifyDataSetChanged();
     }

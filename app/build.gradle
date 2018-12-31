@@ -35,5 +35,6 @@ dependencies {
     // 今日头条屏幕适配方案
     implementation 'me.jessyan:autosize:1.1.1'
     // 机具管控
-    implementation(name:'xdevicemanager', ext:'aar')
+    implementation(name: 'xdevicemanager', ext: 'aar')
+    implementation files('libs/ksoap2-android-assembly-3.3.0-jar-with-dependencies.jar')
 }
