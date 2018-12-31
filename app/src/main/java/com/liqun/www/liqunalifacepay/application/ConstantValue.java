@@ -116,11 +116,16 @@ public class ConstantValue {
     /**
      * 请求支付的接口根地址
      */
-    public static final String REQUEST_URI = "http://10.5.3.43:9080/Alipay-RL/services/Alipay_Liqun_Bussiness/wsdl/Alipay_Liqun_Bussiness.wsdl";
+    public static final String REQUEST_URI = "http://10.5.3.43:9080/Alipay-RL/services/Alipay_Liqun_Bussiness?wsdl";
+
     /**
      * 请求支付的名字空间
      */
     public static final String NAME_SPACE = "http://liqun.alipay.com";
+    /**
+     * 请求支付的根方法名
+     */
+    public static final String METHOD_ROOT = "do_Alipay_Liqun_Bussiness";
     /**
      * 请求支付的方法名
      */
