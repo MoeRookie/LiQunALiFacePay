@@ -44,4 +44,14 @@
     <string name="cancel_pay">取消支付</string>
     <string name="hint_please_open_pay_code">请打开支付宝[付款码]</string>
     <string name="hint_alignment_the_bottom_of_mouth">对准下方扫码口</string>
+    <string name="hint_pay_success">支付宝付款成功</string>
+    <string name="hint_order_total_price">订单金额</string>
+    <string name="hint_merchant_discounts">商家优惠</string>
+    <string name="hint_alipay_discounts">支付宝优惠</string>
+    <string name="hint_get_receipt">请领取小票 , 期待下次光临 !
+    </string>
+    <string name="hint_pay_fail">支付失败</string>
+    <string name="err">错误</string>
+    <string name="hint_return_home">返回首页</string>
+    <string name="hint_continue_pay">继续支付</string>
 </resources>
