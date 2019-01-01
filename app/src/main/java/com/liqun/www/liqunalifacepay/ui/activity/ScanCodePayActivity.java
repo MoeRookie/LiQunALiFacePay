@@ -6,7 +6,6 @@ import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.Handler;
 import android.os.Message;
-import android.provider.Telephony;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.view.KeyEvent;
@@ -19,15 +18,15 @@ import com.alipay.xdevicemanager.api.XDeviceManager;
 import com.liqun.www.liqunalifacepay.R;
 import com.liqun.www.liqunalifacepay.application.ALiFacePayApplication;
 import com.liqun.www.liqunalifacepay.application.ConstantValue;
+import com.liqun.www.liqunalifacepay.data.bean.PaymentTypeBean;
 import com.liqun.www.liqunalifacepay.data.bean.SettingItemBean;
 import com.liqun.www.liqunalifacepay.data.utils.JointDismantleUtils;
 import com.liqun.www.liqunalifacepay.data.utils.L;
-import com.liqun.www.liqunalifacepay.data.utils.MD5;
 import com.liqun.www.liqunalifacepay.data.utils.MD5Utils;
 import com.liqun.www.liqunalifacepay.data.utils.SpUtils;
+import com.liqun.www.liqunalifacepay.ui.view.LoadingDialog;
 import com.liqun.www.liqunalifacepay.ui.view.WarnDialog;
 
-import org.ksoap2.SoapFault;
 import org.ksoap2.serialization.SoapObject;
 import org.ksoap2.serialization.SoapSerializationEnvelope;
 import org.ksoap2.transport.HttpTransportSE;
@@ -50,6 +49,8 @@ import java.util.List;
 import static com.liqun.www.liqunalifacepay.data.bean.ALiPayBean.*;
 import static com.liqun.www.liqunalifacepay.data.bean.CancelPaymentBean.CancelPaymentRequestBean;
 import static com.liqun.www.liqunalifacepay.data.bean.CancelPaymentBean.CancelPaymentResponseBean;
+import static com.liqun.www.liqunalifacepay.data.bean.PaymentTypeBean.*;
+
 //重要约定：在正常情况下，客户端代码需要保证这个Activity是整个App的生命周期
 //重要约定：在正常情况下，客户端代码需要保证这个Activity是整个App的生命周期
 //重要约定：在正常情况下，客户端代码需要保证这个Activity是整个App的生命周期
@@ -88,11 +89,20 @@ public class ScanCodePayActivity extends AppCompatActivity {
                             getString(R.string.connect_client_fail)
                     );
                     break;
+                case 3: // 支付成功
+                    
+                    break;
+                case 4: // 加签失败
+                case 5: // WebService调用IO异常
+                case 6: // WebServiceXML解析异常
+
+                    break;
             }
         }
     };
     private WarnDialog mWarnDialog;
     private TextView mTvMessage;
+    private LoadingDialog mLoadingDialog;
 
     /**
      * 处理服务端返回结果
@@ -163,14 +173,9 @@ public class ScanCodePayActivity extends AppCompatActivity {
         }
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
+    private void setListener() {
         // 开启服务端侦听
         initNetWorkServer();
-    }
-
-    private void setListener() {
         mBtnCancelPay.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -227,8 +232,11 @@ public class ScanCodePayActivity extends AppCompatActivity {
         if (paramKeyEvent.getKeyCode() != KeyEvent.KEYCODE_ENTER) {
             mSb.append(asciiToString(String.valueOf(paramKeyEvent.getUnicodeChar())));
         }else{
+            // 获取用户支付宝付款码码值
             String barCode = mSb.toString().trim();
-            requestALiPay(barCode);
+            // 请求支付
+            requestPay(barCode);
+            // 清空stringBuffer
             mSb.delete(0,mSb.length());
         }
         return super.onKeyDown(paramInt, paramKeyEvent);
@@ -238,45 +246,30 @@ public class ScanCodePayActivity extends AppCompatActivity {
      * 请求支付宝支付
      * @param barCode 二维码码值
      */
-    private void requestALiPay(final String barCode) {
+    private void requestPay(final String barCode) {
+        // 弹出加载对话框
+        showLoadingDialog();
+        /**
+         * 先做支付宝付款请求
+         *  成功:跳转支付结果页(显示支付成功界面)
+         *      请求支付方式
+         *          成功:打印小票
+         *          失败:提示信息
+         *  失败:跳转支付结果页(显示支付失败界面)
+         *      提示信息
+         */
         new Thread(){
             @Override
             public void run() {
                 super.run();
                 // 请求时间
-                // 2.请求支付
-                // 2.1.拼接请求参数
-                // 2.1.1.key -> 业态
-                // 2.1.2.method -> 方法名
-                // 2.1.3.json -> 看参数说明
-                // 2.1.4.resquesttime -> 请求时间(格式为:yyyy-mm-dd hh:mm:ss)
-                // 2.1.5.sign -> 数字签名(MD5)
-                // 2.2.发起支付请求
-                /**
-                 * 参数说明:
-                 *  out_trade_no:支付订单号(lqbl+订单规则)[String((必填))]
-                 *      订单规则说明:款台号+流水号+日期+时间
-                 *  auth_code:顾客手机条码[String(必填)]
-                 *  store_id:商户门店号[String(必填)]
-                 *  terminal_id:款台号[String(必填)]
-                 *  operator_id:收款员工号[String(必填)]
-                 *  total_amount:金额 单位为元,精确到小数点后两位[bigdecimal(必填)]
-                 *  terminal_params:机具信息[String(必填)]
-                 */
-                // 请求时间
                 String requestTime = getRequestTime(System.currentTimeMillis());
-                L.e("请求时间:" + requestTime);
                 // 重新格式化
-                String order = getOrderTime(requestTime);
-                L.e("重新格式化:" + order);
-                String[] orderTimeArr = order.split(" ");
-                // 格式化后的日期
+                String orderTimeMsg = getOrderTime(requestTime);
+                String[] orderTimeArr = orderTimeMsg.split(" ");
                 String orderDate = orderTimeArr[0];
-                L.e("格式化后的日期:" + orderDate);
-                // 格式化后的时间
                 String orderTime = orderTimeArr[1];
-                L.e("格式化后的时间:" + orderTime);
-                // 设置信息
+                // 获取设置信息
                 String settingMsg = SpUtils.getString(
                         ScanCodePayActivity.this,
                         ConstantValue.KEY_SETTING_CONTENT,
@@ -286,23 +279,19 @@ public class ScanCodePayActivity extends AppCompatActivity {
                             = JSONArray.parseArray(settingMsg, SettingItemBean.class);
                 // 门店编码
                 String merchantNo = settingList.get(3).getContent();
-                L.e("门店编码:" + merchantNo);
                 // 款台号
                 String catwalkNo = settingList.get(5).getContent();
-                L.e("款台号:" + catwalkNo);
                 // 加签
-                L.e("barCode = " + barCode);
                 int result[] = new int[1];
                 String signedBarCode = mXDeviceManager.sign(barCode.getBytes(), result);
-                L.e("加签成功:" + signedBarCode);
                 // 请求
                 SoapObject request = null;
                 if (result[0] != 0) {
                     // 加签失败
-                    L.e("加签失败:"+result[0]);
-//                    mMessage = Message.obtain();
-//                    mMessage.what = 3;
-//                    mHandler.sendMessage(mMessage);
+                    mMessage = Message.obtain();
+                    mMessage.what = 4;
+                    mMessage.obj = "加签失败:"+result[0];
+                    mHandler.sendMessage(mMessage);
                 } else{
                     // 2.请求支付
                     request = new SoapObject(
@@ -319,7 +308,7 @@ public class ScanCodePayActivity extends AppCompatActivity {
                             ConstantValue.METHOD_TRADE_PAY);
                     // json
                     ALiPayRequestBean requestBean = new ALiPayRequestBean(
-                            // 支付订单号(款台号+流水号+日期+时间)
+                            // 支付订单号(业态编号[lqbh]+款台号+流水号+日期+时间(订单规则))
                             ConstantValue.KEY_VALUE_LQBH
                                     + catwalkNo
                                     + ALiFacePayApplication.getInstance().getFlowNo()
@@ -331,7 +320,7 @@ public class ScanCodePayActivity extends AppCompatActivity {
                             merchantNo,
                             // 款台号
                             catwalkNo,
-                            // 收款员号
+                            // 收款员号(写死即可)
                             "90001",
                             // 金额 单位为元,精确到小数点后两位
                             new BigDecimal(
@@ -346,7 +335,6 @@ public class ScanCodePayActivity extends AppCompatActivity {
                             // 机具信息
                             signedBarCode
                     );
-                    L.e("requestBean = " + requestBean.toString());
                     request.addProperty(
                             ConstantValue.REQUEST_PARAMS_JSON,
                             JSON.toJSONString(requestBean)
@@ -357,7 +345,6 @@ public class ScanCodePayActivity extends AppCompatActivity {
                             requestTime
                     );
                     // sign -> 数字签名(MD5)
-                    L.e("数字签名:" + ConstantValue.KEY_VALUE_LQBH + requestTime);
                     request.addProperty(
                             ConstantValue.REQUEST_PARAMS_SIGN,
                             MD5Utils.md5(
@@ -365,40 +352,49 @@ public class ScanCodePayActivity extends AppCompatActivity {
                                             + requestTime
                             )
                     );
-
                 }
-                // 创建SoapSerializationEnvelope 对象,同时指定soap版本号(之前在wsdl中看到的)
-                SoapSerializationEnvelope envelope = new SoapSerializationEnvelope(SoapSerializationEnvelope.VER11);
-                // 由于是发送请求,所以是设置bodyOut
-                envelope.bodyOut = request;
-                // 由于是.net开发的webservice,所以这里要设置为true
-                envelope.dotNet = true;
-                HttpTransportSE httpTransportSE = new HttpTransportSE(ConstantValue.REQUEST_URI);
                 // 调用
                 try {
-                    L.e("===========================请求中===============================");
+                    // 创建SoapSerializationEnvelope 对象,同时指定soap版本号(之前在wsdl中看到的)
+                    SoapSerializationEnvelope envelope = new SoapSerializationEnvelope(SoapSerializationEnvelope.VER11);
+                    // 由于是发送请求,所以是设置bodyOut
+                    envelope.bodyOut = request;
+                    // 由于是.net开发的webservice,所以这里要设置为true
+                    envelope.dotNet = true;
+                    HttpTransportSE httpTransportSE = new HttpTransportSE(ConstantValue.REQUEST_URI);
                     httpTransportSE.call(null, envelope);
+                    SoapObject object = (SoapObject) envelope.bodyIn;
+                    // 获取返回的数据
+                    String bodyIn = object.getProperty(0).toString();
+                    mMessage = Message.obtain();
+                    mMessage.what = 3;
+                    mMessage.obj = bodyIn;
                 } catch (IOException e) {
                     // WebService调用IO异常
-                    L.e("WebService调用IO异常");
-//                    mMessage = Message.obtain();
-//                    mMessage.what = 4;
-//                    e.printStackTrace();
+                    mMessage = Message.obtain();
+                    mMessage.what = 5;
+                    mMessage.obj = "WebService调用IO异常";
                 } catch (XmlPullParserException e) {
                     // WebServiceXML解析异常
-                    L.e("WebServiceXML解析异常");
-//                    mMessage = Message.obtain();
-//                    mMessage.what = 5;
-//                    e.printStackTrace();
-                }finally{
-//                    mHandler.sendMessage(mMessage);
+                    mMessage = Message.obtain();
+                    mMessage.what = 6;
+                    mMessage.obj = "WebServiceXML解析异常";
+                }finally {
+                    mHandler.sendMessage(mMessage);
                 }
-                // 获取返回的数据
-                Object bodyIn = envelope.bodyIn;
-                // 获取返回的结果
-                L.e("获取返回的结果:" + bodyIn.toString());
             }
         }.start();
+    }
+
+    /**
+     * 弹出加载类型的对话框
+     */
+    private void showLoadingDialog() {
+        if (mLoadingDialog == null) {
+            mLoadingDialog = new LoadingDialog(this,R.style.LoadingDialogStyle);
+        }
+        mLoadingDialog.show();
+        mLoadingDialog.setMessage("支付中 . . .");
     }
 
     /**

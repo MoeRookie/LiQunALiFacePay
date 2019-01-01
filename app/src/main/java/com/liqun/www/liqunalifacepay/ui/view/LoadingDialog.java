@@ -13,9 +13,6 @@ public class LoadingDialog extends ProgressDialog {
 
     private TextView mTvLoadHint;
 
-    public LoadingDialog(Context context) {
-        super(context);
-    }
     public LoadingDialog(Context context, int theme) {
         super(context, theme);
     }

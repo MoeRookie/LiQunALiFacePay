@@ -33,5 +33,6 @@
         <activity android:name=".ui.activity.InputBarCodeDialogActivity"
             android:theme="@style/DialogBgStyle"/>
         <activity android:name=".ui.activity.ScanCodePayActivity"/>
+        <activity android:name=".ui.activity.ScanCodePayResultActivity"/>
     </application>
 </manifest>

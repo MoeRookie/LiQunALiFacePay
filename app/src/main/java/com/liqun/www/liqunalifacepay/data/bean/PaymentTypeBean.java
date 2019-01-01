@@ -1,5 +1,7 @@
 package com.liqun.www.liqunalifacepay.data.bean;
 
+import java.util.List;
+
 /**
  * 付款方式
  */
@@ -14,10 +16,21 @@ public class PaymentTypeBean {
         private String reference; // 银行卡交易参考号
         private String flag; // 是否立即支付(默认为0)
 
+        public String getTerminal_params() {
+            return terminal_params;
+        }
+
+        public void setTerminal_params(String terminal_params) {
+            this.terminal_params = terminal_params;
+        }
+
+        private String terminal_params; // 机具信息
+
+
         public PaymentTypeRequestBean() {
         }
 
-        public PaymentTypeRequestBean(String ip, String payno, float total, String payid, String paymm, String verifycode, String reference, String flag) {
+        public PaymentTypeRequestBean(String ip, String payno, float total, String payid, String paymm, String verifycode, String reference, String flag, String terminal_params) {
             this.ip = ip;
             this.payno = payno;
             this.total = total;
@@ -26,6 +39,7 @@ public class PaymentTypeBean {
             this.verifycode = verifycode;
             this.reference = reference;
             this.flag = flag;
+            this.terminal_params = terminal_params;
         }
 
         public String getIp() {
@@ -103,78 +117,22 @@ public class PaymentTypeBean {
                     ", verifycode='" + verifycode + '\'' +
                     ", reference='" + reference + '\'' +
                     ", flag='" + flag + '\'' +
+                    ", terminal_params='" + terminal_params + '\'' +
                     '}';
         }
     }
     public static class PaymentTypeResponseBean{
-        private String payno; // 付款方式(01 现金付款,02 金卡付款,03 银行卡付款,08 微信付款)
-        private float total; // 应付总金额
-        private float change; // 找零(现金付款)
-        private String payid; // 付款卡号(金卡卡号或微信交易单号)
-        private String ckic; // 卡类型(payno=02,ckic=0 磁卡;ckic=1 IC 卡,payno=01 或03或04，默认值为0)
-        private String scye; // 消费前卡余额(默认值为0)
-        private String retflag; // 0 正常 1异常(2 成功（交易结束）[注：原先王艳妮交接文档中没有2，后根据程序及文档推测])
+        /**
+         * itempay : [{"payno":"07","total":0.2,"change":0,"payid":"lqbh8jy39000517181231145325","ckic":"0","scye":"0"}]
+         * retflag : 2
+         * retmsg :
+         * printtxt :
+         */
 
-        public PaymentTypeResponseBean() {
-        }
-
-        public PaymentTypeResponseBean(String payno, float total, float change, String payid, String ckic, String scye, String retflag) {
-            this.payno = payno;
-            this.total = total;
-            this.change = change;
-            this.payid = payid;
-            this.ckic = ckic;
-            this.scye = scye;
-            this.retflag = retflag;
-        }
-
-        public String getPayno() {
-            return payno;
-        }
-
-        public void setPayno(String payno) {
-            this.payno = payno;
-        }
-
-        public float getTotal() {
-            return total;
-        }
-
-        public void setTotal(float total) {
-            this.total = total;
-        }
-
-        public float getChange() {
-            return change;
-        }
-
-        public void setChange(float change) {
-            this.change = change;
-        }
-
-        public String getPayid() {
-            return payid;
-        }
-
-        public void setPayid(String payid) {
-            this.payid = payid;
-        }
-
-        public String getCkic() {
-            return ckic;
-        }
-
-        public void setCkic(String ckic) {
-            this.ckic = ckic;
-        }
-
-        public String getScye() {
-            return scye;
-        }
-
-        public void setScye(String scye) {
-            this.scye = scye;
-        }
+        private String retflag;// 0 正常 1异常(2 成功（交易结束）[注：原先王艳妮交接文档中没有2，后根据程序及文档推测])
+        private String retmsg; // 返回信息
+        private String printtxt; // 打印信息
+        private List<ItempayBean> itempay;
 
         public String getRetflag() {
             return retflag;
@@ -184,17 +142,94 @@ public class PaymentTypeBean {
             this.retflag = retflag;
         }
 
-        @Override
-        public String toString() {
-            return "PaymentTypeResponseBean{" +
-                    "payno='" + payno + '\'' +
-                    ", total=" + total +
-                    ", change=" + change +
-                    ", payid='" + payid + '\'' +
-                    ", ckic='" + ckic + '\'' +
-                    ", scye='" + scye + '\'' +
-                    ", retflag='" + retflag + '\'' +
-                    '}';
+        public String getRetmsg() {
+            return retmsg;
+        }
+
+        public void setRetmsg(String retmsg) {
+            this.retmsg = retmsg;
+        }
+
+        public String getPrinttxt() {
+            return printtxt;
+        }
+
+        public void setPrinttxt(String printtxt) {
+            this.printtxt = printtxt;
+        }
+
+        public List<ItempayBean> getItempay() {
+            return itempay;
+        }
+
+        public void setItempay(List<ItempayBean> itempay) {
+            this.itempay = itempay;
+        }
+
+        public static class ItempayBean {
+            /**
+             * payno : 07
+             * total : 0.2
+             * change : 0
+             * payid : lqbh8jy39000517181231145325
+             * ckic : 0
+             * scye : 0
+             */
+
+            private String payno;// 付款方式(01 现金付款,02 金卡付款,03 银行卡付款,08 微信付款)
+            private float total;// 应付总金额
+            private float change;// 找零(现金付款)
+            private String payid;// 付款卡号(金卡卡号或微信交易单号)
+            private String ckic;// 卡类型(payno=02,ckic=0 磁卡;ckic=1 IC 卡,payno=01 或03或04，默认值为0)
+            private String scye;// 消费前卡余额(默认值为0)
+
+            public String getPayno() {
+                return payno;
+            }
+
+            public void setPayno(String payno) {
+                this.payno = payno;
+            }
+
+            public double getTotal() {
+                return total;
+            }
+
+            public void setTotal(float total) {
+                this.total = total;
+            }
+
+            public float getChange() {
+                return change;
+            }
+
+            public void setChange(int change) {
+                this.change = change;
+            }
+
+            public String getPayid() {
+                return payid;
+            }
+
+            public void setPayid(String payid) {
+                this.payid = payid;
+            }
+
+            public String getCkic() {
+                return ckic;
+            }
+
+            public void setCkic(String ckic) {
+                this.ckic = ckic;
+            }
+
+            public String getScye() {
+                return scye;
+            }
+
+            public void setScye(String scye) {
+                this.scye = scye;
+            }
         }
     }
 }

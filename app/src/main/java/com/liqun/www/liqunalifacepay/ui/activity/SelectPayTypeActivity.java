@@ -146,9 +146,9 @@ implements View.OnClickListener {
                 );
                 break;
             case R.id.ib_scan_code: // 扫码支付
+                closeServer();
                 Intent intent = ScanCodePayActivity.newIntent(this,mTotalPrice);
                 startActivity(intent);
-                closeServer();
                 finish();
                 break;
             case R.id.ib_smile:
