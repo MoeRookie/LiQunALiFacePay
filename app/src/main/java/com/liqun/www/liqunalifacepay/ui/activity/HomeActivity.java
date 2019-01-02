@@ -1,5 +1,6 @@
 package com.liqun.www.liqunalifacepay.ui.activity;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
@@ -85,6 +86,11 @@ implements View.OnClickListener {
             }
         }
     };
+
+    public static Intent newIntent(Context packageContext) {
+        Intent intent = new Intent(packageContext, HomeActivity.class);
+        return intent;
+    }
 
     /**
      * 处理服务端返回的结果

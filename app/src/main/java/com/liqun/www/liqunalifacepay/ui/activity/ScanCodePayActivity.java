@@ -94,13 +94,17 @@ public class ScanCodePayActivity extends AppCompatActivity {
                 case 6: // WebServiceXML解析异常
                     if (msg.obj != null) {
                         String message = (String) msg.obj;
+                        // 关闭服务端侦听
+                        closeServer();
                         // 跳转扫码支付结果界面
                         Intent intent = ScanCodeResultActivity.newIntent(
                                 ScanCodePayActivity.this,
                                 mCount,
                                 mTotalPrice,
                                 msg.what,
-                                message
+                                message,
+                                mBarCode,
+                                mSignedBarCode
                         );
                         startActivity(intent);
                     }
@@ -112,6 +116,8 @@ public class ScanCodePayActivity extends AppCompatActivity {
     private TextView mTvMessage;
     private LoadingDialog mLoadingDialog;
     private int mCount;
+    private String mBarCode;
+    private String mSignedBarCode;
 
     /**
      * 处理服务端返回结果
@@ -184,9 +190,14 @@ public class ScanCodePayActivity extends AppCompatActivity {
         }
     }
 
-    private void setListener() {
+    @Override
+    protected void onResume() {
+        super.onResume();
         // 开启服务端侦听
         initNetWorkServer();
+    }
+
+    private void setListener() {
         mBtnCancelPay.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -244,9 +255,9 @@ public class ScanCodePayActivity extends AppCompatActivity {
             mSb.append(asciiToString(String.valueOf(paramKeyEvent.getUnicodeChar())));
         }else{
             // 获取用户支付宝付款码码值
-            String barCode = mSb.toString().trim();
+            mBarCode = mSb.toString().trim();
             // 请求支付
-            requestALiPay(barCode);
+            requestALiPay(mBarCode);
             // 清空stringBuffer
             mSb.delete(0,mSb.length());
         }
@@ -294,7 +305,7 @@ public class ScanCodePayActivity extends AppCompatActivity {
                 String catwalkNo = settingList.get(5).getContent();
                 // 加签
                 int result[] = new int[1];
-                String signedBarCode = mXDeviceManager.sign(barCode.getBytes(), result);
+                mSignedBarCode = mXDeviceManager.sign(barCode.getBytes(), result);
                 // 请求
                 SoapObject request = null;
                 if (result[0] != 0) {
@@ -344,7 +355,7 @@ public class ScanCodePayActivity extends AppCompatActivity {
                                     String.valueOf("0.00")
                             ).setScale(2, BigDecimal.ROUND_HALF_UP),
                             // 机具信息
-                            signedBarCode
+                            mSignedBarCode
                     );
                     request.addProperty(
                             ConstantValue.REQUEST_PARAMS_JSON,

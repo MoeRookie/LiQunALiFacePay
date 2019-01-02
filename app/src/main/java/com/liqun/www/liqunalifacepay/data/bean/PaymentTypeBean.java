@@ -15,6 +15,7 @@ public class PaymentTypeBean {
         private String verifycode; // 校验码(金卡时使用)
         private String reference; // 银行卡交易参考号
         private String flag; // 是否立即支付(默认为0)
+        private String terminal_params; // 机具信息
 
         public String getTerminal_params() {
             return terminal_params;
@@ -24,7 +25,6 @@ public class PaymentTypeBean {
             this.terminal_params = terminal_params;
         }
 
-        private String terminal_params; // 机具信息
 
 
         public PaymentTypeRequestBean() {
