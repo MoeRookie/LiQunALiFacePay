@@ -16,6 +16,11 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    sourceSets {
+        main {
+            jniLibs.srcDirs = ['libs']
+        }
+    }
 }
 repositories {
     flatDir {
@@ -37,4 +42,5 @@ dependencies {
     // 机具管控
     implementation(name: 'xdevicemanager', ext: 'aar')
     implementation files('libs/ksoap2-android-assembly-3.3.0-jar-with-dependencies.jar')
+    implementation files('libs/icod_print.299d.jar')
 }

@@ -287,10 +287,7 @@ public class ScanCodePayActivity extends AppCompatActivity {
                 // 请求时间
                 String requestTime = getRequestTime(System.currentTimeMillis());
                 // 重新格式化
-                String orderTimeMsg = getOrderTime(requestTime);
-                String[] orderTimeArr = orderTimeMsg.split(" ");
-                String orderDate = orderTimeArr[0];
-                String orderTime = orderTimeArr[1];
+                String orderTime = getOrderTime(requestTime);
                 // 获取设置信息
                 String settingMsg = SpUtils.getString(
                         ScanCodePayActivity.this,
@@ -303,6 +300,8 @@ public class ScanCodePayActivity extends AppCompatActivity {
                 String merchantNo = settingList.get(3).getContent();
                 // 款台号
                 String catwalkNo = settingList.get(5).getContent();
+                // 流水号
+                String flowNo = ALiFacePayApplication.getInstance().getFlowNo();
                 // 加签
                 int result[] = new int[1];
                 mSignedBarCode = mXDeviceManager.sign(barCode.getBytes(), result);
@@ -330,11 +329,11 @@ public class ScanCodePayActivity extends AppCompatActivity {
                             ConstantValue.METHOD_TRADE_PAY);
                     // json
                     ALiPayRequestBean requestBean = new ALiPayRequestBean(
-                            // 支付订单号(业态编号[lqbh]+款台号+流水号+日期+时间(订单规则))
+                            // 支付订单号(业态编号[lqbh]+门店编号+款台号+流水号的后六位+日期+时间(订单规则))
                             ConstantValue.KEY_VALUE_LQBH
+                                    + merchantNo
                                     + catwalkNo
-                                    + ALiFacePayApplication.getInstance().getFlowNo()
-                                    + orderDate
+                                    + flowNo.substring(flowNo.length()-6)
                                     + orderTime,
                             // 顾客手机条码
                             barCode,
@@ -346,7 +345,7 @@ public class ScanCodePayActivity extends AppCompatActivity {
                             "90001",
                             // 金额 单位为元,精确到小数点后两位
                             new BigDecimal(
-                                    String.valueOf("0.01")
+                                    String.valueOf(mTotalPrice)
                             ).setScale(2, BigDecimal.ROUND_HALF_UP),
                             new BigDecimal(
                                     String.valueOf("0.00")
@@ -391,6 +390,7 @@ public class ScanCodePayActivity extends AppCompatActivity {
                     mMessage = Message.obtain();
                     mMessage.what = 3;
                     mMessage.obj = bodyIn;
+                    L.e("请求支付的返回结果:" + bodyIn);
                 } catch (IOException e) {
                     // WebService调用IO异常
                     mMessage = Message.obtain();
@@ -430,7 +430,7 @@ public class ScanCodePayActivity extends AppCompatActivity {
         try {
             Date date = oldFormat.parse(requestTime);
             // 格式化日期 ->
-            SimpleDateFormat newFormat = new SimpleDateFormat("yyyymmdd hhmmss");
+            SimpleDateFormat newFormat = new SimpleDateFormat("yyyyMMddhhmmss");
             // 获取日期字符串和时间字符串
             return newFormat.format(date);
         } catch (ParseException e) {

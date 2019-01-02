@@ -87,11 +87,12 @@ implements View.OnClickListener {
             closeServer();
             String retflag = ptrb.getRetflag();
             String retmsg = ptrb.getRetmsg();
-            if ("0".equals(retflag) || "2".equals(retflag)) {
-                // 打印小票(打印完小票之后启动计时器)
-            } else if ("1".equals(retflag)) {
-                showWarnDialog(retmsg);
-            }
+//            if ("0".equals(retflag) || "2".equals(retflag)) {
+//                // 打印小票(打印完小票之后启动计时器)
+//            } else if ("1".equals(retflag)) {
+//                showWarnDialog(retmsg);
+//            }
+
         }
     }
 
