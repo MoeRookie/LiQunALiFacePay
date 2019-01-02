@@ -18,7 +18,6 @@ import com.alipay.xdevicemanager.api.XDeviceManager;
 import com.liqun.www.liqunalifacepay.R;
 import com.liqun.www.liqunalifacepay.application.ALiFacePayApplication;
 import com.liqun.www.liqunalifacepay.application.ConstantValue;
-import com.liqun.www.liqunalifacepay.data.bean.PaymentTypeBean;
 import com.liqun.www.liqunalifacepay.data.bean.SettingItemBean;
 import com.liqun.www.liqunalifacepay.data.utils.JointDismantleUtils;
 import com.liqun.www.liqunalifacepay.data.utils.L;
@@ -49,7 +48,6 @@ import java.util.List;
 import static com.liqun.www.liqunalifacepay.data.bean.ALiPayBean.*;
 import static com.liqun.www.liqunalifacepay.data.bean.CancelPaymentBean.CancelPaymentRequestBean;
 import static com.liqun.www.liqunalifacepay.data.bean.CancelPaymentBean.CancelPaymentResponseBean;
-import static com.liqun.www.liqunalifacepay.data.bean.PaymentTypeBean.*;
 
 //重要约定：在正常情况下，客户端代码需要保证这个Activity是整个App的生命周期
 //重要约定：在正常情况下，客户端代码需要保证这个Activity是整个App的生命周期
@@ -57,6 +55,7 @@ import static com.liqun.www.liqunalifacepay.data.bean.PaymentTypeBean.*;
 public class ScanCodePayActivity extends AppCompatActivity {
     private XDeviceManager mXDeviceManager;
     private static final String EXTRA_TOTAL_PRICE = "com.liqun.www.liqunalifacepay.total_price";
+    private static final String EXTRA_COUNT = "com.liqun.www.liqunalifacepay.count";
     private TextView mBtnCancelPay,mTvTotalPrice;
     private final static int time = 118000;
     private MyCountDownTimer cdt;
@@ -90,12 +89,21 @@ public class ScanCodePayActivity extends AppCompatActivity {
                     );
                     break;
                 case 3: // 支付成功
-                    
-                    break;
                 case 4: // 加签失败
                 case 5: // WebService调用IO异常
                 case 6: // WebServiceXML解析异常
-
+                    if (msg.obj != null) {
+                        String message = (String) msg.obj;
+                        // 跳转扫码支付结果界面
+                        Intent intent = ScanCodeResultActivity.newIntent(
+                                ScanCodePayActivity.this,
+                                mCount,
+                                mTotalPrice,
+                                msg.what,
+                                message
+                        );
+                        startActivity(intent);
+                    }
                     break;
             }
         }
@@ -103,6 +111,7 @@ public class ScanCodePayActivity extends AppCompatActivity {
     private WarnDialog mWarnDialog;
     private TextView mTvMessage;
     private LoadingDialog mLoadingDialog;
+    private int mCount;
 
     /**
      * 处理服务端返回结果
@@ -142,8 +151,9 @@ public class ScanCodePayActivity extends AppCompatActivity {
         mTvMessage.setText(msg);
     }
 
-    public static Intent newIntent(Context packageContext, float totalPrice) {
+    public static Intent newIntent(Context packageContext, int count, float totalPrice) {
         Intent intent = new Intent(packageContext, ScanCodePayActivity.class);
+        intent.putExtra(EXTRA_COUNT, count);
         intent.putExtra(EXTRA_TOTAL_PRICE,totalPrice);
         return intent;
     }
@@ -169,6 +179,7 @@ public class ScanCodePayActivity extends AppCompatActivity {
         Intent intent = getIntent();
         if (intent != null) {
             mTotalPrice = intent.getFloatExtra(EXTRA_TOTAL_PRICE, 0.00f);
+            mCount = intent.getIntExtra(EXTRA_COUNT, 0);
             mTvTotalPrice.setText("￥ " + mTotalPrice);
         }
     }
@@ -235,7 +246,7 @@ public class ScanCodePayActivity extends AppCompatActivity {
             // 获取用户支付宝付款码码值
             String barCode = mSb.toString().trim();
             // 请求支付
-            requestPay(barCode);
+            requestALiPay(barCode);
             // 清空stringBuffer
             mSb.delete(0,mSb.length());
         }
@@ -246,7 +257,7 @@ public class ScanCodePayActivity extends AppCompatActivity {
      * 请求支付宝支付
      * @param barCode 二维码码值
      */
-    private void requestPay(final String barCode) {
+    private void requestALiPay(final String barCode) {
         // 弹出加载对话框
         showLoadingDialog();
         /**
@@ -254,9 +265,9 @@ public class ScanCodePayActivity extends AppCompatActivity {
          *  成功:跳转支付结果页(显示支付成功界面)
          *      请求支付方式
          *          成功:打印小票
-         *          失败:提示信息
+         *          失败:提示信息(界面提示)
          *  失败:跳转支付结果页(显示支付失败界面)
-         *      提示信息
+         *      提示信息(界面提示)
          */
         new Thread(){
             @Override

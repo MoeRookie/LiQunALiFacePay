@@ -9,7 +9,7 @@
         android:layout_height="match_parent">
         <LinearLayout
             android:id="@+id/ll_pay_success"
-            android:visibility="visible"
+            android:visibility="gone"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical">
@@ -177,7 +177,7 @@
         </LinearLayout>
         <LinearLayout
             android:id="@+id/ll_pay_fail"
-            android:visibility="gone"
+            android:visibility="visible"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical">
@@ -226,6 +226,7 @@
                 </LinearLayout>
             </LinearLayout>
             <TextView
+                android:id="@+id/tv_err_hint"
                 android:layout_marginTop="103dp"
                 android:layout_gravity="center_horizontal"
                 android:layout_width="wrap_content"
