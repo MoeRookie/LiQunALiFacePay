@@ -5,7 +5,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:background="#11ffffff">
     <RelativeLayout
-        android:layout_width="260dp"
+        android:layout_width="230dp"
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
         android:background="@drawable/shape_bg_dialog_global">
@@ -27,21 +27,45 @@
             android:layout_height="wrap_content"
             android:layout_centerHorizontal="true"
             android:orientation="vertical">
-            <ImageView
+            <View
                 android:layout_width="167dp"
-                android:layout_height="93dp"
-                android:src="@drawable/bg_dialog_input"
-                android:scaleType="centerCrop"/>
-            <EditText
-                android:id="@+id/et_number"
-                android:layout_margin="5dp"
+                android:layout_height="0dp"/>
+            <TextView
+                android:id="@+id/tv_title"
+                android:layout_gravity="center_horizontal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Title"
+                android:textSize="16sp"
+                android:textColor="@color/black"
+                android:textStyle="bold"/>
+            <LinearLayout
+                android:layout_marginTop="18dp"
+                android:layout_marginBottom="15dp"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_margin="5dp"
                 android:gravity="center_horizontal"
-                android:background="@null"
-                android:textSize="14sp"
-                android:textColor="@color/black"
-                android:textStyle="bold" />
+                android:orientation="horizontal"
+                android:padding="5dp"
+                android:background="@drawable/shape_bg_dialog_global">
+                <EditText
+                    android:id="@+id/et_number"
+                    android:layout_gravity="center_vertical"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:background="@null"
+                    android:textSize="14sp"
+                    android:textColor="@color/black"
+                    android:textStyle="bold"
+                    android:hint="请输入会员手机号"/>
+                <ImageView
+                    android:id="@+id/iv_clear"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/ic_edit_text_clear"/>
+            </LinearLayout>
             <com.liqun.www.liqunalifacepay.ui.view.NumberKeyboardView
                 android:id="@+id/nkv"
                 android:layout_width="match_parent"
@@ -75,7 +99,7 @@
                 android:layout_height="wrap_content"
                 android:layout_margin="5dp"
                 android:layout_gravity="center_horizontal"
-                android:text="条码号不能为空！"
+                android:text="Message"
                 android:textSize="10sp"
                 android:textColor="@color/red"/>
         </LinearLayout>

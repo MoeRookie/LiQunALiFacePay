@@ -19,10 +19,6 @@ import com.alipay.xdevicemanager.api.XDeviceManager;
 import com.liqun.www.liqunalifacepay.R;
 import com.liqun.www.liqunalifacepay.application.ALiFacePayApplication;
 import com.liqun.www.liqunalifacepay.application.ConstantValue;
-import com.liqun.www.liqunalifacepay.data.bean.CancelDealBean;
-import com.liqun.www.liqunalifacepay.data.bean.CancelPaymentBean;
-import com.liqun.www.liqunalifacepay.data.bean.DealRecordBean;
-import com.liqun.www.liqunalifacepay.data.utils.CommonUtils;
 import com.liqun.www.liqunalifacepay.data.utils.JointDismantleUtils;
 import com.liqun.www.liqunalifacepay.data.utils.L;
 import com.liqun.www.liqunalifacepay.data.utils.SpUtils;
@@ -90,6 +86,8 @@ implements View.OnClickListener {
             }
         }
     };
+    private String mSettingMsg;
+    private boolean mIsVip;
 
     public static Intent newIntent(Context packageContext) {
         Intent intent = new Intent(packageContext, HomeActivity.class);
@@ -111,8 +109,10 @@ implements View.OnClickListener {
             } else if ("0".equals(retflag)) {
                 // 保存流水号
                 ALiFacePayApplication.getInstance().setFlowNo(drrb.getFlow_no());
-                // 跳转SelfHelpPayActivity界面
-                Intent intent = SelfHelpPayActivity.newIntent(HomeActivity.this);
+                // 3.根据是否为vip跳转到自助收银界面(先关服务端侦听)
+                closeServer();
+                Intent intent = SelfHelpPayActivity.newIntent(
+                        HomeActivity.this, mIsVip);
                 startActivity(intent);
             }
         }
@@ -165,6 +165,7 @@ implements View.OnClickListener {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
         initUI();
+        initData();
         setListener();
     }
 
@@ -174,32 +175,42 @@ implements View.OnClickListener {
         mBtnNoVip.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // 获取设置信息
-                String settingMsg = SpUtils.getString(
-                        HomeActivity.this,
-                        ConstantValue.KEY_SETTING_CONTENT,
-                        ""
-                );
-                if (TextUtils.isEmpty(settingMsg)) {
-                    showWarnDialog("尚未设置信息,请联系管理员!");
-                }else{
-                    requestNetWorkServer(
-                            ConstantValue.TAG_DEAL_RECORD,
-                            new DealRecordRequestBean(
-                                    ALiFacePayApplication.getInstance().getHostIP(),
-                                    "90001",
-                                    "0"
-                            )
-                    );
-                }
+                mIsVip = false;
+                getFlowNo();
             }
         });
         mBtnVip.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                L.e("======================先什么都不做========================");
+                mIsVip = true;
+                getFlowNo();
             }
         });
+    }
+
+    /**
+     * 获取流水号
+     */
+    private void getFlowNo() {
+        // 1.获取设置信息(为空则提示设置设置信息)
+        String settingMsg = SpUtils.getString(
+                HomeActivity.this,
+                ConstantValue.KEY_SETTING_CONTENT,
+                ""
+        );
+        if (TextUtils.isEmpty(settingMsg)) {
+            showWarnDialog("尚未设置信息,请联系管理员!");
+            return;
+        }
+        // 2.请求获取流水号(失败时直接提示,点击确定后关闭对话框)
+        requestNetWorkServer(
+                ConstantValue.TAG_DEAL_RECORD,
+                new DealRecordRequestBean(
+                        ALiFacePayApplication.getInstance().getHostIP(),
+                        "90001",
+                        "0"
+                )
+        );
     }
 
 
@@ -224,6 +235,13 @@ implements View.OnClickListener {
          * 8.编写"扫码支付"界面布局
          * 9.编写"刷脸付"界面布局
          */
+    }
+    private void initData() { // 获取设置信息
+        mSettingMsg = SpUtils.getString(
+                HomeActivity.this,
+                ConstantValue.KEY_SETTING_CONTENT,
+                ""
+        );
     }
 
     /**

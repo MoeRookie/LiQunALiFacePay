@@ -9,8 +9,10 @@ import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.text.TextUtils;
 import android.view.KeyEvent;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -18,11 +20,13 @@ import com.liqun.www.liqunalifacepay.R;
 import com.liqun.www.liqunalifacepay.application.ALiFacePayApplication;
 import com.liqun.www.liqunalifacepay.application.ConstantValue;
 import com.liqun.www.liqunalifacepay.data.bean.ShoppingBagBean;
+import com.liqun.www.liqunalifacepay.data.bean.VipCardBean;
 import com.liqun.www.liqunalifacepay.data.utils.JointDismantleUtils;
 import com.liqun.www.liqunalifacepay.data.utils.L;
 import com.liqun.www.liqunalifacepay.data.utils.SpUtils;
 import com.liqun.www.liqunalifacepay.ui.adapter.GoodsAdapter;
 import com.liqun.www.liqunalifacepay.ui.adapter.ShoppingBag2Adapter;
+import com.liqun.www.liqunalifacepay.ui.view.InputNumberDialog;
 import com.liqun.www.liqunalifacepay.ui.view.MultipleDialog;
 import com.liqun.www.liqunalifacepay.ui.view.WarnDialog;
 
@@ -37,6 +41,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import static com.alibaba.fastjson.JSONArray.parseArray;
 import static com.liqun.www.liqunalifacepay.data.bean.CancelDealBean.CancelDealRequestBean;
@@ -46,6 +51,7 @@ import static com.liqun.www.liqunalifacepay.data.bean.PreparePaymentBean.*;
 import static com.liqun.www.liqunalifacepay.data.bean.ReObtainDealDetailsBean.*;
 import static com.liqun.www.liqunalifacepay.data.bean.ScanGoodsBean.ScanGoodsRequestBean;
 import static com.liqun.www.liqunalifacepay.data.bean.ScanGoodsBean.ScanGoodsResponseBean;
+import static com.liqun.www.liqunalifacepay.data.bean.VipCardBean.*;
 
 /**
  * 取消交易&输码|扫码->商品信息界面
@@ -62,6 +68,7 @@ import static com.liqun.www.liqunalifacepay.data.bean.ScanGoodsBean.ScanGoodsRes
  */
 public class SelfHelpPayActivity extends AppCompatActivity
 implements View.OnClickListener {
+    private static final String EXTRA_IS_VIP = "com.liqun.www.liqunalifacepay.is_vip";
     public static SelfHelpPayActivity mActivity;
     public static Thread sServerSocketThread;
     public static ServerSocket sServerSocket;
@@ -79,10 +86,15 @@ implements View.OnClickListener {
     private List<ScanGoodsResponseBean> mList = new ArrayList<>();
     private GoodsAdapter mAdapter;
     private final int REQUEST_CODE_INPUT_BAR_CODE_DIALOG = 0;
+    private final int REQUEST_CODE_INPUT_PHONE_NUM_DIALOG = 1;
     private int mCount; // 记录商品数量
     private float mTotalPrice = 0.00f; // 记录商品的总价格
     private TextView mTvGoodsNum;
     private TextView mTvGoodsTotalPrice;
+    /**
+     * 正则表达式：验证手机号
+     */
+    public static final String REGEX_MOBILE = "^[1](([3][0-9])|([4][5,7,9])|([5][^4,6,9])|([6][6])|([7][3,5,6,7,8])|([8][0-9])|([9][8,9]))[0-9]{8}$";
     private Handler mHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
@@ -116,6 +128,10 @@ implements View.OnClickListener {
     private int mIndex = -1;
     private TextView mBtnInputBarCode;
     private WarnDialog mWarnDialog;
+    private InputNumberDialog mPhoneNumberDialog;
+    private TextView mTvMessage;
+    private EditText mEtPhoneNumber;
+    private TextView mTvTitle;
 
     /**
      * 显示警告类型的对话框
@@ -131,6 +147,19 @@ implements View.OnClickListener {
      * @param obj
      */
     private void handleServerResult(Object obj) {
+        if (obj instanceof VipCardResponseBean) { // 会员登录
+            // 4.关闭当前对话框并修改title为-您好,尊敬的利群会员\n卡号:hjgnwklehgkwekg
+            VipCardResponseBean vcrb = (VipCardResponseBean) obj;
+            String retflag = vcrb.getRetflag();
+            String retmsg = vcrb.getRetmsg();
+            if ("1".equals(retflag)) {
+                mTvMessage.setVisibility(View.VISIBLE);
+                mTvMessage.setText(retmsg);
+            } else if ("0".equals(retflag)) {
+                mPhoneNumberDialog.dismiss();
+                mTvTitle.setText("您好 , 尊敬的利群会员\n卡号 : "+vcrb.getVipno());
+            }
+        }
         if (obj instanceof CancelDealResponseBean) { // 取消交易
             CancelDealResponseBean cdrb = (CancelDealResponseBean) obj;
             String retflag = cdrb.getRetflag();
@@ -174,8 +203,9 @@ implements View.OnClickListener {
             startActivity(intent);
         }
     }
-    public static Intent newIntent(Context packageContext) {
+    public static Intent newIntent(Context packageContext, boolean isVip) {
         Intent intent = new Intent(packageContext, SelfHelpPayActivity.class);
+        intent.putExtra(EXTRA_IS_VIP, isVip);
         return intent;
     }
     @Override
@@ -183,13 +213,77 @@ implements View.OnClickListener {
         super.onCreate(savedInstanceState);
         mActivity = this;
         setContentView(R.layout.activity_self_help_pay);
+        initData();
         initUI();
         setListener();
+    }
+
+    private void initData() {
+        Intent intent = getIntent();
+        if (intent != null) {
+            boolean isVip = intent.getBooleanExtra(
+                    EXTRA_IS_VIP
+                    , false
+            );
+            // 如果isVip==true则弹出提示输入手机号码的对话框
+            if (isVip) {
+                showInputPhoneNumDialog();
+            }
+        }
+    }
+
+    /**
+     * 弹出输入手机号码的对话框
+     */
+    private void showInputPhoneNumDialog() {
+        if (mPhoneNumberDialog == null) {
+            mPhoneNumberDialog = new InputNumberDialog(this);
+            mPhoneNumberDialog.setLayoutResId(R.layout.dialog_input_phone_num);
+            mPhoneNumberDialog.setTitle("会员登录");
+            mPhoneNumberDialog.setOnYesClickListener(new InputNumberDialog.OnYesClickListener() {
+                @Override
+                public void onYesClicked() {
+                    String phoneNumber = mEtPhoneNumber.getText().toString().trim();
+                    // 1.判空(空则提示手机号不能为空)
+                    if (TextUtils.isEmpty(phoneNumber)) {
+                        mTvMessage.setVisibility(View.VISIBLE);
+                        mTvMessage.setText(R.string.hint_phone_number_empty_err);
+                        return;
+                    }
+                    // 2.判格式(不符合则提示手机号格式有误,并清空手机号输入框)
+                    if(!Pattern.matches(REGEX_MOBILE, phoneNumber)){
+                        mTvMessage.setVisibility(View.VISIBLE);
+                        mTvMessage.setText(R.string.hint_phone_number_format_err);
+                        mEtPhoneNumber.setText("");
+                        return;
+                    }
+                    // 3.请求会员登录(失败则提示返回信息)
+                    requestNetWorkServer(
+                            ConstantValue.TAG_VIP_CARD,
+                            new VipCardRequestBean(
+                                    ALiFacePayApplication.getInstance().getHostIP(),
+                                    phoneNumber,
+                                    "1"
+                            )
+                    );
+                }
+            });
+        }
+        mPhoneNumberDialog.show();
+        if (mTvMessage == null) {
+            mTvMessage = mPhoneNumberDialog.findViewById(R.id.tv_message);
+        }
+        if (mEtPhoneNumber == null) {
+            mEtPhoneNumber = mPhoneNumberDialog.findViewById(R.id.et_number);
+        }
+        // 每次显示dialog时,提示默认不显示
+        mTvMessage.setVisibility(View.GONE);
     }
 
 
     private void initUI() {
         // 默认
+        mTvTitle = findViewById(R.id.tv_title);
         mBtnCancelDeal = findViewById(R.id.btn_cancel_deal);
         mBtnInput = findViewById(R.id.btn_input);
         // 商品信息
@@ -476,7 +570,7 @@ implements View.OnClickListener {
      * 弹出条码号输入对话框
      */
     private void showInputBarCodeDialog() {
-        Intent intent = InputBarCodeDialogActivity.newIntent(this);
+        Intent intent = InputBarCodeActivity.newIntent(this);
         startActivityForResult(intent,REQUEST_CODE_INPUT_BAR_CODE_DIALOG);
     }
 
@@ -566,7 +660,7 @@ implements View.OnClickListener {
             if (data != null) {
                 ScanGoodsResponseBean goodsBean =
                         (ScanGoodsResponseBean) data.
-                                getSerializableExtra(InputBarCodeDialogActivity.EXTRA_RET_MSG);
+                                getSerializableExtra(InputBarCodeActivity.EXTRA_RET_MSG);
                 // 设置商品信息
                 setGoodsListMsg("+",goodsBean);
                 // 重新获取交易明细

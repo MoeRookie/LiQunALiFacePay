@@ -32,7 +32,7 @@
                 android:src="@drawable/bg_dialog_input"
                 android:scaleType="centerCrop"/>
             <EditText
-                android:id="@+id/et_bar_code"
+                android:id="@+id/et_number"
                 android:layout_margin="5dp"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

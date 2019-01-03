@@ -163,6 +163,15 @@ implements View.OnClickListener {
                     mTvTotalPrice1.setText("￥" + mTotalPrice);
                     mTvCount.setText("共" + mCount + "件商品");
                     mTvTotalPrice2.setText("￥" + mTotalPrice);
+                    /**
+                     * 打印小票
+                     * 1.连接usb;
+                     * 2.成功后开始打印服务端返回的文本;
+                     * 3.成功后开始打印自己拼接的文本;
+                     * 4.成功后开始打印二维码;
+                     * 5.成功后打印"利群集团(须居中显示)"字样;
+                     * 6.断开usb连接并启动计时器;
+                     */
                     // 启用计时器
                     cdt.start();
                     break;

@@ -29,7 +29,7 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-public class InputBarCodeDialogActivity extends AppCompatActivity {
+public class InputBarCodeActivity extends AppCompatActivity {
 
     private static final int MAX_LENGTH = 20;
     public static final String EXTRA_RET_MSG = "com.liqun.www.liqunalifacepay.ret_msg";
@@ -98,7 +98,7 @@ public class InputBarCodeDialogActivity extends AppCompatActivity {
     }
 
     public static Intent newIntent(Context packageContext) {
-        Intent intent = new Intent(packageContext, InputBarCodeDialogActivity.class);
+        Intent intent = new Intent(packageContext, InputBarCodeActivity.class);
         return intent;
     }
 
@@ -112,7 +112,7 @@ public class InputBarCodeDialogActivity extends AppCompatActivity {
 
     private void initUI() {
         mBtnNo = findViewById(R.id.btn_no);
-        mEtBarCode = findViewById(R.id.et_bar_code);
+        mEtBarCode = findViewById(R.id.et_number);
         // 设置光标不显示
         mEtBarCode.setCursorVisible(false);
         // 设置不可编辑
@@ -243,7 +243,7 @@ public class InputBarCodeDialogActivity extends AppCompatActivity {
                 while ((temp = bufferedReader.readLine()) != null) {
                     info += temp;
                 }
-                L.e("InputBarCodeDialogActivity:::::::::::::::::::::::::::::::::::::::"+info);
+                L.e("InputBarCodeActivity:::::::::::::::::::::::::::::::::::::::"+info);
                 /**
                  * 为了避免出现msg被重用的问题,每次的msg对象都要通过Message.obtain()方法获取
                  */
@@ -274,7 +274,7 @@ public class InputBarCodeDialogActivity extends AppCompatActivity {
                         tag,
                         requestBean
                 );
-                L.e("InputBarCodeDialogActivity::::::::::::::::::::::::::::::::::::::::"+msg);
+                L.e("InputBarCodeActivity::::::::::::::::::::::::::::::::::::::::"+msg);
                 //建立tcp的服务
                 try {
                     Socket socket = new Socket(

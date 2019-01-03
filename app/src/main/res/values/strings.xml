@@ -54,4 +54,6 @@
     <string name="err">错误</string>
     <string name="hint_return_home">返回首页</string>
     <string name="hint_continue_pay">继续支付</string>
+    <string name="hint_phone_number_empty_err">手机号不能为空！</string>
+    <string name="hint_phone_number_format_err">手机号格式有误 , 请重新输入!</string>
 </resources>
