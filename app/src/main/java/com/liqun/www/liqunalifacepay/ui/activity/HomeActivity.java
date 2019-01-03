@@ -19,6 +19,8 @@ import com.alipay.xdevicemanager.api.XDeviceManager;
 import com.liqun.www.liqunalifacepay.R;
 import com.liqun.www.liqunalifacepay.application.ALiFacePayApplication;
 import com.liqun.www.liqunalifacepay.application.ConstantValue;
+import com.liqun.www.liqunalifacepay.data.bean.CancelDealBean;
+import com.liqun.www.liqunalifacepay.data.bean.CancelPaymentBean;
 import com.liqun.www.liqunalifacepay.data.bean.DealRecordBean;
 import com.liqun.www.liqunalifacepay.data.utils.CommonUtils;
 import com.liqun.www.liqunalifacepay.data.utils.JointDismantleUtils;
@@ -35,6 +37,8 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 
+import static com.liqun.www.liqunalifacepay.data.bean.CancelDealBean.*;
+import static com.liqun.www.liqunalifacepay.data.bean.CancelPaymentBean.*;
 import static com.liqun.www.liqunalifacepay.data.bean.DealRecordBean.*;
 
 /**
@@ -97,6 +101,7 @@ implements View.OnClickListener {
      * @param obj 对象
      */
     private void handlerServerResult(Object obj) {
+        // 获取流水号
         if (obj instanceof DealRecordResponseBean) {
             DealRecordResponseBean drrb = (DealRecordResponseBean) obj;
             String retflag = drrb.getRetflag();
@@ -109,6 +114,26 @@ implements View.OnClickListener {
                 // 跳转SelfHelpPayActivity界面
                 Intent intent = SelfHelpPayActivity.newIntent(HomeActivity.this);
                 startActivity(intent);
+            }
+        }
+        // 取消付款
+        if (obj instanceof CancelPaymentResponseBean) {
+            // 取消交易
+            requestNetWorkServer(
+                    ConstantValue.TAG_CANCEL_DEAL,
+                    new CancelDealRequestBean(
+                            ALiFacePayApplication.getInstance().getHostIP(),
+                            "0"
+                    )
+            );
+        }
+        // 取消交易
+        if (obj instanceof CancelDealResponseBean) {
+            CancelDealResponseBean cdrb = (CancelDealResponseBean) obj;
+            String retflag = cdrb.getRetflag();
+            String retmsg = cdrb.getRetmsg();
+            if ("1".equals(retflag)) {
+                showWarnDialog(retmsg);
             }
         }
     }
@@ -219,6 +244,14 @@ implements View.OnClickListener {
         super.onResume();
         // 启动服务端侦听
         initNetWorkServer();
+        // 先取消付款
+        requestNetWorkServer(
+                ConstantValue.TAG_CANCEL_PAYMENT,
+                new CancelPaymentRequestBean(
+                        ALiFacePayApplication.getInstance().getHostIP(),
+                        "0"
+                )
+        );
     }
 
     /**

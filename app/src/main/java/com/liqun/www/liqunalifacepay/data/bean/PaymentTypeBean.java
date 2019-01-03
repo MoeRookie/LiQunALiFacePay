@@ -1,5 +1,6 @@
 package com.liqun.www.liqunalifacepay.data.bean;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -121,7 +122,7 @@ public class PaymentTypeBean {
                     '}';
         }
     }
-    public static class PaymentTypeResponseBean{
+    public static class PaymentTypeResponseBean implements Serializable {
         /**
          * itempay : [{"payno":"07","total":0.2,"change":0,"payid":"lqbh8jy39000517181231145325","ckic":"0","scye":"0"}]
          * retflag : 2
@@ -166,7 +167,7 @@ public class PaymentTypeBean {
             this.itempay = itempay;
         }
 
-        public static class ItempayBean {
+        public static class ItempayBean implements Serializable{
             /**
              * payno : 07
              * total : 0.2

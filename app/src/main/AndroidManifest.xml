@@ -1,6 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.liqun.www.liqunalifacepay">
+    <!-- 打印机所需权限 -->
+    <uses-feature android:name="android.hardware.usb.host" />
+    <!-- WIFIManage permission -->
+    <!-- Allows applications to access information about networks -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Allows applications to access information about Wi-Fi networks -->
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <!-- Allows applications to change network connectivity state -->
+    <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
+    <!-- Allows applications to change network connectivity state -->
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+    <!-- Allows applications to enter Wi-Fi Multicast mode -->
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <!-- SDCard permission -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.MOUNT_UNMOUNT_FILESYSTEMS" />
+    <!-- If your application uses Wi-Fi, declare so with a <uses-feature> element in the manifest file -->
+    >
+    <uses-feature android:name="android.hardware.wifi" />
+
+    <!-- Bluetooth permission -->
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <!-- 当前App所需权限 -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
     <application
@@ -33,6 +59,6 @@
         <activity android:name=".ui.activity.InputBarCodeDialogActivity"
             android:theme="@style/DialogBgStyle"/>
         <activity android:name=".ui.activity.ScanCodePayActivity"/>
-        <activity android:name=".ui.activity.ScanCodeResultActivity"/>
+        <activity android:name=".ui.activity.PayResultActivity"/>
     </application>
 </manifest>

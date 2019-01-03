@@ -17,7 +17,6 @@ import android.widget.TextView;
 import com.liqun.www.liqunalifacepay.R;
 import com.liqun.www.liqunalifacepay.application.ALiFacePayApplication;
 import com.liqun.www.liqunalifacepay.application.ConstantValue;
-import com.liqun.www.liqunalifacepay.data.bean.PreparePaymentBean;
 import com.liqun.www.liqunalifacepay.data.bean.ShoppingBagBean;
 import com.liqun.www.liqunalifacepay.data.utils.JointDismantleUtils;
 import com.liqun.www.liqunalifacepay.data.utils.L;
@@ -44,6 +43,7 @@ import static com.liqun.www.liqunalifacepay.data.bean.CancelDealBean.CancelDealR
 import static com.liqun.www.liqunalifacepay.data.bean.CancelDealBean.CancelDealResponseBean;
 import static com.liqun.www.liqunalifacepay.data.bean.CancelGoodsBean.*;
 import static com.liqun.www.liqunalifacepay.data.bean.PreparePaymentBean.*;
+import static com.liqun.www.liqunalifacepay.data.bean.ReObtainDealDetailsBean.*;
 import static com.liqun.www.liqunalifacepay.data.bean.ScanGoodsBean.ScanGoodsRequestBean;
 import static com.liqun.www.liqunalifacepay.data.bean.ScanGoodsBean.ScanGoodsResponseBean;
 
@@ -97,7 +97,7 @@ implements View.OnClickListener {
                 case 1:
                     // 处理返回结果
                     if (msg.obj != null) {
-                        handlerServerResult(msg.obj);
+                        handleServerResult(msg.obj);
                     }
                     break;
                 case 2:
@@ -130,7 +130,7 @@ implements View.OnClickListener {
      * 处理从服务端读取过来的返回结果
      * @param obj
      */
-    private void handlerServerResult(Object obj) {
+    private void handleServerResult(Object obj) {
         if (obj instanceof CancelDealResponseBean) { // 取消交易
             CancelDealResponseBean cdrb = (CancelDealResponseBean) obj;
             String retflag = cdrb.getRetflag();
@@ -569,6 +569,14 @@ implements View.OnClickListener {
                                 getSerializableExtra(InputBarCodeDialogActivity.EXTRA_RET_MSG);
                 // 设置商品信息
                 setGoodsListMsg("+",goodsBean);
+                // 重新获取交易明细
+                requestNetWorkServer(
+                        ConstantValue.TAG_RE_OBTAIN_DEAL_DETAILS,
+                        new ReObtainDealDetailsRequestBean(
+                                ALiFacePayApplication.getInstance().getHostIP(),
+                                ALiFacePayApplication.getInstance().getFlowNo()
+                        )
+                );
             }
         }
     }
