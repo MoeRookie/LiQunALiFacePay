@@ -1,7 +1,5 @@
 package com.liqun.www.liqunalifacepay.application;
 
-import org.ksoap2.serialization.PropertyInfo;
-
 public class ConstantValue {
     /**
      * 日结确认密码
@@ -114,44 +112,26 @@ public class ConstantValue {
      */
     public static final String KEY_SHOPPING_BAG_MSG = "key_shopping_bag_msg";
     /**
-     * 请求支付的接口根地址
+     * 请求刷脸的接口根地址
+     * 浏览器:http://10.5.3.43:9080/Alipay-RL/services/Alipay_Liqun_Bussiness/wsdl/Alipay_Liqun_Bussiness.wsdl
+     * 客户端:http://10.5.3.43:9080/Alipay-RL/services/Alipay_Liqun_Bussiness?wsdl
      */
-    public static final String REQUEST_URI = "http://10.5.3.43:9080/Alipay-RL/services/Alipay_Liqun_Bussiness?wsdl";
+    public static final String REQUEST_URI = "http://177.16.1.222:8888/Service1.asmx?wsdl";
 
     /**
-     * 请求支付的名字空间
+     * 请求刷脸的名字空间
      */
-    public static final String NAME_SPACE = "http://liqun.alipay.com";
+    public static final String NAME_SPACE = "http://localhost:2101/AlipayService/";
     /**
-     * 请求支付的根方法名
+     * 请求刷脸的初始化方法名
      */
-    public static final String METHOD_ROOT = "do_Alipay_Liqun_Bussiness";
+    public static final String METHOD_ZOLOZ_INIT = "ZolozInit";
     /**
-     * 请求支付的方法名
+     * 请求刷脸的支付方法名
      */
-    public static final String METHOD_TRADE_PAY = "trade_pay";
+    public static final String METHOD_RE_PAY = "RePay";
     /**
-     * 业态 - 利群百货
+     * 请求刷脸的key
      */
-    public static final String KEY_VALUE_LQBH = "lqbh";
-    /**
-     * 业态 - params
-     */
-    public static final String REQUEST_PARAMS_KEY = "key";
-    /**
-     * 方法名 - params
-     */
-    public static final String REQUEST_PARAMS_METHOD_NAME = "method";
-    /**
-     * 请求时间 - params
-     */
-    public static final String REQUEST_PARAMS_REQUEST_TIME = "resquesttime";
-    /**
-     * 签名 - params
-     */
-    public static final String REQUEST_PARAMS_SIGN = "sign";
-    /**
-     * json - params
-     */
-    public static final String REQUEST_PARAMS_JSON = "json";
+    public static final String REQUEST_KEY = "Request";
 }

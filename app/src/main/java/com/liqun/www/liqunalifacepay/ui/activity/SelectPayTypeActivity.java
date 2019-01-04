@@ -13,13 +13,23 @@ import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
+import com.alibaba.fastjson.JSON;
+import com.alipay.zoloz.smile2pay.service.Zoloz;
+import com.alipay.zoloz.smile2pay.service.ZolozCallback;
 import com.liqun.www.liqunalifacepay.R;
 import com.liqun.www.liqunalifacepay.application.ALiFacePayApplication;
 import com.liqun.www.liqunalifacepay.application.ConstantValue;
-import com.liqun.www.liqunalifacepay.data.bean.CancelPaymentBean;
+import com.liqun.www.liqunalifacepay.data.bean.SettingItemBean;
+import com.liqun.www.liqunalifacepay.data.utils.CommonUtils;
 import com.liqun.www.liqunalifacepay.data.utils.JointDismantleUtils;
 import com.liqun.www.liqunalifacepay.data.utils.L;
+import com.liqun.www.liqunalifacepay.data.utils.SpUtils;
 import com.liqun.www.liqunalifacepay.ui.view.WarnDialog;
+
+import org.ksoap2.serialization.SoapObject;
+import org.ksoap2.serialization.SoapSerializationEnvelope;
+import org.ksoap2.transport.HttpTransportSE;
+import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -29,6 +39,9 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static com.liqun.www.liqunalifacepay.data.bean.CancelPaymentBean.*;
 
@@ -42,6 +55,35 @@ implements View.OnClickListener {
     private static Thread sServerSocketThread;
     private static ServerSocket sServerSocket;
     private Message mMessage;
+    //刷脸支付相关
+    public static final String KEY_INIT_RESP_NAME = "zim.init.resp";
+    private Zoloz zoloz;
+
+    // 值为"1000"调用成功
+    // 值为"1003"用户选择退出
+    // 值为"1004"超时
+    // 值为"1005"用户选用其他支付方式
+    static final String CODE_SUCCESS = "1000";
+    static final String CODE_EXIT = "1003";
+    static final String CODE_TIMEOUT = "1004";
+    static final String CODE_OTHER_PAY = "1005";
+
+    static final String TXT_EXIT = "已退出刷脸支付";
+    static final String TXT_TIMEOUT = "操作超时";
+    static final String TXT_OTHER_PAY = "已退出刷脸支付";
+    static final String TXT_OTHER = "抱歉未支付成功，请重新支付";
+
+    //刷脸支付相关
+    static final String SMILEPAY_CODE_SUCCESS = "10000";
+    static final String SMILEPAY_SUBCODE_LIMIT = "ACQ.PRODUCT_AMOUNT_LIMIT_ERROR";
+    static final String SMILEPAY_SUBCODE_BALANCE_NOT_ENOUGH = "ACQ.BUYER_BALANCE_NOT_ENOUGH";
+    static final String SMILEPAY_SUBCODE_BANKCARD_BALANCE_NOT_ENOUGH = "ACQ.BUYER_BANKCARD_BALANCE_NOT_ENOUGH";
+
+    static final String SMILEPAY_TXT_LIMIT = "刷脸支付超出限额，请选用其他支付方式";
+    static final String SMILEPAY_TXT_EBALANCE_NOT_ENOUGH = "账户余额不足，支付失败";
+    static final String SMILEPAY_TXT_BANKCARD_BALANCE_NOT_ENOUGH = "账户余额不足，支付失败";
+    static final String SMILEPAY_TXT_FAIL = "抱歉未支付成功，请重新支付";
+    static final String SMILEPAY_TXT_SUCCESS = "刷脸支付成功";
     private Handler mHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
@@ -119,6 +161,7 @@ implements View.OnClickListener {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_select_pay_type);
+        zoloz = Zoloz.getInstance(getApplicationContext());
         initError();
         initUI();
         setListener();
@@ -154,9 +197,155 @@ implements View.OnClickListener {
                 startActivity(intent);
                 finish();
                 break;
-            case R.id.ib_smile:
+            case R.id.ib_smile: // 刷脸付
+                smilePay();
                 break;
         }
+    }
+    /**
+     * 发起刷脸支付请求，先zolozGetMetaInfo获取本地app信息，然后调用服务端获取刷脸付协议.
+     */
+    private void smilePay() {
+        zoloz.zolozGetMetaInfo(mockInfo(), new ZolozCallback() {
+            @Override
+            public void response(Map smileToPayResponse) {
+                if (smileToPayResponse == null) {
+                    L.e("zoloz.zolozGetMetaInfo response is null");
+                    return;
+                }
+                String code = (String)smileToPayResponse.get("code");
+                final String metaInfo = (String)smileToPayResponse.get("metainfo");
+                //获取metainfo成功
+                if (CODE_SUCCESS.equalsIgnoreCase(code) && metaInfo != null) {
+                    L.i("获取metainfo成功->metanfo is:" + metaInfo);
+                    // 将metaInfo发送给商户服务端，由商户服务端发起刷脸初始化OpenAPI的调用
+                    // 人脸初始化
+                    requestFacePay(
+                            ConstantValue.METHOD_ZOLOZ_INIT,
+                            metaInfo);
+//                    alipayClient.execute(request,
+//                            new AlipayCallBack() {
+//                                @Override
+//                                public AlipayResponse onResponse(AlipayResponse response) {
+//                                    if (response != null && SMILEPAY_CODE_SUCCESS.equals(response.getCode())) {
+//                                        try {
+//                                            ZolozAuthenticationCustomerSmilepayInitializeResponse zolozResponse
+//                                                    = (ZolozAuthenticationCustomerSmilepayInitializeResponse)response;
+//
+//                                            String result = zolozResponse.getResult();
+//                                            JSONObject resultJson = JSON.parseObject(result);
+//                                            String zimId = resultJson.getString("zimId");
+//                                            String zimInitClientData = resultJson.getString("zimInitClientData");
+//                                            //人脸调用
+//                                            smile(zimId, zimInitClientData);
+//                                        } catch (Exception e) {
+//                                            promptText(TXT_OTHER);
+//                                        }
+//                                    } else {
+//                                        promptText(TXT_OTHER);
+//                                    }
+//                                    return null;
+//                                }
+//                            });
+                } else {
+                    // 考虑使用dialog进行友好提示
+                    L.e(SMILEPAY_TXT_FAIL);
+                }
+            }
+        });
+    }
+
+    /**
+     * 请求刷脸付
+     * @param methodName 方法名
+     * @param requestData 请求数据
+     */
+    private void requestFacePay(final String methodName, final String requestData) {
+        //起一个异步线程发起网络请求
+        new Thread(){
+            @Override
+            public void run() {
+                super.run();
+                // 发起支付宝人脸初始化请求
+                SoapObject request = new SoapObject(
+                        ConstantValue.NAME_SPACE,
+                        methodName
+                        );
+                // 设置需调用WebService接口传入的参数
+                request.addProperty(
+                        ConstantValue.REQUEST_KEY,
+                        requestData);
+                // 创建SoapSerializationEnvelope 对象,同时指定soap版本号(之前在wsdl中看到的)
+                SoapSerializationEnvelope envelope
+                        = new SoapSerializationEnvelope(SoapSerializationEnvelope.VER12);
+                // 由于是发送请求,所以是设置bodyOut
+                envelope.bodyOut = request;
+                // 由于是.net开发的webservice,所以这里要设置为true
+                envelope.dotNet = true;
+                HttpTransportSE httpTransportSE
+                        = new HttpTransportSE(ConstantValue.REQUEST_URI);
+                try {
+                    httpTransportSE.call(
+                            null, envelope);
+                    // 获取返回的数据
+                    SoapObject object = (SoapObject) envelope.bodyIn;
+                    String bodyIn = object.getProperty(0).toString();
+                    L.e("bodyIn = " + bodyIn);
+                } catch (IOException e) {
+                    L.e("==========WebService调用IO异常==========");
+                } catch (XmlPullParserException e) {
+                    L.e("==========WebService调用Xml异常==========");
+                }
+            }
+        }.start();
+    }
+
+    /**
+     * mock数据，真实商户请填写真实信息.
+     */
+    private Map mockInfo() {
+        // 获取设置信息
+        String settingMsg = SpUtils.getString(
+                SelectPayTypeActivity.this,
+                ConstantValue.KEY_SETTING_CONTENT,
+                ""
+        );
+        // 转换为集合对象
+        List<SettingItemBean> settingList
+                = JSON.parseArray(settingMsg, SettingItemBean.class);
+        // 门店编码
+        String shopNo = settingList.get(3).getContent();
+        // 门店商户号
+        String merchantNo = settingList.get(4).getContent();
+        // 款台号
+        String catwalkNo = settingList.get(5).getContent();
+        Map merchantInfo = new HashMap();
+        //以下信息请根据真实情况填写
+        //商户 Pid
+        merchantInfo.put("merchantId", "2088521308744741");
+        //ISV PID
+        merchantInfo.put("partnerId", "2088031960490332");
+        //添加刷脸付功能的appid
+        merchantInfo.put("appId", "2018041960033206");
+        //机具编号，便于关联商家管理的机具
+        merchantInfo.put("deviceNum", catwalkNo);
+        //商户的门店编号
+        merchantInfo.put("storeCode", shopNo);
+        //口碑店铺号
+        merchantInfo.put("alipayStoreCode", "lqjt");
+        return merchantInfo;
+    }
+    /**
+     * 发起刷脸支付请求.
+     * @param txt toast文案
+     */
+    void promptText(final String txt) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                CommonUtils.showLongToast(txt);
+            }
+        });
     }
     /**
      * 连接服务端,请求数据
