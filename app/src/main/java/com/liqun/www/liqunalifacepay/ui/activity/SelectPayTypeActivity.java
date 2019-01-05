@@ -8,17 +8,21 @@ import android.os.Message;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
+import com.alipay.xdevicemanager.api.XDeviceManager;
 import com.alipay.zoloz.smile2pay.service.Zoloz;
 import com.alipay.zoloz.smile2pay.service.ZolozCallback;
 import com.liqun.www.liqunalifacepay.R;
 import com.liqun.www.liqunalifacepay.application.ALiFacePayApplication;
 import com.liqun.www.liqunalifacepay.application.ConstantValue;
+import com.liqun.www.liqunalifacepay.data.bean.FacePayBean;
 import com.liqun.www.liqunalifacepay.data.bean.SettingItemBean;
 import com.liqun.www.liqunalifacepay.data.utils.CommonUtils;
 import com.liqun.www.liqunalifacepay.data.utils.JointDismantleUtils;
@@ -39,11 +43,15 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 import static com.liqun.www.liqunalifacepay.data.bean.CancelPaymentBean.*;
+import static com.liqun.www.liqunalifacepay.data.bean.FacePayBean.*;
 
 public class SelectPayTypeActivity extends AppCompatActivity
 implements View.OnClickListener {
@@ -108,6 +116,18 @@ implements View.OnClickListener {
                             getString(R.string.connect_client_fail)
                     );
                     break;
+                case 3: // 人脸初始化请求成功
+                    if (msg.obj != null) {
+                        String json = (String) msg.obj;
+                        // 解析json->zimId+zimInitClientData
+                        FacePayInitBean facePayInitBean =
+                                JSON.parseObject(json, FacePayInitBean.class);
+                        String zimId = facePayInitBean.getJson().getZimId();
+                        String zimInitClientData = facePayInitBean.getJson().getZimInitClientData();
+                        // 唤起人脸识别
+                        smile(zimId,zimInitClientData);
+                    }
+                    break;
             }
         }
     };
@@ -130,6 +150,110 @@ implements View.OnClickListener {
             closeServer();
             showWarnDialog(retmsg);
         }
+    }
+    /**
+     * 发起刷脸支付请求.
+     * @param zimId 刷脸付token，从服务端获取，不要mock传入
+     * @param protocal 刷脸付协议，从服务端获取，不要mock传入
+     */
+    private void smile(String zimId, String protocal) {
+        Map params = new HashMap();
+        params.put(KEY_INIT_RESP_NAME, protocal);
+        /* start: 如果是预输入手机号方案，请加入以下代码,填入会员绑定的手机号，必须与支付宝帐号对应的手机号一致 */
+        params.put("phone_number", "1381XXXXX");
+        /* end: --------------------------------------------- */
+        zoloz.zolozVerify(zimId, params, new ZolozCallback() {
+            @Override
+            public void response(final Map smileToPayResponse) {
+                if (smileToPayResponse == null) {
+                    L.e("========抱歉未支付成功 , 请重新支付=======");
+                    return;
+                }
+                String code = (String)smileToPayResponse.get("code");
+                String fToken = (String)smileToPayResponse.get("ftoken");
+                //刷脸成功
+                if (CODE_SUCCESS.equalsIgnoreCase(code) && fToken != null) {
+                    // 请求支付
+                    pay(fToken);
+                }
+            }
+        });
+    }
+
+    /**
+     * 支付
+     * @param fToken
+     */
+    private void pay(String fToken) {
+        // 拼接参数
+        // 获取设置信息
+        String settingMsg = SpUtils.getString(
+                this,
+                ConstantValue.KEY_SETTING_CONTENT,
+                ""
+        );
+        // 将设置信息转换为集合对象
+        List<SettingItemBean> settingList = JSONArray.parseArray(settingMsg, SettingItemBean.class);
+        // 获取门店编码+门店商户号+款台号
+        String shopNo = settingList.get(3).getContent();
+        String merchantNo = settingList.get(4).getContent();
+        String catwalkNo = settingList.get(5).getContent();
+        // 获取固定规则的当前时间
+        String requestTime = getRequestTime(System.currentTimeMillis());
+        // 获取流水号
+        String flowNo = ALiFacePayApplication.getInstance().getFlowNo();
+        // 1.生成订单号(规则:lqbh+门店编码+款台号+流水号的后6位+固定规则的当前时间)
+        String orderNo =
+                "lqbh"
+                        + shopNo
+                        + catwalkNo
+                        + flowNo.substring(flowNo.length() - 6)
+                        + requestTime;
+        // 2.签名token值
+        // 获取xDeviceManager
+        XDeviceManager xDeviceManager = ALiFacePayApplication.getInstance().getXDeviceManager();
+        // 加签
+        int result[] = new int[1];
+        String signedFToken = xDeviceManager.sign(fToken.getBytes(), result);
+        if (result[0] != 0) {
+            // 加签失败
+            L.e("加签失败：" + result[0]);
+        }else{
+            // 发起支付请求
+            requestFacePay(
+                    ConstantValue.METHOD_RE_PAY,
+                    JSON.toJSONString(
+                            new FacePayRequestBean(
+                                    fToken,
+                                    "利群集团刷脸支付",
+                                    "2088031960490332",
+                                    "90001",
+                                    orderNo,
+                                    "2088521308744741",
+                                    "ALIPAY_F2F_PAYMENT",
+                                    "security_code",
+                                    merchantNo,
+                                    shopNo,
+                                    "利群集团刷脸付消费",
+                                    catwalkNo,
+                                    signedFToken,
+                                    "1m",
+                                    mTotalPrice
+                            )
+                    ),
+                    4
+            );
+        }
+    }
+    /**
+     * 获取发送支付请求的时间
+     * @param currentTime 当前时间的时间戳
+     * @return 发送支付请求的时间
+     */
+    private String getRequestTime(long currentTime) {
+        Date date = new Date(currentTime);
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddhhmmss");
+        return sdf.format(date); // 发送请求的时间;
     }
 
     public static void closeServer(){
@@ -222,31 +346,7 @@ implements View.OnClickListener {
                     // 人脸初始化
                     requestFacePay(
                             ConstantValue.METHOD_ZOLOZ_INIT,
-                            metaInfo);
-//                    alipayClient.execute(request,
-//                            new AlipayCallBack() {
-//                                @Override
-//                                public AlipayResponse onResponse(AlipayResponse response) {
-//                                    if (response != null && SMILEPAY_CODE_SUCCESS.equals(response.getCode())) {
-//                                        try {
-//                                            ZolozAuthenticationCustomerSmilepayInitializeResponse zolozResponse
-//                                                    = (ZolozAuthenticationCustomerSmilepayInitializeResponse)response;
-//
-//                                            String result = zolozResponse.getResult();
-//                                            JSONObject resultJson = JSON.parseObject(result);
-//                                            String zimId = resultJson.getString("zimId");
-//                                            String zimInitClientData = resultJson.getString("zimInitClientData");
-//                                            //人脸调用
-//                                            smile(zimId, zimInitClientData);
-//                                        } catch (Exception e) {
-//                                            promptText(TXT_OTHER);
-//                                        }
-//                                    } else {
-//                                        promptText(TXT_OTHER);
-//                                    }
-//                                    return null;
-//                                }
-//                            });
+                            metaInfo,3);
                 } else {
                     // 考虑使用dialog进行友好提示
                     L.e(SMILEPAY_TXT_FAIL);
@@ -260,7 +360,7 @@ implements View.OnClickListener {
      * @param methodName 方法名
      * @param requestData 请求数据
      */
-    private void requestFacePay(final String methodName, final String requestData) {
+    private void requestFacePay(final String methodName, final String requestData, final int what) {
         //起一个异步线程发起网络请求
         new Thread(){
             @Override
@@ -291,6 +391,10 @@ implements View.OnClickListener {
                     SoapObject object = (SoapObject) envelope.bodyIn;
                     String bodyIn = object.getProperty(0).toString();
                     L.e("bodyIn = " + bodyIn);
+                    mMessage = Message.obtain();
+                    mMessage.what = what;
+                    mMessage.obj = bodyIn;
+                    mHandler.sendMessage(mMessage);
                 } catch (IOException e) {
                     L.e("==========WebService调用IO异常==========");
                 } catch (XmlPullParserException e) {
@@ -334,18 +438,6 @@ implements View.OnClickListener {
         //口碑店铺号
         merchantInfo.put("alipayStoreCode", "lqjt");
         return merchantInfo;
-    }
-    /**
-     * 发起刷脸支付请求.
-     * @param txt toast文案
-     */
-    void promptText(final String txt) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                CommonUtils.showLongToast(txt);
-            }
-        });
     }
     /**
      * 连接服务端,请求数据

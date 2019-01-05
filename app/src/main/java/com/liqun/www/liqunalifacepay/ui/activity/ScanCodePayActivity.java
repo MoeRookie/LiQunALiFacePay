@@ -12,25 +12,14 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.widget.TextView;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONArray;
 import com.alipay.xdevicemanager.api.XDeviceManager;
 import com.liqun.www.liqunalifacepay.R;
 import com.liqun.www.liqunalifacepay.application.ALiFacePayApplication;
 import com.liqun.www.liqunalifacepay.application.ConstantValue;
-import com.liqun.www.liqunalifacepay.data.bean.PaymentTypeBean;
-import com.liqun.www.liqunalifacepay.data.bean.SettingItemBean;
 import com.liqun.www.liqunalifacepay.data.utils.JointDismantleUtils;
 import com.liqun.www.liqunalifacepay.data.utils.L;
-import com.liqun.www.liqunalifacepay.data.utils.MD5Utils;
-import com.liqun.www.liqunalifacepay.data.utils.SpUtils;
 import com.liqun.www.liqunalifacepay.ui.view.LoadingDialog;
 import com.liqun.www.liqunalifacepay.ui.view.WarnDialog;
-
-import org.ksoap2.serialization.SoapObject;
-import org.ksoap2.serialization.SoapSerializationEnvelope;
-import org.ksoap2.transport.HttpTransportSE;
-import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -38,18 +27,16 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.math.BigDecimal;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.List;
 
-import static com.liqun.www.liqunalifacepay.data.bean.ALiPayBean.*;
 import static com.liqun.www.liqunalifacepay.data.bean.CancelPaymentBean.CancelPaymentRequestBean;
 import static com.liqun.www.liqunalifacepay.data.bean.CancelPaymentBean.CancelPaymentResponseBean;
-import static com.liqun.www.liqunalifacepay.data.bean.PaymentTypeBean.*;
+import static com.liqun.www.liqunalifacepay.data.bean.PaymentTypeBean.PaymentTypeRequestBean;
+import static com.liqun.www.liqunalifacepay.data.bean.PaymentTypeBean.PaymentTypeResponseBean;
 
 //重要约定：在正常情况下，客户端代码需要保证这个Activity是整个App的生命周期
 //重要约定：在正常情况下，客户端代码需要保证这个Activity是整个App的生命周期
@@ -266,6 +253,7 @@ public class ScanCodePayActivity extends AppCompatActivity {
                     mMessage.obj = "加签失败:"+result[0];
                     mHandler.sendMessage(mMessage);
                 } else{
+                    showLoadingDialog();
                     requestNetWorkServer(
                             ConstantValue.TAG_PAYMENT_TYPE,
                             new PaymentTypeRequestBean(
@@ -287,151 +275,6 @@ public class ScanCodePayActivity extends AppCompatActivity {
         }
         return super.onKeyDown(paramInt, paramKeyEvent);
     }
-
-    /**
-     * 请求支付宝支付
-     * @param barCode 二维码码值
-     */
-//    private void requestALiPay(final String barCode) {
-//        // 弹出加载对话框
-//        showLoadingDialog();
-//        /**
-//         * 先做支付宝付款请求
-//         *  成功:跳转支付结果页(显示支付成功界面)
-//         *      请求支付方式
-//         *          成功:打印小票
-//         *          失败:提示信息(界面提示)
-//         *  失败:跳转支付结果页(显示支付失败界面)
-//         *      提示信息(界面提示)
-//         */
-//        new Thread(){
-//            @Override
-//            public void run() {
-//                super.run();
-//                // 请求时间
-//                String requestTime = getRequestTime(System.currentTimeMillis());
-//                // 重新格式化
-//                String orderTime = getOrderTime(requestTime);
-//                // 获取设置信息
-//                String settingMsg = SpUtils.getString(
-//                        ScanCodePayActivity.this,
-//                        ConstantValue.KEY_SETTING_CONTENT,
-//                        ""
-//                );
-//                List<SettingItemBean> settingList
-//                            = JSONArray.parseArray(settingMsg, SettingItemBean.class);
-//                // 门店编码
-//                String merchantNo = settingList.get(3).getContent();
-//                // 款台号
-//                String catwalkNo = settingList.get(5).getContent();
-//                // 流水号
-//                String flowNo = ALiFacePayApplication.getInstance().getFlowNo();
-//                // 加签
-//                int result[] = new int[1];
-//                mSignedBarCode = mXDeviceManager.sign(barCode.getBytes(), result);
-//                // 请求
-//                SoapObject request = null;
-//                if (result[0] != 0) {
-//                    // 加签失败
-//                    mMessage = Message.obtain();
-//                    mMessage.what = 4;
-//                    mMessage.obj = "加签失败:"+result[0];
-//                    mHandler.sendMessage(mMessage);
-//                } else{
-//                    // 2.请求支付
-//                    request = new SoapObject(
-//                            ConstantValue.NAME_SPACE,
-//                            ConstantValue.METHOD_ROOT);
-//                    // 设置需调用WebService接口传入的参数
-//                    // key -> 业态
-//                    request.addProperty(
-//                            ConstantValue.REQUEST_PARAMS_KEY,
-//                            ConstantValue.KEY_VALUE_LQBH);
-//                    // method -> 方法名
-//                    request.addProperty(
-//                            ConstantValue.REQUEST_PARAMS_METHOD_NAME,
-//                            ConstantValue.METHOD_TRADE_PAY);
-//                    // json
-//                    ALiPayRequestBean requestBean = new ALiPayRequestBean(
-//                            // 支付订单号(业态编号[lqbh]+门店编号+款台号+流水号的后六位+日期+时间(订单规则))
-//                            ConstantValue.KEY_VALUE_LQBH
-//                                    + merchantNo
-//                                    + catwalkNo
-//                                    + flowNo.substring(flowNo.length()-6)
-//                                    + orderTime,
-//                            // 顾客手机条码
-//                            barCode,
-//                            // 门店编码
-//                            merchantNo,
-//                            // 款台号
-//                            catwalkNo,
-//                            // 收款员号(写死即可)
-//                            "90001",
-//                            // 金额 单位为元,精确到小数点后两位
-//                            new BigDecimal(
-//                                    String.valueOf(mTotalPrice)
-//                            ).setScale(2, BigDecimal.ROUND_HALF_UP),
-//                            new BigDecimal(
-//                                    String.valueOf("0.00")
-//                            ).setScale(2, BigDecimal.ROUND_HALF_UP),
-//                            new BigDecimal(
-//                                    String.valueOf("0.00")
-//                            ).setScale(2, BigDecimal.ROUND_HALF_UP),
-//                            // 机具信息
-//                            mSignedBarCode
-//                    );
-//                    request.addProperty(
-//                            ConstantValue.REQUEST_PARAMS_JSON,
-//                            JSON.toJSONString(requestBean)
-//                    );
-//                    // resquesttime -> 请求时间(格式为:yyyy-mm-dd hh:mm:ss)
-//                    request.addProperty(
-//                            ConstantValue.REQUEST_PARAMS_REQUEST_TIME,
-//                            requestTime
-//                    );
-//                    // sign -> 数字签名(MD5)
-//                    request.addProperty(
-//                            ConstantValue.REQUEST_PARAMS_SIGN,
-//                            MD5Utils.md5(
-//                                    ConstantValue.KEY_VALUE_LQBH
-//                                            + requestTime
-//                            )
-//                    );
-//                }
-//                // 调用
-//                try {
-//                    // 创建SoapSerializationEnvelope 对象,同时指定soap版本号(之前在wsdl中看到的)
-//                    SoapSerializationEnvelope envelope = new SoapSerializationEnvelope(SoapSerializationEnvelope.VER11);
-//                    // 由于是发送请求,所以是设置bodyOut
-//                    envelope.bodyOut = request;
-//                    // 由于是.net开发的webservice,所以这里要设置为true
-//                    envelope.dotNet = true;
-//                    HttpTransportSE httpTransportSE = new HttpTransportSE(ConstantValue.REQUEST_URI);
-//                    httpTransportSE.call(null, envelope);
-//                    SoapObject object = (SoapObject) envelope.bodyIn;
-//                    // 获取返回的数据
-//                    String bodyIn = object.getProperty(0).toString();
-//                    mMessage = Message.obtain();
-//                    mMessage.what = 3;
-//                    mMessage.obj = bodyIn;
-//                    L.e("请求支付的返回结果:" + bodyIn);
-//                } catch (IOException e) {
-//                    // WebService调用IO异常
-//                    mMessage = Message.obtain();
-//                    mMessage.what = 5;
-//                    mMessage.obj = "WebService调用IO异常";
-//                } catch (XmlPullParserException e) {
-//                    // WebServiceXML解析异常
-//                    mMessage = Message.obtain();
-//                    mMessage.what = 6;
-//                    mMessage.obj = "WebServiceXML解析异常";
-//                }finally {
-//                    mHandler.sendMessage(mMessage);
-//                }
-//            }
-//        }.start();
-//    }
-
     /**
      * 弹出加载类型的对话框
      */
@@ -464,16 +307,7 @@ public class ScanCodePayActivity extends AppCompatActivity {
         return null;
     }
 
-    /**
-     * 获取发送支付请求的时间
-     * @param currentTime 当前时间的时间戳
-     * @return 发送支付请求的时间
-     */
-    private String getRequestTime(long currentTime) {
-        Date date = new Date(currentTime);
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-mm-dd hh:mm:ss");
-        return sdf.format(date); // 发送请求的时间;
-    }
+
     /**
      * ascii码转换为字符串
      * @param paramString ascii码值
