@@ -69,6 +69,9 @@ public class ScanCodePayActivity extends AppCompatActivity {
                     if (mIsCancelPay) { // 弹出带倒计时的警告框
                         setRequestFail(
                                 getString(R.string.connect_server_fail));
+                    }else{
+                        enterPayResult(
+                                getString(R.string.connect_server_fail));
                     }
                     break;
                 case 1:
@@ -78,14 +81,14 @@ public class ScanCodePayActivity extends AppCompatActivity {
                     }
                     break;
                 case 2: // 读取服务器失败
-                    setRequestFail(
-                            getString(R.string.connect_client_fail)
-                    );
-                    break;
-                case 3: // 加签失败
-                    if (msg.obj != null) {
-                        String message = (String) msg.obj;
-                        showWarnDialog(message);
+                    if (mIsCancelPay) {
+                        setRequestFail(
+                                getString(R.string.connect_client_fail)
+                        );
+                    }else{
+                        enterPayResult(
+                                getString(R.string.connect_client_fail)
+                        );
                     }
                     break;
 
@@ -122,9 +125,7 @@ public class ScanCodePayActivity extends AppCompatActivity {
             CancelPaymentResponseBean cprb = (CancelPaymentResponseBean) obj;
             String retflag = cprb.getRetflag();
             String retmsg = cprb.getRetmsg();
-            if ("0".equals(retflag)) {
-                retmsg = "取消付款成功！";
-            }
+            retmsg = "取消付款成功！";
             if ("0".equals(retflag)) {
                 // 设置取消支付成功
                 mIsRequestSuccess = true;
@@ -151,16 +152,33 @@ public class ScanCodePayActivity extends AppCompatActivity {
         }
         if (obj instanceof PaymentTypeResponseBean) {
             PaymentTypeResponseBean ptrb = (PaymentTypeResponseBean) obj;
-            closeServer(); // 关闭服务端侦听,防止支付结果界面的请求被其捕获
-            // 跳转支付结果界面
-            Intent intent = PayResultActivity.newIntent(
-                    ScanCodePayActivity.this,
-                    ptrb,
-                    mTotalPrice,
-                    mCount
-            );
-            startActivity(intent);
+            String retflag = ptrb.getRetflag();
+            String retmsg = ptrb.getRetmsg();
+            if ("0".equals(retflag)) {
+                retmsg = "支付宝付款成功";
+            }
+            enterPayResult(retmsg);
         }
+    }
+
+    private void enterPayResult(String retmsg) {
+        // 关闭加载框
+        mLoadingDialog.dismiss();
+        // 关闭服务端侦听
+        closeServer();
+        // finish掉当前界面
+        finish();
+        // 跳转支付结果界面
+        closeServer(); // 关闭服务端侦听,防止支付结果界面的请求被其捕获
+        // 跳转支付结果界面
+        Intent intent = PayResultActivity.newIntent(
+                ScanCodePayActivity.this,
+                retmsg,
+                mTotalPrice,
+                mCount,
+                TYPE_SCAN_CODE_PAY
+        );
+        startActivity(intent);
     }
 
     /**
@@ -292,16 +310,14 @@ public class ScanCodePayActivity extends AppCompatActivity {
             // 获取用户支付宝付款码码值
             mBarCode = mSb.toString().trim();
             // 请求支付
+            // 设置当前操作类型为扫码付
+            mIsCancelPay = false;
             // 加签
                 int result[] = new int[1];
                 mSignedBarCode = mXDeviceManager.sign(mBarCode.getBytes(), result);
                 if (result[0] != 0) {
                     // 加签失败
                     L.e("加签失败：" + result[0]);
-                    mMessage = Message.obtain();
-                    mMessage.what = 4;
-                    mMessage.obj = "加签失败:"+result[0];
-                    mHandler.sendMessage(mMessage);
                 } else{
                     showLoadingDialog();
                     requestNetWorkServer(

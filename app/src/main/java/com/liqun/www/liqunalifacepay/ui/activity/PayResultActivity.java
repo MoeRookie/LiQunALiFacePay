@@ -37,8 +37,9 @@ public class PayResultActivity extends AppCompatActivity
 implements View.OnClickListener {
 
     private static final String EXTRA_COUNT = "com.liqun.www.liqunalifacepay.count";
-    private static final String EXTRA_PTRB = "com.liqun.www.liqunalifacepay.ptrb";
     private static final String EXTRA_TOTAL_PRICE = "com.liqun.www.liqunalifacepay.total_price";
+    private static final String EXTRA_RETMSG = "com.liqun.www.liqunalifacepay.retmsg";
+    private static final String EXTRA_TYPE = "com.liqun.www.liqunalifacepay.type";
     private final static int time = 10000;
     private MyCountDownTimer cdt;
     private LinearLayout mLLPaySuccess;
@@ -110,12 +111,13 @@ implements View.OnClickListener {
     private float mTotalPrice;
 
     public static Intent newIntent(
-            Context packageContext, PaymentTypeResponseBean ptrb, float totalPrice, int count)
+            Context packageContext, String retmsg, float totalPrice, int count,String type)
     {
         Intent intent = new Intent(packageContext, PayResultActivity.class);
-        intent.putExtra(EXTRA_PTRB, ptrb);
+        intent.putExtra(EXTRA_RETMSG, retmsg);
         intent.putExtra(EXTRA_TOTAL_PRICE, totalPrice);
         intent.putExtra(EXTRA_COUNT, count);
+        intent.putExtra(EXTRA_TYPE, type);
         return intent;
     }
 
@@ -150,10 +152,6 @@ implements View.OnClickListener {
         if (intent != null) {
             mCount = intent.getIntExtra(EXTRA_COUNT, 0);
             mTotalPrice = intent.getFloatExtra(EXTRA_TOTAL_PRICE, 0.00f);
-            PaymentTypeResponseBean ptrb =
-                    (PaymentTypeResponseBean) intent.getSerializableExtra(EXTRA_PTRB);
-            String retflag = ptrb.getRetflag();
-            String retmsg = ptrb.getRetmsg();
             switch (retflag) {
                 case "0":
                 case "2":
