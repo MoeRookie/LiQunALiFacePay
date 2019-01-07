@@ -66,10 +66,10 @@ public class ScanCodePayActivity extends AppCompatActivity {
             super.handleMessage(msg);
             switch (msg.what) {
                 case 0: // 连接服务器失败
-                    // 弹出警告对话框,点击确定返回到主界面
-                    showWarnDialog(
-                            getString(R.string.connect_server_fail)
-                    );
+                    if (mIsCancelPay) { // 弹出带倒计时的警告框
+                        setRequestFail(
+                                getString(R.string.connect_server_fail));
+                    }
                     break;
                 case 1:
                     // 处理返回结果
@@ -78,7 +78,7 @@ public class ScanCodePayActivity extends AppCompatActivity {
                     }
                     break;
                 case 2: // 读取服务器失败
-                    showWarnDialog(
+                    setRequestFail(
                             getString(R.string.connect_client_fail)
                     );
                     break;
@@ -92,6 +92,19 @@ public class ScanCodePayActivity extends AppCompatActivity {
             }
         }
     };
+
+    private void setRequestFail(String msg) {
+        // 1.设置请求失败
+        mIsRequestSuccess = false;
+        // 2.取消之前的计时器,新开计时器
+        cdt.cancel();
+        time = 10000;
+        cdt = new MyCountDownTimer(time, 1000);
+        cdt.start();
+        // 3.弹出带倒计时的警告框
+        showWarnDialog(msg);
+    }
+
     private WarnDialog mWarnDialog;
     private TextView mTvMessage;
     private LoadingDialog mLoadingDialog;
@@ -132,6 +145,8 @@ public class ScanCodePayActivity extends AppCompatActivity {
                     // 2.弹出带倒计时的警告框
                     showWarnDialog(retmsg);
                 }
+            } else if ("1".equals(retflag)) {
+                setRequestFail(retmsg);
             }
         }
         if (obj instanceof PaymentTypeResponseBean) {
@@ -158,11 +173,9 @@ public class ScanCodePayActivity extends AppCompatActivity {
             mWarnDialog.setOnConfirmClickListener(new WarnDialog.OnConfirmClickListener() {
                 @Override
                 public void onConfirmClicked() {
-                    if (mIsRequestSuccess) {
-                        // 取消倒计时
-                        cdt.cancel();
-                        cdt.onFinish();
-                    }
+                    // 取消倒计时
+                    cdt.cancel();
+                    cdt.onFinish();
                 }
             });
         }
@@ -400,6 +413,8 @@ public class ScanCodePayActivity extends AppCompatActivity {
                 }else{
                     mBtnConfirm.setText(getString(R.string.sure) + "(" + millisUntilFinished / 1000 + "s)");
                 }
+            }else{
+                mBtnConfirm.setText(getString(R.string.sure) + "(" + millisUntilFinished / 1000 + "s)");
             }
         }
 
@@ -409,27 +424,39 @@ public class ScanCodePayActivity extends AppCompatActivity {
              * 取消付款
              */
             if (mIsCancelPay) {
-                /**
+                if (mIsRequestSuccess) {/**
                  * 自动取消
                  */
-                if (!mIsManual) {
-                    /**
-                     * 发起取消请求
-                     */
-                    requestNetWorkServer(
-                            ConstantValue.TAG_CANCEL_PAYMENT,
-                            new CancelPaymentRequestBean(
-                                    ALiFacePayApplication.getInstance().getHostIP()
-                                    ,"0"
-                            )
-                    );
+                    if (!mIsManual) {
+                        /**
+                         * 发起取消请求
+                         */
+                        requestNetWorkServer(
+                                ConstantValue.TAG_CANCEL_PAYMENT,
+                                new CancelPaymentRequestBean(
+                                        ALiFacePayApplication.getInstance().getHostIP()
+                                        ,"0"
+                                )
+                        );
+                    }else{
+                        // 关闭对话框
+                        mWarnDialog.dismiss();
+                        // 关闭服务端侦听
+                        closeServer();
+                        // finish()当前界面
+                        finish();
+                    }
                 }else{
                     // 关闭对话框
                     mWarnDialog.dismiss();
                     // 关闭服务端侦听
                     closeServer();
-                    // finish()当前界面
+                    // finish()掉当前界面
                     finish();
+                    // 跳转到首页
+                    startActivity(
+                            HomeActivity.newIntent(ScanCodePayActivity.this)
+                    );
                 }
             }
         }
