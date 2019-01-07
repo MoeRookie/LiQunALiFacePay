@@ -53,6 +53,12 @@ public class ScanCodePayActivity extends AppCompatActivity {
     private Message mMessage;
     private float mTotalPrice = 0.00f;
     private StringBuffer mSb = new StringBuffer();
+    private static final String TYPE_SCAN_CODE_PAY = "type_scan_code_pay";
+    private boolean mIsCancelPay = true; // 操作类型->取消付款
+    private boolean mIsRequestSuccess = true; // 请求结果
+    private boolean mIsManual = false; // 默认自动
+    private boolean mIsCancel = true; // 计时器默认作用于取消按钮
+
     private Handler mHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
@@ -104,7 +110,19 @@ public class ScanCodePayActivity extends AppCompatActivity {
             if ("0".equals(retflag)) {
                 retmsg = "取消付款成功！";
             }
-            showWarnDialog(retmsg);
+            if ("0".equals(retflag)) {
+                // 设置取消支付成功
+                mIsRequestSuccess = true;
+                /**
+                 * 自动取消
+                 */
+                if (!mIsManual) {
+                    // 关闭服务端侦听
+                    closeServer();
+                    // finish()当前界面
+                    finish();
+                }
+            }
         }
         if (obj instanceof PaymentTypeResponseBean) {
             PaymentTypeResponseBean ptrb = (PaymentTypeResponseBean) obj;
@@ -362,9 +380,26 @@ public class ScanCodePayActivity extends AppCompatActivity {
 
         @Override
         public void onFinish() {
-            // 关闭服务端监听
-            closeServer();
-            finish();
+            /**
+             * 取消付款
+             */
+            if (mIsCancelPay) {
+                /**
+                 * 自动取消
+                 */
+                if (!mIsManual) {
+                    /**
+                     * 发起取消请求
+                     */
+                    requestNetWorkServer(
+                            ConstantValue.TAG_CANCEL_PAYMENT,
+                            new CancelPaymentRequestBean(
+                                    ALiFacePayApplication.getInstance().getHostIP()
+                                    ,"0"
+                            )
+                    );
+                }
+            }
         }
     }
     public static void closeServer(){
