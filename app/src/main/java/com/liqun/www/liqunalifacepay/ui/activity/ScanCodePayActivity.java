@@ -10,6 +10,7 @@ import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.view.KeyEvent;
 import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 
 import com.alipay.xdevicemanager.api.XDeviceManager;
@@ -46,7 +47,7 @@ public class ScanCodePayActivity extends AppCompatActivity {
     private static final String EXTRA_COUNT = "com.liqun.www.liqunalifacepay.count";
     private static final String EXTRA_TOTAL_PRICE = "com.liqun.www.liqunalifacepay.total_price";
     private TextView mBtnCancelPay,mTvTotalPrice;
-    private final static int time = 118000;
+    private int time = 118000;
     private MyCountDownTimer cdt;
     private static Thread sServerSocketThread;
     private static ServerSocket sServerSocket;
@@ -97,6 +98,7 @@ public class ScanCodePayActivity extends AppCompatActivity {
     private int mCount;
     private String mBarCode;
     private String mSignedBarCode;
+    private Button mBtnConfirm;
 
     /**
      * 处理服务端返回结果
@@ -121,6 +123,14 @@ public class ScanCodePayActivity extends AppCompatActivity {
                     closeServer();
                     // finish()当前界面
                     finish();
+                }else{ // 手动取消(弹出带倒计时的警告框)
+                    // 1.新建计时器&启用
+                    cdt.cancel();
+                    time = 10000;
+                    cdt = new MyCountDownTimer(time, 1000);
+                    cdt.start();
+                    // 2.弹出带倒计时的警告框
+                    showWarnDialog(retmsg);
                 }
             }
         }
@@ -148,14 +158,20 @@ public class ScanCodePayActivity extends AppCompatActivity {
             mWarnDialog.setOnConfirmClickListener(new WarnDialog.OnConfirmClickListener() {
                 @Override
                 public void onConfirmClicked() {
-                    cdt.cancel();
-                    cdt.onFinish();
+                    if (mIsRequestSuccess) {
+                        // 取消倒计时
+                        cdt.cancel();
+                        cdt.onFinish();
+                    }
                 }
             });
         }
         mWarnDialog.show();
         if (mTvMessage == null) {
             mTvMessage = mWarnDialog.findViewById(R.id.tv_message);
+        }
+        if (mBtnConfirm == null) {
+            mBtnConfirm = mWarnDialog.findViewById(R.id.btn_confirm);
         }
         mTvMessage.setText(msg);
     }
@@ -204,6 +220,9 @@ public class ScanCodePayActivity extends AppCompatActivity {
         mBtnCancelPay.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                mIsCancelPay = true;
+                mIsManual = true;
+                mIsCancel = true;
                 // 发起取消支付的请求
                 requestNetWorkServer(
                         ConstantValue.TAG_CANCEL_PAYMENT,
@@ -375,7 +394,13 @@ public class ScanCodePayActivity extends AppCompatActivity {
 
         @Override
         public void onTick(long millisUntilFinished) {
-            mBtnCancelPay.setText(getString(R.string.cancel_pay) + "(" + millisUntilFinished/1000 + "s)");
+            if (mIsRequestSuccess) {
+                if (!mIsManual) {
+                    mBtnCancelPay.setText(getString(R.string.cancel_pay) + "(" + millisUntilFinished/1000 + "s)");
+                }else{
+                    mBtnConfirm.setText(getString(R.string.sure) + "(" + millisUntilFinished / 1000 + "s)");
+                }
+            }
         }
 
         @Override
@@ -398,6 +423,13 @@ public class ScanCodePayActivity extends AppCompatActivity {
                                     ,"0"
                             )
                     );
+                }else{
+                    // 关闭对话框
+                    mWarnDialog.dismiss();
+                    // 关闭服务端侦听
+                    closeServer();
+                    // finish()当前界面
+                    finish();
                 }
             }
         }
