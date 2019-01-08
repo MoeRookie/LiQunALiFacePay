@@ -178,14 +178,16 @@ implements View.OnClickListener {
                 cdt.onFinish();
                 break;
             case R.id.btn_return_home2: // 返回首页2
+                cdt.cancel();
+                cdt.onFinish();
                 break;
             case R.id.btn_continue_pay: // 继续支付
                 // 跳转扫码付款界面
-//                Intent intent = ScanCodePayActivity.newIntent(
-//                        this,
-//                        mCount,
-//                        mTotalPrice);
-//                startActivity(intent);
+                Intent intent = ScanCodePayActivity.newIntent(
+                        this,
+                        mCount,
+                        mTotalPrice);
+                startActivity(intent);
                 break;
         }
     }
