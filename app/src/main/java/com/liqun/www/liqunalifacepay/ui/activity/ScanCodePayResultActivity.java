@@ -6,13 +6,22 @@ import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
+import android.text.TextUtils;
 import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.liqun.www.liqunalifacepay.R;
+import com.liqun.www.liqunalifacepay.data.bean.PaymentTypeBean;
+import com.liqun.www.liqunalifacepay.data.utils.L;
 import com.szsicod.print.escpos.PrinterAPI;
+import com.szsicod.print.io.InterfaceAPI;
+import com.szsicod.print.io.USBAPI;
+
+import java.io.UnsupportedEncodingException;
+
+import static com.liqun.www.liqunalifacepay.data.bean.PaymentTypeBean.*;
 
 public class ScanCodePayResultActivity extends AppCompatActivity
 implements View.OnClickListener {
@@ -21,6 +30,7 @@ implements View.OnClickListener {
     private static final String EXTRA_TOTAL_PRICE = "com.liqun.www.liqunalifacepay.total_price";
     private static final String EXTRA_RETMSG = "com.liqun.www.liqunalifacepay.retmsg";
     private static final String EXTRA_IS_SUCCESS = "com.liqun.www.liqunalifacepay.is_success";
+    private static final String EXTRA_PTRB = "com.liqun.www.liqunalifacepay.ptrb";
     private final static int time = 10000;
     private MyCountDownTimer cdt;
     private LinearLayout mLLPaySuccess;
@@ -32,73 +42,22 @@ implements View.OnClickListener {
 //             2、连接usb,成功后开始打印printxt的内容
 //             3、打印完成后继续调用打印文本->打印二维码->打印文本的功能
 //             4、打印最终完成后断开打印机
-//            if (!TextUtils.isEmpty(printtxt)) {
-//                // 连接usb
-//                if(mPrinter.isConnect()){
-//                    mPrinter.disconnect();
-//                }
-//                // 开启子线程
-//                new Thread(){
-//                    @Override
-//                    public void run() {
-//                        super.run();
-//                        InterfaceAPI io = new USBAPI(ScanCodePayResultActivity.this);
-//                        // 如果打印机连接API成功
-//                        if (PrinterAPI.SUCCESS == mPrinter.connect(io)) {
-//                            // 打印printxt的内容
-//                            // 设置排版
-////                            mPrinter.set58mm();
-//                            // 设置字体样式
-//                            mPrinter.setFontStyle(0);
-//                            try {
-//                                // 如果字符串流入打印机成功
-//                                if (PrinterAPI.SUCCESS == mPrinter.printString(
-//                                        printtxt,
-//                                        "GBK",
-//                                        // 流入
-//                                        true)) {
-//                                    String printtxt1 = "支付宝扫下方二维码 , 更多优惠及精彩内容为你呈现";
-//                                    // 打印之后的文本
-//                                    if (PrinterAPI.SUCCESS == mPrinter.printString(
-//                                            printtxt1,"GBK",true)) {
-//                                        // 打印二维码
-//                                        if (PrinterAPI.SUCCESS == mPrinter.printQRCode(
-//                                                "https://m.alipay.com/9y5i54d",
-//                                                6,
-//                                                false)) {
-//                                            // 打印并换行
-//                                            mPrinter.printFeed();
-//                                        }
-//                                        // 打印最后的文本切纸并关闭打印机
-//                                        String printtxt2 = "\n\t\t    利群集团";
-//                                        if (PrinterAPI.SUCCESS == mPrinter.printString(
-//                                                printtxt2,"GBK",true)) {
-//                                            // 切纸
-//                                            mPrinter.cutPaper(66, 0);
-//                                            // 关闭打印机
-//                                            mPrinter.disconnect();
-//                                        }
-//                                    }
-//                                }
-//                            } catch (UnsupportedEncodingException e) {
-//                                L.e("==================不支持的编码格式===============");
-//                            }
-//                        }
-//                    }
-//                }.start();
-//            }
-
     private Button mBtnReturnHome1,mBtnReturnHome2,mBtnContinuePay;
     private float mTotalPrice;
 
     public static Intent newIntent(
-            Context packageContext, boolean isSuccess,String retmsg, float totalPrice, int count)
+            Context packageContext,
+            boolean isSuccess,
+            String retmsg,
+            float totalPrice,
+            int count, PaymentTypeResponseBean ptrb)
     {
         Intent intent = new Intent(packageContext, ScanCodePayResultActivity.class);
         intent.putExtra(EXTRA_IS_SUCCESS, isSuccess);
         intent.putExtra(EXTRA_RETMSG, retmsg);
         intent.putExtra(EXTRA_TOTAL_PRICE, totalPrice);
         intent.putExtra(EXTRA_COUNT, count);
+        intent.putExtra(EXTRA_PTRB, ptrb);
         return intent;
     }
 
@@ -153,6 +112,63 @@ implements View.OnClickListener {
                  */
                 // 启用计时器
                 cdt.start();
+                final PaymentTypeResponseBean ptrb =
+                        (PaymentTypeResponseBean) intent.getSerializableExtra(EXTRA_PTRB);
+                if (!TextUtils.isEmpty(ptrb.getPrinttxt())) {
+                // 连接usb
+                if(mPrinter.isConnect()){
+                    mPrinter.disconnect();
+                }
+                // 开启子线程
+                new Thread(){
+                    @Override
+                    public void run() {
+                        super.run();
+                        InterfaceAPI io = new USBAPI(ScanCodePayResultActivity.this);
+                        // 如果打印机连接API成功
+                        if (PrinterAPI.SUCCESS == mPrinter.connect(io)) {
+                            // 打印printxt的内容
+                            // 设置排版
+//                            mPrinter.set58mm();
+                            // 设置字体样式
+                            mPrinter.setFontStyle(0);
+                            try {
+                                // 如果字符串流入打印机成功
+                                if (PrinterAPI.SUCCESS == mPrinter.printString(
+                                        ptrb.getPrinttxt(),
+                                        "GBK",
+                                        // 流入
+                                        true)) {
+                                    String printtxt1 = "支付宝扫下方二维码 , 更多优惠及精彩内容为你呈现";
+                                    // 打印之后的文本
+                                    if (PrinterAPI.SUCCESS == mPrinter.printString(
+                                            printtxt1,"GBK",true)) {
+                                        // 打印二维码
+                                        if (PrinterAPI.SUCCESS == mPrinter.printQRCode(
+                                                "https://m.alipay.com/9y5i54d",
+                                                6,
+                                                false)) {
+                                            // 打印并换行
+                                            mPrinter.printFeed();
+                                        }
+                                        // 打印最后的文本切纸并关闭打印机
+                                        String printtxt2 = "\n\t\t    利群集团";
+                                        if (PrinterAPI.SUCCESS == mPrinter.printString(
+                                                printtxt2,"GBK",true)) {
+                                            // 切纸
+                                            mPrinter.cutPaper(66, 0);
+                                            // 关闭打印机
+                                            mPrinter.disconnect();
+                                        }
+                                    }
+                                }
+                            } catch (UnsupportedEncodingException e) {
+                                L.e("==================不支持的编码格式===============");
+                            }
+                        }
+                    }
+                }.start();
+            }
             }else{
                 // 显示支付失败界面,隐藏支付成功界面
                 setLayoutVisibility(false);

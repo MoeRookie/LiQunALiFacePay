@@ -71,7 +71,7 @@ public class ScanCodePayActivity extends AppCompatActivity {
                                 getString(R.string.connect_server_fail));
                     }else{
                         enterPayResult(
-                                getString(R.string.connect_server_fail),false);
+                                getString(R.string.connect_server_fail),false,null);
                     }
                     break;
                 case 1:
@@ -88,7 +88,7 @@ public class ScanCodePayActivity extends AppCompatActivity {
                     }else{
                         enterPayResult(
                                 getString(R.string.connect_client_fail),
-                                false
+                                false,null
                         );
                     }
                     break;
@@ -158,11 +158,11 @@ public class ScanCodePayActivity extends AppCompatActivity {
             if ("0".equals(retflag)) {
                 retmsg = "支付宝付款成功";
             }
-            enterPayResult(retmsg,"0".equals(retflag)||"2".equals(retflag));
+            enterPayResult(retmsg,"0".equals(retflag)||"2".equals(retflag),ptrb);
         }
     }
 
-    private void enterPayResult(String retmsg,boolean isSuccess) {
+    private void enterPayResult(String retmsg,boolean isSuccess,PaymentTypeResponseBean ptrb) {
         // 关闭加载框
         mLoadingDialog.dismiss();
         // 关闭服务端侦听
@@ -175,7 +175,8 @@ public class ScanCodePayActivity extends AppCompatActivity {
                 isSuccess,
                 retmsg,
                 mTotalPrice,
-                mCount
+                mCount,ptrb
+
         );
         startActivity(intent);
     }

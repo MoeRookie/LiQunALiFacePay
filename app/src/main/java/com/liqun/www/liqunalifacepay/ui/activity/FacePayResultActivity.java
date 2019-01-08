@@ -32,7 +32,6 @@ implements View.OnClickListener {
     private LinearLayout mLLPaySuccess;
     private LinearLayout mLLPayFail;
     private TextView mTvTotalPrice1,mTvCount,mTvTotalPrice2,mTvTotalPrice3,mTvCount1,mTvErrHint;
-    public PrinterAPI mPrinter = PrinterAPI.getInstance();
     private int mCount;
 
     private Button mBtnReturnHome1,mBtnReturnHome2,mBtnContinuePay;

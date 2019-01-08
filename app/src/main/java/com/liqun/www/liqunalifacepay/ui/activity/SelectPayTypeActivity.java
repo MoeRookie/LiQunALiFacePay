@@ -18,7 +18,6 @@ import com.alibaba.fastjson.JSONArray;
 import com.alipay.xdevicemanager.api.XDeviceManager;
 import com.alipay.zoloz.smile2pay.service.Zoloz;
 import com.alipay.zoloz.smile2pay.service.ZolozCallback;
-import com.google.gson.Gson;
 import com.liqun.www.liqunalifacepay.R;
 import com.liqun.www.liqunalifacepay.application.ALiFacePayApplication;
 import com.liqun.www.liqunalifacepay.application.ConstantValue;
