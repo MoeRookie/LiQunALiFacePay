@@ -8,7 +8,6 @@ import android.os.Message;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
@@ -19,12 +18,11 @@ import com.alibaba.fastjson.JSONArray;
 import com.alipay.xdevicemanager.api.XDeviceManager;
 import com.alipay.zoloz.smile2pay.service.Zoloz;
 import com.alipay.zoloz.smile2pay.service.ZolozCallback;
+import com.google.gson.Gson;
 import com.liqun.www.liqunalifacepay.R;
 import com.liqun.www.liqunalifacepay.application.ALiFacePayApplication;
 import com.liqun.www.liqunalifacepay.application.ConstantValue;
-import com.liqun.www.liqunalifacepay.data.bean.FacePayBean;
 import com.liqun.www.liqunalifacepay.data.bean.SettingItemBean;
-import com.liqun.www.liqunalifacepay.data.utils.CommonUtils;
 import com.liqun.www.liqunalifacepay.data.utils.JointDismantleUtils;
 import com.liqun.www.liqunalifacepay.data.utils.L;
 import com.liqun.www.liqunalifacepay.data.utils.SpUtils;
@@ -46,12 +44,14 @@ import java.net.Socket;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import static com.liqun.www.liqunalifacepay.data.bean.CancelPaymentBean.*;
-import static com.liqun.www.liqunalifacepay.data.bean.FacePayBean.*;
+import static com.liqun.www.liqunalifacepay.data.bean.CancelPaymentBean.CancelPaymentRequestBean;
+import static com.liqun.www.liqunalifacepay.data.bean.CancelPaymentBean.CancelPaymentResponseBean;
+import static com.liqun.www.liqunalifacepay.data.bean.FacePayBean.FacePayInitBean;
+import static com.liqun.www.liqunalifacepay.data.bean.FacePayBean.FacePayRequestBean;
+import static com.liqun.www.liqunalifacepay.data.bean.FacePayBean.FacePayResponseBean;
 
 public class SelectPayTypeActivity extends AppCompatActivity
 implements View.OnClickListener {
@@ -128,9 +128,31 @@ implements View.OnClickListener {
                         smile(zimId,zimInitClientData);
                     }
                     break;
+                case 4: // 支付结果
+                    if (msg.obj != null) {
+                        if (msg.obj instanceof String) {
+                            String json = (String) msg.obj;
+                            FacePayResponseBean fprb = JSON.parseObject(json, FacePayResponseBean.class);
+                            L.e("fprb.code = " + fprb.getJson().getAlipay_trade_pay_response().getCode());
+                            // 1.关闭当前服务端侦听
+                            closeServer();
+                            // 2.跳转到刷脸结果界面
+                            Intent intent = FacePayResultActivity.newIntent(
+                                    SelectPayTypeActivity.this,
+                                    mTotalPrice,
+                                    mCount,
+                                    fprb
+                            );
+                            startActivity(intent);
+                            // 3.finish掉当前界面
+                            finish();
+                        }
+                    }
+                    break;
             }
         }
     };
+
     private float mTotalPrice = 0.00f;
     private int mCount;
 
@@ -166,7 +188,7 @@ implements View.OnClickListener {
             @Override
             public void response(final Map smileToPayResponse) {
                 if (smileToPayResponse == null) {
-                    L.e("========抱歉未支付成功 , 请重新支付=======");
+                    L.e("==================人脸识别验证失败=================");
                     return;
                 }
                 String code = (String)smileToPayResponse.get("code");
@@ -334,22 +356,20 @@ implements View.OnClickListener {
             @Override
             public void response(Map smileToPayResponse) {
                 if (smileToPayResponse == null) {
-                    L.e("zoloz.zolozGetMetaInfo response is null");
+                    L.e("===========本地刷脸初始化失败==========");
                     return;
                 }
                 String code = (String)smileToPayResponse.get("code");
                 final String metaInfo = (String)smileToPayResponse.get("metainfo");
                 //获取metainfo成功
                 if (CODE_SUCCESS.equalsIgnoreCase(code) && metaInfo != null) {
-                    L.i("获取metainfo成功->metanfo is:" + metaInfo);
                     // 将metaInfo发送给商户服务端，由商户服务端发起刷脸初始化OpenAPI的调用
                     // 人脸初始化
                     requestFacePay(
                             ConstantValue.METHOD_ZOLOZ_INIT,
                             metaInfo,3);
                 } else {
-                    // 考虑使用dialog进行友好提示
-                    L.e(SMILEPAY_TXT_FAIL);
+                    L.e("===========获取刷脸初始化参数失败==========");
                 }
             }
         });
@@ -396,9 +416,9 @@ implements View.OnClickListener {
                     mMessage.obj = bodyIn;
                     mHandler.sendMessage(mMessage);
                 } catch (IOException e) {
-                    L.e("==========WebService调用IO异常==========");
+                    L.e("==========客户端或者服务端数据异常(IO)==========");
                 } catch (XmlPullParserException e) {
-                    L.e("==========WebService调用Xml异常==========");
+                    L.e("==========客户端或者服务端数据异常(XML)==========");
                 }
             }
         }.start();

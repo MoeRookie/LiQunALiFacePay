@@ -99,34 +99,7 @@
                     android:textStyle="bold"/>
             </LinearLayout>
             <LinearLayout
-                android:visibility="gone"
-                android:layout_marginTop="8dp"
-                android:layout_marginLeft="50dp"
-                android:layout_marginRight="50dp"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/hint_merchant_discounts"
-                    android:textSize="11sp"
-                    android:textColor="@color/red"
-                    android:textStyle="bold"/>
-                <View
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:layout_height="0dp"/>
-                <TextView
-                    android:id="@+id/tv_merchant_discounts"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="￥0.01"
-                    android:textSize="11sp"
-                    android:textColor="@color/black"
-                    android:textStyle="bold"/>
-            </LinearLayout>
-            <LinearLayout
+                android:id="@+id/ll_alipay_discounts"
                 android:visibility="gone"
                 android:layout_marginTop="8dp"
                 android:layout_marginLeft="50dp"
@@ -149,7 +122,6 @@
                     android:id="@+id/tv_alipay_discounts"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="￥0.01"
                     android:textSize="11sp"
                     android:textColor="@color/black"
                     android:textStyle="bold"/>

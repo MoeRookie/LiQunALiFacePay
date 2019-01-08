@@ -40,4 +40,5 @@ dependencies {
     // 打印机sdk
     implementation files('libs/icod_3.0.0_b.jar')
     implementation files('libs/SmileService1.9.1.jar')
+    implementation 'com.google.code.gson:gson:2.8.5'
 }

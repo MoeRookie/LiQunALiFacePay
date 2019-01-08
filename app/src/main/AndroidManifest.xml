@@ -60,5 +60,6 @@
             android:theme="@style/DialogBgStyle"/>
         <activity android:name=".ui.activity.ScanCodePayActivity"/>
         <activity android:name=".ui.activity.ScanCodePayResultActivity"/>
+        <activity android:name=".ui.activity.FacePayResultActivity"/>
     </application>
 </manifest>
