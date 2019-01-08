@@ -4,8 +4,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.CountDownTimer;
-import android.os.Handler;
-import android.os.Message;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
@@ -14,32 +12,15 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.liqun.www.liqunalifacepay.R;
-import com.liqun.www.liqunalifacepay.application.ALiFacePayApplication;
-import com.liqun.www.liqunalifacepay.application.ConstantValue;
-import com.liqun.www.liqunalifacepay.data.utils.JointDismantleUtils;
-import com.liqun.www.liqunalifacepay.data.utils.L;
-import com.liqun.www.liqunalifacepay.ui.view.WarnDialog;
 import com.szsicod.print.escpos.PrinterAPI;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.net.ServerSocket;
-import java.net.Socket;
-
-import static com.liqun.www.liqunalifacepay.data.bean.PaymentTypeBean.*;
-import static com.liqun.www.liqunalifacepay.data.bean.PaymentTypeBean.PaymentTypeResponseBean.*;
-
-public class PayResultActivity extends AppCompatActivity
+public class ScanCodePayResultActivity extends AppCompatActivity
 implements View.OnClickListener {
 
     private static final String EXTRA_COUNT = "com.liqun.www.liqunalifacepay.count";
     private static final String EXTRA_TOTAL_PRICE = "com.liqun.www.liqunalifacepay.total_price";
     private static final String EXTRA_RETMSG = "com.liqun.www.liqunalifacepay.retmsg";
-    private static final String EXTRA_TYPE = "com.liqun.www.liqunalifacepay.type";
+    private static final String EXTRA_IS_SUCCESS = "com.liqun.www.liqunalifacepay.is_success";
     private final static int time = 10000;
     private MyCountDownTimer cdt;
     private LinearLayout mLLPaySuccess;
@@ -61,7 +42,7 @@ implements View.OnClickListener {
 //                    @Override
 //                    public void run() {
 //                        super.run();
-//                        InterfaceAPI io = new USBAPI(PayResultActivity.this);
+//                        InterfaceAPI io = new USBAPI(ScanCodePayResultActivity.this);
 //                        // 如果打印机连接API成功
 //                        if (PrinterAPI.SUCCESS == mPrinter.connect(io)) {
 //                            // 打印printxt的内容
@@ -111,13 +92,13 @@ implements View.OnClickListener {
     private float mTotalPrice;
 
     public static Intent newIntent(
-            Context packageContext, String retmsg, float totalPrice, int count,String type)
+            Context packageContext, boolean isSuccess,String retmsg, float totalPrice, int count)
     {
-        Intent intent = new Intent(packageContext, PayResultActivity.class);
+        Intent intent = new Intent(packageContext, ScanCodePayResultActivity.class);
+        intent.putExtra(EXTRA_IS_SUCCESS, isSuccess);
         intent.putExtra(EXTRA_RETMSG, retmsg);
         intent.putExtra(EXTRA_TOTAL_PRICE, totalPrice);
         intent.putExtra(EXTRA_COUNT, count);
-        intent.putExtra(EXTRA_TYPE, type);
         return intent;
     }
 
@@ -150,36 +131,34 @@ implements View.OnClickListener {
         cdt = new MyCountDownTimer(time,1000);
         Intent intent = getIntent();
         if (intent != null) {
-            mCount = intent.getIntExtra(EXTRA_COUNT, 0);
+            boolean isSuccess = intent.getBooleanExtra(EXTRA_IS_SUCCESS, true);
+            String retmsg = intent.getStringExtra(EXTRA_RETMSG);
             mTotalPrice = intent.getFloatExtra(EXTRA_TOTAL_PRICE, 0.00f);
-            switch (retflag) {
-                case "0":
-                case "2":
-                    // 显示支付成功界面,隐藏支付失败界面
-                    setLayoutVisibility(true);
-                    // 设置支付成功界面显示
-                    mTvTotalPrice1.setText("￥" + mTotalPrice);
-                    mTvCount.setText("共" + mCount + "件商品");
-                    mTvTotalPrice2.setText("￥" + mTotalPrice);
-                    /**
-                     * 打印小票
-                     * 1.连接usb;
-                     * 2.成功后开始打印服务端返回的文本;
-                     * 3.成功后开始打印自己拼接的文本;
-                     * 4.成功后开始打印二维码;
-                     * 5.成功后打印"利群集团(须居中显示)"字样;
-                     * 6.断开usb连接并启动计时器;
-                     */
-                    // 启用计时器
-                    cdt.start();
-                    break;
-                case "1":
-                    // 显示支付失败界面,隐藏支付成功界面
-                    setLayoutVisibility(false);
-                    mTvTotalPrice3.setText("￥" + mTotalPrice);
-                    mTvCount1.setText("共" + mCount + "件商品");
-                    mTvErrHint.setText(retmsg);
-                    break;
+            mCount = intent.getIntExtra(EXTRA_COUNT, 0);
+            if (isSuccess) {
+                // 显示支付成功界面,隐藏支付失败界面
+                setLayoutVisibility(true);
+                // 设置支付成功界面显示
+                mTvTotalPrice1.setText("￥" + mTotalPrice);
+                mTvCount.setText("共" + mCount + "件商品");
+                mTvTotalPrice2.setText("￥" + mTotalPrice);
+                /**
+                 * 打印小票
+                 * 1.连接usb;
+                 * 2.成功后开始打印服务端返回的文本;
+                 * 3.成功后开始打印自己拼接的文本;
+                 * 4.成功后开始打印二维码;
+                 * 5.成功后打印"利群集团(须居中显示)"字样;
+                 * 6.断开usb连接并启动计时器;
+                 */
+                // 启用计时器
+                cdt.start();
+            }else{
+                // 显示支付失败界面,隐藏支付成功界面
+                setLayoutVisibility(false);
+                mTvTotalPrice3.setText("￥" + mTotalPrice);
+                mTvCount1.setText("共" + mCount + "件商品");
+                mTvErrHint.setText(retmsg);
             }
         }
     }
@@ -195,22 +174,20 @@ implements View.OnClickListener {
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.btn_return_home1: // 返回首页1
-                enterHome();
                 cdt.cancel();
+                cdt.onFinish();
                 break;
             case R.id.btn_return_home2: // 返回首页2
-                enterHome();
                 break;
             case R.id.btn_continue_pay: // 继续支付
                 // 跳转扫码付款界面
-                Intent intent = ScanCodePayActivity.newIntent(
-                        this,
-                        mCount,
-                        mTotalPrice);
-                startActivity(intent);
+//                Intent intent = ScanCodePayActivity.newIntent(
+//                        this,
+//                        mCount,
+//                        mTotalPrice);
+//                startActivity(intent);
                 break;
         }
-        cdt.onFinish();
     }
 
     private void enterHome() {

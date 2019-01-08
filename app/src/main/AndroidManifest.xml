@@ -59,6 +59,6 @@
         <activity android:name=".ui.activity.InputBarCodeActivity"
             android:theme="@style/DialogBgStyle"/>
         <activity android:name=".ui.activity.ScanCodePayActivity"/>
-        <activity android:name=".ui.activity.PayResultActivity"/>
+        <activity android:name=".ui.activity.ScanCodePayResultActivity"/>
     </application>
 </manifest>
