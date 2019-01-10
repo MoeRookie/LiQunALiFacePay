@@ -128,8 +128,6 @@ implements View.OnClickListener {
                         // 如果打印机连接API成功
                         if (PrinterAPI.SUCCESS == mPrinter.connect(io)) {
                             // 打印printxt的内容
-                            // 设置排版
-//                            mPrinter.set58mm();
                             // 设置字体样式
                             mPrinter.setFontStyle(0);
                             try {

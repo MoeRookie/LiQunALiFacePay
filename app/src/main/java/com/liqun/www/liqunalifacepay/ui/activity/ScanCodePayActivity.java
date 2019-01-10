@@ -505,15 +505,11 @@ public class ScanCodePayActivity extends AppCompatActivity {
             try {
                 // 得到一个输入流，接收客户端传递的信息
                 InputStream inputStream = socket.getInputStream();
-                // 提高效率，将自己字节流转为字符流
-                InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
-                // 加入缓冲区
-                BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
-                String temp = null;
+                byte[] buf = new byte[5120];
+                int length = 0;
+                length = inputStream.read(buf);
                 String info = "";
-                while ((temp = bufferedReader.readLine()) != null) {
-                    info += temp;
-                }
+                info = new String(buf, 0, length);
                 L.e(info);
                 /**
                  * 为了避免出现msg被重用的问题,每次的msg对象都要通过Message.obtain()方法获取

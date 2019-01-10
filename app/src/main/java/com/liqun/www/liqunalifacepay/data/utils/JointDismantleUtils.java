@@ -5,6 +5,11 @@ import android.text.TextUtils;
 import com.alibaba.fastjson.JSON;
 import com.liqun.www.liqunalifacepay.data.bean.PreparePaymentBean;
 
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+
 import static com.liqun.www.liqunalifacepay.data.bean.CancelDealBean.CancelDealRequestBean;
 import static com.liqun.www.liqunalifacepay.data.bean.CancelDealBean.CancelDealResponseBean;
 import static com.liqun.www.liqunalifacepay.data.bean.CancelGoodsBean.CancelGoodsRequestBean;
@@ -21,6 +26,7 @@ import static com.liqun.www.liqunalifacepay.data.bean.LicenseManagerBean.License
 import static com.liqun.www.liqunalifacepay.data.bean.LicenseManagerBean.LicenseManagerResponseBean;
 import static com.liqun.www.liqunalifacepay.data.bean.PaymentTypeBean.PaymentTypeRequestBean;
 import static com.liqun.www.liqunalifacepay.data.bean.PaymentTypeBean.PaymentTypeResponseBean;
+import static com.liqun.www.liqunalifacepay.data.bean.PaymentTypeBean.PaymentTypeResponseBean.*;
 import static com.liqun.www.liqunalifacepay.data.bean.PreparePaymentBean.PreparePaymentRequestBean;
 import static com.liqun.www.liqunalifacepay.data.bean.ReObtainDealDetailsBean.ReObtainDealDetailsRequestBean;
 import static com.liqun.www.liqunalifacepay.data.bean.ReObtainDealDetailsBean.ReObtainDealDetailsResponseBean;

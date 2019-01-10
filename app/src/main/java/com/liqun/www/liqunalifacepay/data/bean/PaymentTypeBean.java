@@ -122,67 +122,57 @@ public class PaymentTypeBean {
                     '}';
         }
     }
-    public static class PaymentTypeResponseBean implements Serializable {
-        /**
-         * itempay : [{"payno":"07","total":0.2,"change":0,"payid":"lqbh8jy39000517181231145325","ckic":"0","scye":"0"}]
-         * retflag : 2
-         * retmsg :
-         * printtxt :
-         */
+    /**
+     * itempay : [{"payno":"07","total":0.2,"change":0,"payid":"lqbh8jy39000861190108190124","ckic":"0","scye":"0"}]
+     * retflag : 2
+     * retmsg :
+     * printtxt : welcome1
+     */
+    public static class PaymentTypeResponseBean
+    implements Serializable{
+        private String retflag;
+        private String retmsg;
+        private String printtxt;
+        private List<ItemBean> itempay;
 
-        private String retflag;// 0 正常 1异常(2 成功（交易结束）[注：原先王艳妮交接文档中没有2，后根据程序及文档推测])
-        private String retmsg; // 返回信息
-        private String printtxt; // 打印信息
-        private List<ItempayBean> itempay;
-
-        public String getRetflag() {
-            return retflag;
+        public PaymentTypeResponseBean() {
         }
 
-        public void setRetflag(String retflag) {
+        public PaymentTypeResponseBean(String retflag, String retmsg, String printtxt, List<ItemBean> itempay) {
             this.retflag = retflag;
-        }
-
-        public String getRetmsg() {
-            return retmsg;
-        }
-
-        public void setRetmsg(String retmsg) {
             this.retmsg = retmsg;
-        }
-
-        public String getPrinttxt() {
-            return printtxt;
-        }
-
-        public void setPrinttxt(String printtxt) {
             this.printtxt = printtxt;
-        }
-
-        public List<ItempayBean> getItempay() {
-            return itempay;
-        }
-
-        public void setItempay(List<ItempayBean> itempay) {
             this.itempay = itempay;
         }
 
-        public static class ItempayBean implements Serializable{
-            /**
-             * payno : 07
-             * total : 0.2
-             * change : 0
-             * payid : lqbh8jy39000517181231145325
-             * ckic : 0
-             * scye : 0
-             */
+        /**
+         * payno : 07
+         * total : 0.2
+         * change : 0
+         * payid : lqbh8jy39000861190108190124
+         * ckic : 0
+         * scye : 0
+         */
+        public static class ItemBean
+        implements Serializable{
+            private String payno;
+            private double total;
+            private int change;
+            private String payid;
+            private String ckic;
+            private String scye;
 
-            private String payno;// 付款方式(01 现金付款,02 金卡付款,03 银行卡付款,08 微信付款)
-            private float total;// 应付总金额
-            private float change;// 找零(现金付款)
-            private String payid;// 付款卡号(金卡卡号或微信交易单号)
-            private String ckic;// 卡类型(payno=02,ckic=0 磁卡;ckic=1 IC 卡,payno=01 或03或04，默认值为0)
-            private String scye;// 消费前卡余额(默认值为0)
+            public ItemBean() {
+            }
+
+            public ItemBean(String payno, double total, int change, String payid, String ckic, String scye) {
+                this.payno = payno;
+                this.total = total;
+                this.change = change;
+                this.payid = payid;
+                this.ckic = ckic;
+                this.scye = scye;
+            }
 
             public String getPayno() {
                 return payno;
@@ -196,11 +186,11 @@ public class PaymentTypeBean {
                 return total;
             }
 
-            public void setTotal(float total) {
+            public void setTotal(double total) {
                 this.total = total;
             }
 
-            public float getChange() {
+            public int getChange() {
                 return change;
             }
 
@@ -231,6 +221,38 @@ public class PaymentTypeBean {
             public void setScye(String scye) {
                 this.scye = scye;
             }
+        }
+
+        public String getRetflag() {
+            return retflag;
+        }
+
+        public void setRetflag(String retflag) {
+            this.retflag = retflag;
+        }
+
+        public String getRetmsg() {
+            return retmsg;
+        }
+
+        public void setRetmsg(String retmsg) {
+            this.retmsg = retmsg;
+        }
+
+        public String getPrinttxt() {
+            return printtxt;
+        }
+
+        public void setPrinttxt(String printtxt) {
+            this.printtxt = printtxt;
+        }
+
+        public List<ItemBean> getItempay() {
+            return itempay;
+        }
+
+        public void setItempay(List<ItemBean> itempay) {
+            this.itempay = itempay;
         }
     }
 }

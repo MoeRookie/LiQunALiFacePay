@@ -13,9 +13,13 @@ import android.widget.TextView;
 
 import com.liqun.www.liqunalifacepay.R;
 import com.liqun.www.liqunalifacepay.data.bean.FacePayBean.FacePayResponseBean.JsonBean;
+import com.liqun.www.liqunalifacepay.data.utils.L;
 import com.szsicod.print.escpos.PrinterAPI;
+import com.szsicod.print.io.InterfaceAPI;
+import com.szsicod.print.io.USBAPI;
 
 import java.io.Serializable;
+import java.io.UnsupportedEncodingException;
 import java.text.DecimalFormat;
 
 import static com.liqun.www.liqunalifacepay.data.bean.FacePayBean.*;
@@ -39,7 +43,7 @@ implements View.OnClickListener {
     private LinearLayout mLLALiPayDisCounts;
     private TextView mTvAccount,mTvALiPayDiscounts;
     private boolean mIsSuccess = true;
-
+    public PrinterAPI mPrinter = PrinterAPI.getInstance();
     public static Intent newIntent(
             Context packageContext,
             float totalPrice,
@@ -86,7 +90,7 @@ implements View.OnClickListener {
         if (intent != null) {
             mTotalPrice = intent.getFloatExtra(EXTRA_TOTAL_PRICE, 0.00f);
             mCount = intent.getIntExtra(EXTRA_COUNT, 0);
-            FacePayResponseBean fprb = (FacePayResponseBean) intent.getSerializableExtra(EXTRA_PAY_RESULT);
+            final FacePayResponseBean fprb = (FacePayResponseBean) intent.getSerializableExtra(EXTRA_PAY_RESULT);
             AlipayTradePayResponseBean payResponse = fprb.getJson().getAlipay_trade_pay_response();
             String code = payResponse.getCode();
             if ("10000".equals(code)) { // 成功
@@ -114,6 +118,7 @@ implements View.OnClickListener {
                     // 设置优惠金额
                     mTvALiPayDiscounts.setText("￥"+disCountsStr);
                 }
+                // 打印小票
             }else{ // 失败
                 // 设置刷脸付失败
                 mIsSuccess = false;
