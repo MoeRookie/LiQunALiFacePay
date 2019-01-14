@@ -25,6 +25,7 @@ import com.liqun.www.liqunalifacepay.data.bean.SettingItemBean;
 import com.liqun.www.liqunalifacepay.data.utils.JointDismantleUtils;
 import com.liqun.www.liqunalifacepay.data.utils.L;
 import com.liqun.www.liqunalifacepay.data.utils.SpUtils;
+import com.liqun.www.liqunalifacepay.ui.view.LoadingDialog;
 import com.liqun.www.liqunalifacepay.ui.view.WarnDialog;
 
 import org.ksoap2.serialization.SoapObject;
@@ -135,6 +136,10 @@ implements View.OnClickListener {
                             L.e("fprb.code = " + fprb.getJson().getAlipay_trade_pay_response().getCode());
                             // 1.关闭当前服务端侦听
                             closeServer();
+                            // 3.finish掉当前界面
+                            finish();
+                            // 4.关闭提示支付中的对话框
+                            mLoadingDialog.dismiss();
                             // 2.跳转到刷脸结果界面
                             Intent intent = FacePayResultActivity.newIntent(
                                     SelectPayTypeActivity.this,
@@ -143,10 +148,11 @@ implements View.OnClickListener {
                                     fprb
                             );
                             startActivity(intent);
-                            // 3.finish掉当前界面
-                            finish();
                         }
                     }
+                    break;
+                case 5:
+                    showLoadingDialog();
                     break;
             }
         }
@@ -154,6 +160,7 @@ implements View.OnClickListener {
 
     private float mTotalPrice = 0.00f;
     private int mCount;
+    private LoadingDialog mLoadingDialog;
 
     /**
      * 处理请求结果
@@ -194,11 +201,24 @@ implements View.OnClickListener {
                 String fToken = (String)smileToPayResponse.get("ftoken");
                 //刷脸成功
                 if (CODE_SUCCESS.equalsIgnoreCase(code) && fToken != null) {
-                    // 请求支付
+                    // 请求支付(显示提示支付中的对话框)
+                    mMessage = Message.obtain();
+                    mMessage.what = 5; // 刷脸成功,请求支付
+                    mHandler.sendMessage(mMessage);
                     pay(fToken);
                 }
             }
         });
+    }
+    /**
+     * 弹出加载类型的对话框
+     */
+    private void showLoadingDialog() {
+        if (mLoadingDialog == null) {
+            mLoadingDialog = new LoadingDialog(this,R.style.LoadingDialogStyle);
+        }
+        mLoadingDialog.show();
+        mLoadingDialog.setMessage("支付中 . . .");
     }
 
     /**
@@ -258,7 +278,7 @@ implements View.OnClickListener {
                                     "利群集团刷脸付消费",
                                     catwalkNo,
                                     signedFToken,
-                                    "1m",
+                                    "5m",
                                     mTotalPrice
                             )
                     ),
