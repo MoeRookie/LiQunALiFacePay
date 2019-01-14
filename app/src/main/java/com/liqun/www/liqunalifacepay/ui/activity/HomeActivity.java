@@ -15,10 +15,13 @@ import android.widget.ImageView;
 import android.widget.LinearLayout.LayoutParams;
 import android.widget.TextView;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
 import com.alipay.xdevicemanager.api.XDeviceManager;
 import com.liqun.www.liqunalifacepay.R;
 import com.liqun.www.liqunalifacepay.application.ALiFacePayApplication;
 import com.liqun.www.liqunalifacepay.application.ConstantValue;
+import com.liqun.www.liqunalifacepay.data.bean.SettingItemBean;
 import com.liqun.www.liqunalifacepay.data.utils.JointDismantleUtils;
 import com.liqun.www.liqunalifacepay.data.utils.L;
 import com.liqun.www.liqunalifacepay.data.utils.SpUtils;
@@ -32,6 +35,7 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.List;
 
 import static com.liqun.www.liqunalifacepay.data.bean.CancelDealBean.*;
 import static com.liqun.www.liqunalifacepay.data.bean.CancelPaymentBean.*;
@@ -202,12 +206,16 @@ implements View.OnClickListener {
             showWarnDialog("尚未设置信息,请联系管理员!");
             return;
         }
+        // 3.转换为json数组
+        List<SettingItemBean> itemBeans = JSONArray.parseArray(settingMsg, SettingItemBean.class);
+        String operatorNo = itemBeans.get(9).getContent();
+        ALiFacePayApplication.getInstance().setOperatorNo(operatorNo);
         // 2.请求获取流水号(失败时直接提示,点击确定后关闭对话框)
         requestNetWorkServer(
                 ConstantValue.TAG_DEAL_RECORD,
                 new DealRecordRequestBean(
                         ALiFacePayApplication.getInstance().getHostIP(),
-                        "90001",
+                        operatorNo,
                         "0"
                 )
         );

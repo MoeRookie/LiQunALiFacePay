@@ -43,6 +43,16 @@ public class ALiFacePayApplication extends Application {
     private XDeviceManager mXDeviceManager;
     private String hostIP; // 本机ip地址
     private String shoppingBagMsg; // 购物袋信息
+    private String operatorNo; // 操作员编号
+
+    public String getOperatorNo() {
+        return operatorNo;
+    }
+
+    public void setOperatorNo(String operatorNo) {
+        this.operatorNo = operatorNo;
+    }
+
     public String getFlowNo() {
         return flowNo;
     }

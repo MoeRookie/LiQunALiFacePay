@@ -268,7 +268,7 @@ implements View.OnClickListener {
                                     fToken,
                                     "利群集团刷脸支付",
                                     "2088031960490332",
-                                    "90001",
+                                    ALiFacePayApplication.getInstance().getOperatorNo(),
                                     orderNo,
                                     "2088521308744741",
                                     "ALIPAY_F2F_PAYMENT",

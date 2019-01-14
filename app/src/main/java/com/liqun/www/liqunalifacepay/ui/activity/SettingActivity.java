@@ -112,6 +112,7 @@ public class SettingActivity extends AppCompatActivity {
                     case 5:
                     case 6:
                     case 7:
+                    case 9:
                         // 弹出以列表项标题为title、内容为content的普通对话框
                         // 取消 -> 关闭对话框
                         // 确定:
@@ -365,6 +366,8 @@ public class SettingActivity extends AppCompatActivity {
             mItemList.add(new SettingItemBean("Pos后台IP端口",""));
             // 启用购物袋
             mItemList.add(new SettingItemBean("启用购物袋",noUseShoppingBag));
+            // 收款员
+            mItemList.add(new SettingItemBean("收款员","90001"));
             // 保存为json
             saveInstanceState();
         }
