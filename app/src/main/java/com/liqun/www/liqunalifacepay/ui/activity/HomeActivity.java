@@ -24,6 +24,7 @@ import com.liqun.www.liqunalifacepay.application.ConstantValue;
 import com.liqun.www.liqunalifacepay.data.bean.SettingItemBean;
 import com.liqun.www.liqunalifacepay.data.utils.JointDismantleUtils;
 import com.liqun.www.liqunalifacepay.data.utils.L;
+import com.liqun.www.liqunalifacepay.data.utils.SocketUtils;
 import com.liqun.www.liqunalifacepay.data.utils.SpUtils;
 import com.liqun.www.liqunalifacepay.ui.view.WarnDialog;
 
@@ -69,7 +70,7 @@ implements View.OnClickListener {
             super.handleMessage(msg);
             switch (msg.what) {
                 case 0:
-                    // 读取服务器失败
+                    // 读取服务器失败(极少出现)
                     showWarnDialog(
                             getString(R.string.connect_client_fail)
                     );
@@ -82,7 +83,6 @@ implements View.OnClickListener {
                     break;
                 case 2:
                     // 连接服务器失败
-                    // 弹出警告对话框,点击确定返回到主界面
                     showWarnDialog(
                             getString(R.string.connect_server_fail)
                     );
@@ -97,29 +97,19 @@ implements View.OnClickListener {
         Intent intent = new Intent(packageContext, HomeActivity.class);
         return intent;
     }
-
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_home);
+        initUI();
+        initData();
+        setListener();
+    }
     /**
      * 处理服务端返回的结果
      * @param obj 对象
      */
     private void handlerServerResult(Object obj) {
-        // 获取流水号
-        if (obj instanceof DealRecordResponseBean) {
-            DealRecordResponseBean drrb = (DealRecordResponseBean) obj;
-            String retflag = drrb.getRetflag();
-            String retmsg = drrb.getRetmsg();
-            if ("1".equals(retflag)) {
-                showWarnDialog(retmsg);
-            } else if ("0".equals(retflag)) {
-                // 保存流水号
-                ALiFacePayApplication.getInstance().setFlowNo(drrb.getFlow_no());
-                // 3.根据是否为vip跳转到自助收银界面(先关服务端侦听)
-                closeServer();
-                Intent intent = SelfHelpPayActivity.newIntent(
-                        HomeActivity.this, mIsVip);
-                startActivity(intent);
-            }
-        }
         // 取消付款
         if (obj instanceof CancelPaymentResponseBean) {
             // 取消交易
@@ -138,6 +128,23 @@ implements View.OnClickListener {
             String retmsg = cdrb.getRetmsg();
             if ("1".equals(retflag)) {
                 showWarnDialog(retmsg);
+            }
+        }
+        // 获取流水号
+        if (obj instanceof DealRecordResponseBean) {
+            DealRecordResponseBean drrb = (DealRecordResponseBean) obj;
+            String retflag = drrb.getRetflag();
+            String retmsg = drrb.getRetmsg();
+            if ("1".equals(retflag)) {
+                showWarnDialog(retmsg);
+            } else if ("0".equals(retflag)) {
+                // 保存流水号
+                ALiFacePayApplication.getInstance().setFlowNo(drrb.getFlow_no());
+                // 3.根据是否为vip跳转到自助收银界面(先关服务端侦听)
+                SocketUtils.closeServer(sServerSocket,sServerSocketThread);
+                Intent intent = SelfHelpPayActivity.newIntent(
+                        HomeActivity.this, mIsVip);
+                startActivity(intent);
             }
         }
     }
@@ -163,15 +170,54 @@ implements View.OnClickListener {
         mTvMsg.setText(msg);
     }
 
-    @Override
 
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_home);
-        initUI();
-        initData();
-        setListener();
+    private void initUI() {
+        // 适配home界面的head图片
+        mDefaultDisplay = getWindowManager().getDefaultDisplay();
+        mIvHead = findViewById(R.id.iv_head);
+        setImageDisplay(mIvHead,898,1920);
+        mIvLiQun = findViewById(R.id.iv_liqun);
+        mIvRt = findViewById(R.id.iv_rt);
+        // 会员结账&非会员结账
+        mBtnVip = findViewById(R.id.btn_vip);
+        mBtnNoVip = findViewById(R.id.btn_novip);
     }
+    /**
+     * 根据图片宽高比适配其显示
+     * @param iv 显示图片的view
+     * @param width 图片的宽
+     * @param height 图片的高
+     */
+    private void setImageDisplay(ImageView iv, int width, int height) {
+        LayoutParams layoutParams = (LayoutParams) mIvHead.getLayoutParams();
+        layoutParams.width = mDefaultDisplay.getWidth();
+        layoutParams.height = layoutParams.width * width / height;
+        iv.setLayoutParams(layoutParams);
+    }
+    private void initData() {
+        // 获取设置信息
+        mSettingMsg = SpUtils.getString(
+                HomeActivity.this,
+                ConstantValue.KEY_SETTING_CONTENT,
+                ""
+        );
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // 启用服务端侦听
+        initNetWorkServer();
+        // 先取消付款
+        requestNetWorkServer(
+                ConstantValue.TAG_CANCEL_PAYMENT,
+                new CancelPaymentRequestBean(
+                        ALiFacePayApplication.getInstance().getHostIP(),
+                        "0"
+                )
+        );
+    }
+
 
     private void setListener() {
         mIvLiQun.setOnClickListener(this);
@@ -202,84 +248,55 @@ implements View.OnClickListener {
                 ConstantValue.KEY_SETTING_CONTENT,
                 ""
         );
+        List<SettingItemBean> itemList = null;
         if (TextUtils.isEmpty(settingMsg)) {
             showWarnDialog("尚未设置信息,请联系管理员!");
             return;
+        }else{
+            // 2.转换为json数组
+            itemList = JSONArray.parseArray(settingMsg, SettingItemBean.class);
+            if (TextUtils.isEmpty(itemList.get(2).getContent())) {
+                showWarnDialog("尚未设置门店名称,请联系管理员!");
+                return;
+            }
+            if (TextUtils.isEmpty(itemList.get(3).getContent())) {
+                showWarnDialog("尚未设置门店编码,请联系管理员!");
+                return;
+            }
+            if (TextUtils.isEmpty(itemList.get(4).getContent())) {
+                showWarnDialog("尚未设置门店商户号,请联系管理员!");
+                return;
+            }
+            if (TextUtils.isEmpty(itemList.get(5).getContent())) {
+                showWarnDialog("尚未设置款台号,请联系管理员!");
+                return;
+            }
+            if (TextUtils.isEmpty(itemList.get(6).getContent())) {
+                showWarnDialog("尚未设置POS后台IP地址,请联系管理员!");
+                return;
+            }
+            if (TextUtils.isEmpty(itemList.get(7).getContent())) {
+                showWarnDialog("尚未设置POS后台IP端口,请联系管理员!");
+                return;
+            }
+            if (TextUtils.isEmpty(itemList.get(9).getContent())) {
+                showWarnDialog("尚未设置收款员编码,请联系管理员!");
+                return;
+            }
+            String operatorNo = itemList.get(9).getContent();
+            // 设置收款员编码
+            ALiFacePayApplication.getInstance().setOperatorNo(operatorNo);
+            // 3.请求获取流水号(失败时直接提示,点击确定后关闭对话框)
+            requestNetWorkServer(
+                    ConstantValue.TAG_DEAL_RECORD,
+                    new DealRecordRequestBean(
+                            ALiFacePayApplication.getInstance().getHostIP(),
+                            operatorNo,
+                            "0"
+                    )
+            );
         }
-        // 3.转换为json数组
-        List<SettingItemBean> itemBeans = JSONArray.parseArray(settingMsg, SettingItemBean.class);
-        String operatorNo = itemBeans.get(9).getContent();
-        ALiFacePayApplication.getInstance().setOperatorNo(operatorNo);
-        // 2.请求获取流水号(失败时直接提示,点击确定后关闭对话框)
-        requestNetWorkServer(
-                ConstantValue.TAG_DEAL_RECORD,
-                new DealRecordRequestBean(
-                        ALiFacePayApplication.getInstance().getHostIP(),
-                        operatorNo,
-                        "0"
-                )
-        );
     }
-
-
-    private void initUI() {
-        mDefaultDisplay = getWindowManager().getDefaultDisplay();
-        // 适配home界面的head图片
-        mIvHead = findViewById(R.id.iv_head);
-        setImageDisplay(mIvHead,898,1920);
-        mIvLiQun = findViewById(R.id.iv_liqun);
-        mIvRt = findViewById(R.id.iv_rt);
-        // 会员结账&非会员结账
-        mBtnVip = findViewById(R.id.btn_vip);
-        mBtnNoVip = findViewById(R.id.btn_novip);
-        /**
-         * 1.编写"自助收银"界面布局
-         * 2."取消交易"
-         * 3."手输条码"
-         * 4."扫描商品码"
-         * 5.编写商品信息界面布局
-         * 6.添加购物袋
-         * 7."选择支付方式"界面布局
-         * 8.编写"扫码支付"界面布局
-         * 9.编写"刷脸付"界面布局
-         */
-    }
-    private void initData() { // 获取设置信息
-        mSettingMsg = SpUtils.getString(
-                HomeActivity.this,
-                ConstantValue.KEY_SETTING_CONTENT,
-                ""
-        );
-    }
-
-    /**
-     * 根据图片宽高比适配其显示
-     * @param iv 显示图片的view
-     * @param width 图片的宽
-     * @param height 图片的高
-     */
-    private void setImageDisplay(ImageView iv, int width, int height) {
-        LayoutParams layoutParams = (LayoutParams) mIvHead.getLayoutParams();
-        layoutParams.width = mDefaultDisplay.getWidth();
-        layoutParams.height = layoutParams.width * width / height;
-        iv.setLayoutParams(layoutParams);
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        // 启动服务端侦听
-        initNetWorkServer();
-        // 先取消付款
-        requestNetWorkServer(
-                ConstantValue.TAG_CANCEL_PAYMENT,
-                new CancelPaymentRequestBean(
-                        ALiFacePayApplication.getInstance().getHostIP(),
-                        "0"
-                )
-        );
-    }
-
     /**
      * 开启本地服务端,以监听此时作为客户端的服务器返回数据
      */
@@ -302,23 +319,6 @@ implements View.OnClickListener {
         };
         sServerSocketThread.start();
     }
-
-    /**
-     * 关闭服务端侦听
-     */
-    public static void closeServer(){
-        if (sServerSocket != null) {
-            try {
-                sServerSocket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-                L.e("=======================哎呀,关闭服务端侦听失败啦=======================");
-            }
-        }
-        if (sServerSocketThread != null) {
-            sServerSocketThread.interrupt();
-        }
-    }
     @Override
     public void onClick(View v) {
         Intent intent = null;
@@ -328,6 +328,9 @@ implements View.OnClickListener {
             switch (v.getId()) {
                 case R.id.iv_liqun:
                     // 满足"五击事件"后,跳转"日结"界面
+                    // 1.关闭服务端侦听
+                    SocketUtils.closeServer(sServerSocket,sServerSocketThread);
+                    // 2.跳转"日结"界面
                     intent = DayEndActivity.newIntent(HomeActivity.this);
                     break;
                 case R.id.iv_rt:
@@ -368,7 +371,6 @@ implements View.OnClickListener {
                     mMessage = Message.obtain();
                     mMessage.what = 2;
                     mHandler.sendMessage(mMessage);
-                    e.printStackTrace();
                 }
             }
         }.start();
@@ -377,7 +379,7 @@ implements View.OnClickListener {
     protected void onPause() {
         super.onPause();
         // 关闭服务端侦听
-        closeServer();
+        SocketUtils.closeServer(sServerSocket,sServerSocketThread);
     }
 
     /**
@@ -416,7 +418,6 @@ implements View.OnClickListener {
             } catch (IOException e) {
                 mMessage = Message.obtain();
                 mMessage.what = 0;
-                e.printStackTrace();
             }finally {
                 mHandler.sendMessage(mMessage);
             }

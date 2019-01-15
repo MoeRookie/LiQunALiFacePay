@@ -2,7 +2,8 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:background="@color/white">
     <!-- iv的scaleType属性详解 -->
     <ImageView
         android:id="@+id/iv_head"
@@ -26,8 +27,9 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"
             android:layout_margin="13dp"
-            android:text="*"
-            android:textSize="19sp"/>
+            android:text="╳"
+            android:textSize="10sp"
+            android:textStyle="bold"/>
         <ImageView
             android:layout_width="45dp"
             android:layout_height="59dp"
@@ -37,8 +39,9 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"
             android:layout_margin="13dp"
-            android:text="*"
-            android:textSize="19sp"/>
+            android:text="╳"
+            android:textSize="10sp"
+            android:textStyle="bold"/>
         <ImageView
             android:id="@+id/iv_rt"
             android:layout_width="45dp"

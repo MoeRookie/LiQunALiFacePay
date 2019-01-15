@@ -87,29 +87,45 @@ public class FacePayBean {
         }
     }
     public static class FacePayRequestBean{
+
+        /**
+         * auth_code : fp04cfdb2f73be7ca6d2abc946c7edb7abc
+         * body : 利群集团刷脸支付
+         * extend_params : {"sys_service_provider_id":"2088031960490332"}
+         * operator_id : 90001
+         * out_trade_no : lqbh37f6500104820190115100116
+         * partnerId : 2088031960490332
+         * product_code : ALIPAY_F2F_PAYMENT
+         * scene : security_code
+         * seller_id : 2088521298747650
+         * store_id : 37
+         * subject : 利群集团刷脸付消费
+         * terminal_id : f65
+         * terminal_params : {"signature":"cs8+NV5THVFg5nxAUkvXhnVq0kmM4ViT3JRD4qseYucB","credential":"fp04cfdb2f73be7ca6d2abc946c7edb7abc:1547517676:dsYPc__8RPJqV4-Q14Pyz8O8ERgamQXdIw98bNcIgpNbnu1OaAEAAA==","terminalType":"IOT"}
+         * timeout_express : 1m
+         * total_amount : 0
+         */
+
         private String auth_code; // 用户付款码(刷脸支付传入ftoken)
-        private String body; //	订单描述(利群集团刷脸支付)
-        private String sys_service_provider_id; // 系统商编号(和pid一致2088031960490332)
-        private String operator_id; // 	操作员id
-        private String out_trade_no; //	订单号
+        private String body; // 订单描述(利群集团刷脸支付)
+        private ExtendParamsBean extend_params; // 系统商编号(和pid一致：2088031960490332)
+        private String operator_id; // 操作员id
+        private String out_trade_no; // 订单号
         private String partnerId; // 商户pid
-        private String product_code; //	支付方式(必须传ALIPAY_F2F_PAYMENT)
+        private String product_code; // 支付方式(必须传ALIPAY_F2F_PAYMENT)
         private String scene; // 支付场景(必须传security_code)
         private String seller_id; // 各门店商户号
-        private String store_id; //	门店号
-        private String subject; // 利群集团刷脸付消费
+        private String store_id; // 门店号
+        private String subject; // (群集团刷脸付消费)
         private String terminal_id; // 款台号
         private String terminal_params; // 商户传入终端设备相关信息
-        private String timeout_express; // 轮询时间(默认值1m)
-        private float total_amount; //	金额
+        private String timeout_express; // 轮询时间
+        private String total_amount; // 金额
 
-        public FacePayRequestBean() {
-        }
-
-        public FacePayRequestBean(String auth_code, String body, String sys_service_provider_id, String operator_id, String out_trade_no, String partnerId, String product_code, String scene, String seller_id, String store_id, String subject, String terminal_id, String terminal_params, String timeout_express, float total_amount) {
+        public FacePayRequestBean(String auth_code, String body, ExtendParamsBean extend_params, String operator_id, String out_trade_no, String partnerId, String product_code, String scene, String seller_id, String store_id, String subject, String terminal_id, String terminal_params, String timeout_express, String total_amount) {
             this.auth_code = auth_code;
             this.body = body;
-            this.sys_service_provider_id = sys_service_provider_id;
+            this.extend_params = extend_params;
             this.operator_id = operator_id;
             this.out_trade_no = out_trade_no;
             this.partnerId = partnerId;
@@ -140,12 +156,12 @@ public class FacePayBean {
             this.body = body;
         }
 
-        public String getSys_service_provider_id() {
-            return sys_service_provider_id;
+        public ExtendParamsBean getExtend_params() {
+            return extend_params;
         }
 
-        public void setSys_service_provider_id(String sys_service_provider_id) {
-            this.sys_service_provider_id = sys_service_provider_id;
+        public void setExtend_params(ExtendParamsBean extend_params) {
+            this.extend_params = extend_params;
         }
 
         public String getOperator_id() {
@@ -236,37 +252,37 @@ public class FacePayBean {
             this.timeout_express = timeout_express;
         }
 
-        public float getTotal_amount() {
+        public String getTotal_amount() {
             return total_amount;
         }
 
-        public void setTotal_amount(float total_amount) {
+        public void setTotal_amount(String total_amount) {
             this.total_amount = total_amount;
         }
 
-        @Override
-        public String toString() {
-            return "FacePayRequestBean{" +
-                    "auth_code='" + auth_code + '\'' +
-                    ", body='" + body + '\'' +
-                    ", sys_service_provider_id='" + sys_service_provider_id + '\'' +
-                    ", operator_id='" + operator_id + '\'' +
-                    ", out_trade_no='" + out_trade_no + '\'' +
-                    ", partnerId='" + partnerId + '\'' +
-                    ", product_code='" + product_code + '\'' +
-                    ", scene='" + scene + '\'' +
-                    ", seller_id='" + seller_id + '\'' +
-                    ", store_id='" + store_id + '\'' +
-                    ", subject='" + subject + '\'' +
-                    ", terminal_id='" + terminal_id + '\'' +
-                    ", terminal_params='" + terminal_params + '\'' +
-                    ", timeout_express='" + timeout_express + '\'' +
-                    ", total_amount=" + total_amount +
-                    '}';
+        public static class ExtendParamsBean
+        implements Serializable{
+            /**
+             * sys_service_provider_id : 2088031960490332
+             */
+
+            private String sys_service_provider_id;
+
+            public ExtendParamsBean(String sys_service_provider_id) {
+                this.sys_service_provider_id = sys_service_provider_id;
+            }
+
+            public String getSys_service_provider_id() {
+                return sys_service_provider_id;
+            }
+
+            public void setSys_service_provider_id(String sys_service_provider_id) {
+                this.sys_service_provider_id = sys_service_provider_id;
+            }
         }
     }
     public static class FacePayResponseBean
-    implements Serializable {
+            implements Serializable {
 
         /**
          * json : {"alipay_trade_pay_response":{"code":"10000","msg":"Success","buyer_logon_id":"184****0561","buyer_pay_amount":"0.20","buyer_user_id":"2088912022897334","fund_bill_list":[{"amount":"0.20","fund_channel":"ALIPAYACCOUNT"}],"gmt_payment":"2019-01-08 10:33:35","invoice_amount":"0.20","out_trade_no":"lqbh8jy3900082620190108103401","point_amount":"0.00","receipt_amount":"0.20","store_name":"利群超市(诺德广场店)","total_amount":"0.20","trade_no":"2019010822001497330511417331"},"sign":"GkEoIAFvDZOvNVvFQCOKBFYvFZlrwBlmM9J5UzG1MqYIkRYVlc3JFfnlvMlO35LmDIHzmCs9vylmDDswYc3oZByQE0mVzrza1/TtDiItgjRiQB8xV6M5UybLh8lIoBJkHqqfgPQZi/YNEeeXCVPGHOtK0rfMBv22wgknBGIklGiHNabD5HMP51/4jnK4DMP/m0gknqrc5LmD/KHCdWvvYUcAJkKuQXGDjpqR2YpEH+bN4TdtxWCyev0p8BAFiGutV90Zz7LeWDNX7ViNKIP9P9d0NIzFfLc3Shf3242nN3H87PcSTARikDyxMeJliuWJO1vR9S/I6Yy/zYdNC+M4+w=="}
@@ -313,7 +329,7 @@ public class FacePayBean {
         }
 
         public static class JsonBean
-        implements Serializable{
+                implements Serializable{
             /**
              * alipay_trade_pay_response : {"code":"10000","msg":"Success","buyer_logon_id":"184****0561","buyer_pay_amount":"0.20","buyer_user_id":"2088912022897334","fund_bill_list":[{"amount":"0.20","fund_channel":"ALIPAYACCOUNT"}],"gmt_payment":"2019-01-08 10:33:35","invoice_amount":"0.20","out_trade_no":"lqbh8jy3900082620190108103401","point_amount":"0.00","receipt_amount":"0.20","store_name":"利群超市(诺德广场店)","total_amount":"0.20","trade_no":"2019010822001497330511417331"}
              * sign : GkEoIAFvDZOvNVvFQCOKBFYvFZlrwBlmM9J5UzG1MqYIkRYVlc3JFfnlvMlO35LmDIHzmCs9vylmDDswYc3oZByQE0mVzrza1/TtDiItgjRiQB8xV6M5UybLh8lIoBJkHqqfgPQZi/YNEeeXCVPGHOtK0rfMBv22wgknBGIklGiHNabD5HMP51/4jnK4DMP/m0gknqrc5LmD/KHCdWvvYUcAJkKuQXGDjpqR2YpEH+bN4TdtxWCyev0p8BAFiGutV90Zz7LeWDNX7ViNKIP9P9d0NIzFfLc3Shf3242nN3H87PcSTARikDyxMeJliuWJO1vR9S/I6Yy/zYdNC+M4+w==
@@ -339,7 +355,7 @@ public class FacePayBean {
             }
 
             public static class AlipayTradePayResponseBean
-            implements Serializable{
+                    implements Serializable{
                 /**
                  * code : 10000
                  * msg : Success
@@ -485,7 +501,7 @@ public class FacePayBean {
                 }
 
                 public static class FundBillListBean
-                implements Serializable{
+                        implements Serializable{
                     /**
                      * amount : 0.20
                      * fund_channel : ALIPAYACCOUNT

@@ -138,8 +138,8 @@ implements View.OnClickListener {
                             closeServer();
                             // 3.finish掉当前界面
                             finish();
-                            // 4.关闭提示支付中的对话框
-                            mLoadingDialog.dismiss();
+                            // 4.关闭提示支付中界面
+                            PayingActivity.sInstance.finish();
                             // 2.跳转到刷脸结果界面
                             Intent intent = FacePayResultActivity.newIntent(
                                     SelectPayTypeActivity.this,
@@ -152,11 +152,17 @@ implements View.OnClickListener {
                     }
                     break;
                 case 5:
-                    showLoadingDialog();
+                    // 弹出提示支付中的界面
+                    enterPayingActivity();
                     break;
             }
         }
     };
+
+    private void enterPayingActivity() {
+        Intent intent = PayingActivity.newIntent(this);
+        startActivity(intent);
+    }
 
     private float mTotalPrice = 0.00f;
     private int mCount;
@@ -213,13 +219,13 @@ implements View.OnClickListener {
     /**
      * 弹出加载类型的对话框
      */
-    private void showLoadingDialog() {
-        if (mLoadingDialog == null) {
-            mLoadingDialog = new LoadingDialog(this,R.style.LoadingDialogStyle);
-        }
-        mLoadingDialog.show();
-        mLoadingDialog.setMessage("支付中 . . .");
-    }
+//    private void showLoadingDialog() {
+//        if (mLoadingDialog == null) {
+//            mLoadingDialog = new LoadingDialog(this,R.style.LoadingDialogStyle);
+//        }
+//        mLoadingDialog.show();
+//        mLoadingDialog.setMessage("支付中 . . .");
+//    }
 
     /**
      * 支付
@@ -266,21 +272,20 @@ implements View.OnClickListener {
                     JSON.toJSONString(
                             new FacePayRequestBean(
                                     fToken,
-                                    "利群集团刷脸支付",
-                                    "2088031960490332",
+                    "利群集团刷脸支付",
+                                    new FacePayRequestBean.ExtendParamsBean("2088031960490332"),
                                     ALiFacePayApplication.getInstance().getOperatorNo(),
                                     orderNo,
-                                    "2088521308744741",
+                                    "2088031960490332",
                                     "ALIPAY_F2F_PAYMENT",
                                     "security_code",
                                     merchantNo,
                                     shopNo,
-                                    "利群集团刷脸付消费",
+                                    "群集团刷脸付消费",
                                     catwalkNo,
                                     signedFToken,
-                                    "5m",
-                                    mTotalPrice
-                            )
+                                    "1m",
+                                    String.valueOf(mTotalPrice))
                     ),
                     4
             );
@@ -400,6 +405,7 @@ implements View.OnClickListener {
      * @param requestData 请求数据
      */
     private void requestFacePay(final String methodName, final String requestData, final int what) {
+        L.e("requestData = " + requestData);
         //起一个异步线程发起网络请求
         new Thread(){
             @Override

@@ -426,9 +426,9 @@ public class ScanCodePayActivity extends AppCompatActivity {
             if (mIsRequestSuccess) {
                 if (!mIsManual) {
                     mBtnCancelPay.setText(getString(R.string.cancel_pay) + "(" + millisUntilFinished/1000 + "s)");
-                }else{
+                }/*else{
                     mBtnConfirm.setText(getString(R.string.sure) + "(" + millisUntilFinished / 1000 + "s)");
-                }
+                }*/
             }else{
                 mBtnConfirm.setText(getString(R.string.sure) + "(" + millisUntilFinished / 1000 + "s)");
             }

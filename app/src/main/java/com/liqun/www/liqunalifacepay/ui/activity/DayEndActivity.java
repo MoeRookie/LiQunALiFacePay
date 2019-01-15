@@ -12,7 +12,6 @@ import android.text.TextUtils;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.liqun.www.liqunalifacepay.R;
@@ -20,6 +19,7 @@ import com.liqun.www.liqunalifacepay.application.ALiFacePayApplication;
 import com.liqun.www.liqunalifacepay.application.ConstantValue;
 import com.liqun.www.liqunalifacepay.data.utils.JointDismantleUtils;
 import com.liqun.www.liqunalifacepay.data.utils.L;
+import com.liqun.www.liqunalifacepay.data.utils.SocketUtils;
 import com.liqun.www.liqunalifacepay.ui.view.GlobalDialog;
 import com.liqun.www.liqunalifacepay.ui.view.LoadingDialog;
 import com.liqun.www.liqunalifacepay.ui.view.WarnDialog;
@@ -43,49 +43,46 @@ public class DayEndActivity extends AppCompatActivity{
     private GlobalDialog mGlobalDialog;
     private LoadingDialog mLoadingDialog;
     private WarnDialog mWarnDialog;
-    private RelativeLayout mSuccessDialog;
     private TextView mTvMessage;
     private EditText mEtPwd;
     private Message mMessage;
     private Handler mHandler = new Handler(){
         @Override
         public void handleMessage(Message msg) {
-            int msgId = 0;
+            String message = getString(R.string.day_end_success);
             switch (msg.what) {
                 case 0:
-                    msgId = R.string.connect_client_fail;
+                    message = getString(R.string.connect_client_fail);
                     // 隐藏提示加载中的对话框&显示警告类的对话框
-                    dismissLoadingDialog(true,msgId);
+                    dismissLoadingDialog(message);
                     break;
                 case 1:
-                    msgId = R.string.connect_server_fail;
-                    dismissLoadingDialog(true,msgId);
-                    break;
-                case 2:
                     if (msg.obj != null) {
                         handleResult(msg.obj);
                     }
-                    dismissLoadingDialog(false,msgId);
+                    break;
+                case 2:
+                    message = getString(R.string.connect_server_fail);
+                    dismissLoadingDialog(message);
                     break;
             }
             super.handleMessage(msg);
         }
     };
+    private static Thread sServerSocketThread;
+    private static ServerSocket sServerSocket;
 
     /**
-     * 隐藏提示"加载中"的对话框并提示异常信息
-     * @param isError
-     * @param msgId 异常信息串id
+     * 隐藏提示"加载中"的对话框并提示信息
+     * @param msg 信息串
      */
-    private void dismissLoadingDialog(boolean isError, int msgId) {
+    private void dismissLoadingDialog(String msg) {
         // 隐藏提示"加载中"的对话框
         if (mLoadingDialog != null && mLoadingDialog.isShowing()) {
             mLoadingDialog.dismiss();
         }
-        if (isError) {
-            // 显示警告类型的对话框
-            showWarnDialog(getString(msgId));
-        }
+        // 显示警告类型的对话框
+        showWarnDialog(msg);
     }
 
     /**
@@ -103,6 +100,10 @@ public class DayEndActivity extends AppCompatActivity{
             public void onConfirmClicked() {
                 if (mWarnDialog.isShowing()) {
                     mWarnDialog.dismiss();
+                    // 关闭当前服务端侦听
+                    SocketUtils.closeServer(sServerSocket,sServerSocketThread);
+                    // 挂掉当前界面
+                    finish();
                 }
             }
         });
@@ -114,18 +115,14 @@ public class DayEndActivity extends AppCompatActivity{
      */
     private void handleResult(Object obj) {
         // 日结
-        DayEndResponseBean bean = null;
         if (obj instanceof DayEndResponseBean) {
-            bean = (DayEndResponseBean) obj;
-            if ("0".equals(bean.getRetflag())) {
-                // 设置日结完成界面显示
-                mSuccessDialog.setVisibility(View.VISIBLE);
-            } else if ("1".equals(bean.getRetflag())) {
-                // 设置日结完成界面隐藏
-                mSuccessDialog.setVisibility(View.GONE);
-                // 显示⚠️类型的对话框
-                showWarnDialog(bean.getRetmsg());
+            DayEndResponseBean derb = (DayEndResponseBean) obj;
+            String retflag = derb.getRetflag();
+            String retmsg = derb.getRetmsg();
+            if ("0".equals(retflag)) {
+                retmsg = getString(R.string.day_end_success);
             }
+            dismissLoadingDialog(retmsg);
         }
     }
 
@@ -149,13 +146,6 @@ public class DayEndActivity extends AppCompatActivity{
         mTvBack = findViewById(R.id.tv_back);
         mTvSure = findViewById(R.id.tv_sure);
         mBtnDayEnd = findViewById(R.id.btn_day_end);
-        mSuccessDialog = findViewById(R.id.dialog_day_end_success);
-    }
-
-    private void initRequestBean() {
-        mRequestBean = new DayEndRequestBean();
-        mRequestBean.setIp(ALiFacePayApplication.getInstance().getHostIP());
-        mRequestBean.setFlag(ConstantValue.FLAG_DAY_END);
     }
 
     private void setListener() {
@@ -166,12 +156,14 @@ public class DayEndActivity extends AppCompatActivity{
         mTvBack.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                // 1.挂掉当前界面
                 finish();
             }
         });
         mTvSure.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                // 1.挂掉当前界面
                 finish();
             }
         });
@@ -189,71 +181,90 @@ public class DayEndActivity extends AppCompatActivity{
                 showGlobalDialog();
             }
         });
-        /**
-         * 点击确定按钮,返回上级界面
-         */
-        mSuccessDialog.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                finish();
-            }
-        });
+    }
+
+    private void initRequestBean() {
+        mRequestBean = new DayEndRequestBean();
+        mRequestBean.setIp(ALiFacePayApplication.getInstance().getHostIP());
+        mRequestBean.setFlag(ConstantValue.FLAG_DAY_END);
     }
     /**
      * 开启本地服务端,以监听此时作为客户端的服务器返回数据
      */
     private void initNetWorkServer() {
-        new Thread(){
+        sServerSocketThread = new Thread(){
             @Override
             public void run() {
                 super.run();
                 try {
-                    // 建立Tcp的服务端,并且监听一个端口
-                    ServerSocket serverSocket = new ServerSocket(
-                            ConstantValue.PORT_SERVER_RETURN);
-                    // 接受客户端的连接
-                    Socket socket  =  serverSocket.accept(); // 接受客户端的连接(该方法是一个阻塞型的方法,当没有客户端与其连接时会一直等待下去)
-                    // 获取输入流对象,读取客户端发送的内容
-                    InputStream inputStream = socket.getInputStream();
-                    InputStreamReader inputStreamReader=new InputStreamReader(inputStream);
-                    // 加入缓冲区
-                    BufferedReader bufferedReader=new BufferedReader(inputStreamReader);
-                    String temp=null;
-                    String info="";
-                    while((temp=bufferedReader.readLine())!=null){
-                        info+=temp;
+                    sServerSocket = new ServerSocket(2001);
+                    while (true) {
+                        Socket socket = sServerSocket.accept();// 侦听并接受到此套接字的连接,返回一个Socket对象
+                        SocketServerThread socketThread = new SocketServerThread(socket);
+                        socketThread.start();
                     }
-                    /**
-                     * 为了避免出现msg被重用的问题,每次的msg对象都要通过Message.obtain()方法获取
-                     */
-                    mMessage = Message.obtain();
-                    mMessage.what = 2;
-                    mMessage.obj = JointDismantleUtils.dismantleResponse(info);
-                    //关闭资源
-                    serverSocket.close();
                 } catch (IOException e) {
-                    mMessage = Message.obtain();
-                    mMessage.what = 0;
                     e.printStackTrace();
-                }finally {
-                    mHandler.sendMessage(mMessage);
                 }
             }
-        }.start();
+        };
+        sServerSocketThread.start();
     }
-
+    /**
+     * Socket多线程处理类 用来处理服务端接收到的客户端请求(处理Socket对象)
+     */
+    class SocketServerThread extends Thread {
+        private Socket socket;
+        public SocketServerThread(Socket socket) {
+            this.socket = socket;
+        }
+        @Override
+        public void run() {
+            super.run();
+            // 根据输入输出流和客户端连接
+            try {
+                // 得到一个输入流，接收客户端传递的信息
+                InputStream inputStream = socket.getInputStream();
+                // 提高效率，将自己字节流转为字符流
+                InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
+                // 加入缓冲区
+                BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
+                String temp = null;
+                String info = "";
+                while ((temp = bufferedReader.readLine()) != null) {
+                    info += temp;
+                }
+                L.e(info);
+                /**
+                 * 为了避免出现msg被重用的问题,每次的msg对象都要通过Message.obtain()方法获取
+                 */
+                mMessage = Message.obtain();
+                mMessage.what = 1;
+                mMessage.obj = JointDismantleUtils.dismantleResponse(info);
+                //关闭资源
+                socket.close();
+            } catch (IOException e) {
+                mMessage = Message.obtain();
+                mMessage.what = 0;
+            }finally {
+                mHandler.sendMessage(mMessage);
+            }
+        }
+    }
     /**
      * 弹出确认密码弹框
+     * 使用自定义dialog可以避免因使用了头条的适配方式而导致原生dialog适配出错的问题
      */
     private void showGlobalDialog() {
         if (mGlobalDialog == null) {
-            // 使用自定义dialog可以避免因使用了头条的适配方式而导致原生dialog适配出错的问题
             mGlobalDialog = new GlobalDialog(this);
             // 设置对话框标题
             String title = getString(R.string.input_pwd);
             mGlobalDialog.setTitle(title);
             // 设置输入的文本类型
-            mGlobalDialog.setEtInputType(InputType.TYPE_CLASS_NUMBER|InputType.TYPE_NUMBER_VARIATION_PASSWORD);
+            mGlobalDialog.setEtInputType(
+                    InputType.TYPE_CLASS_NUMBER
+                            |InputType.TYPE_NUMBER_VARIATION_PASSWORD);
             setDialogListener();
         }
         // 显示对话框
@@ -276,6 +287,9 @@ public class DayEndActivity extends AppCompatActivity{
                 if (mGlobalDialog.isShowing()) {
                     mGlobalDialog.dismiss();
                 }
+                // 1.关闭当前服务端侦听
+                SocketUtils.closeServer(sServerSocket,sServerSocketThread);
+                // 2.挂掉当前界面
                 finish();
             }
         });
@@ -295,58 +309,31 @@ public class DayEndActivity extends AppCompatActivity{
                 setErrorMsgLayout(false,R.string.empty);
                 // 隐藏msg控件&关掉对话框&发起日结请求
                 mGlobalDialog.dismiss();
-                // doDayEnd();
-                /**
-                 * 发起日结
-                 * 开启本地服务端,以监听此时作为客户端的服务器返回数据
-                 *  1.端口被占用的异常
-                 *  2.读取服务端返回数据的过程中的io异常
-                 */
-                doDayEnd();
+                requestNetWorkServer(
+                        ConstantValue.TAG_DAY_END,
+                        new DayEndRequestBean(
+                                ALiFacePayApplication.getInstance().getHostIP(),
+                                "0"
+                        )
+                );
             }
         });
     }
-
     /**
-     * 设置报错后的对话框布局
-     * @param isError 是否报错
-     * @param errStrId 报错提示字符串id
+     * 连接服务端,请求数据
      */
-    private void setErrorMsgLayout(boolean isError, int errStrId) {
-        // 设置msg控件显示&设置显示内容&中断流程
-        mTvMessage.setVisibility(isError?View.VISIBLE:View.GONE);
-        mTvMessage.setText(errStrId);
-    }
-
-    /**
-     * 日结请求
-     */
-    private void doDayEnd() {
-        // 弹出提示"日结中 . . ."的对话框(自定义"加载"类型的对话框)
+    private void requestNetWorkServer(final String tag, final Object requestBean) {
         showLoadingDialog();
-        // 请求网络做日结
         new Thread(){
             @Override
             public void run() {
                 super.run();
-                /**
-                 * 标识符
-                 * 分隔符
-                 * json str
-                 *  机具ip地址
-                 *  flag
-                 *
-                 * JointDismantleUtils
-                 *  获取本机ip地址?????????????????????????????????????????
-                 *  jointRequest(标识符,Object);
-                 *      object -> json(fastJson)
-                 *  dismantleResponse(str);
-                 *      json -> object(fastJson)
-                 */
+                // 拼接请求串
                 String msg = JointDismantleUtils.jointRequest(
-                        ConstantValue.TAG_DAY_END,
-                        mRequestBean
+                        tag,
+                        requestBean
                 );
+                L.e(msg);
                 //建立tcp的服务
                 try {
                     Socket socket = new Socket(
@@ -361,12 +348,21 @@ public class DayEndActivity extends AppCompatActivity{
                     socket.close();
                 } catch (IOException e) {
                     mMessage = Message.obtain();
-                    mMessage.what = 1;
+                    mMessage.what = 2;
                     mHandler.sendMessage(mMessage);
-                    e.printStackTrace();
                 }
             }
         }.start();
+    }
+    /**
+     * 设置报错后的对话框布局
+     * @param isError 是否报错
+     * @param errStrId 报错提示字符串id
+     */
+    private void setErrorMsgLayout(boolean isError, int errStrId) {
+        // 设置msg控件显示&设置显示内容&中断流程
+        mTvMessage.setVisibility(isError?View.VISIBLE:View.GONE);
+        mTvMessage.setText(errStrId);
     }
     /**
      * 显示提示"加载中 . . ."类型的对话框
