@@ -286,20 +286,32 @@ implements View.OnClickListener {
                 showWarnDialog("尚未设置收款员编码,请联系管理员!");
                 return;
             }
-            String operatorNo = itemList.get(9).getContent();
-            // 设置收款员编码
-            ALiFacePayApplication.getInstance().setOperatorNo(operatorNo);
+            setConfigMsg(itemList);
             // 3.请求获取流水号(失败时直接提示,点击确定后关闭对话框)
             requestNetWorkServer(
                     ConstantValue.TAG_DEAL_RECORD,
                     new DealRecordRequestBean(
                             ALiFacePayApplication.getInstance().getHostIP(),
-                            operatorNo,
+                            ALiFacePayApplication.getInstance().getOperatorNo(),
                             "0"
                     )
             );
         }
     }
+
+    /**
+     * 设置配置信息
+     */
+    private void setConfigMsg(List<SettingItemBean> itemList) {
+        ALiFacePayApplication.getInstance().setShopName(itemList.get(2).getContent());
+        ALiFacePayApplication.getInstance().setShopNo(itemList.get(3).getContent());
+        ALiFacePayApplication.getInstance().setShopMerchantNo(itemList.get(4).getContent());
+        ALiFacePayApplication.getInstance().setCatwalkNo(itemList.get(5).getContent());
+        ALiFacePayApplication.getInstance().setPosServerIp(itemList.get(6).getContent());
+        ALiFacePayApplication.getInstance().setPosServerPort(itemList.get(7).getContent());
+        ALiFacePayApplication.getInstance().setOperatorNo(itemList.get(9).getContent());
+    }
+
     /**
      * 开启本地服务端,以监听此时作为客户端的服务器返回数据
      */

@@ -43,6 +43,61 @@ public class ALiFacePayApplication extends Application {
     private XDeviceManager mXDeviceManager;
     private String hostIP; // 本机ip地址
     private String shoppingBagMsg; // 购物袋信息
+
+    public String getShopName() {
+        return shopName;
+    }
+
+    public void setShopName(String shopName) {
+        this.shopName = shopName;
+    }
+
+    public String getShopNo() {
+        return shopNo;
+    }
+
+    public void setShopNo(String shopNo) {
+        this.shopNo = shopNo;
+    }
+
+    public String getShopMerchantNo() {
+        return shopMerchantNo;
+    }
+
+    public void setShopMerchantNo(String shopMerchantNo) {
+        this.shopMerchantNo = shopMerchantNo;
+    }
+
+    public String getCatwalkNo() {
+        return catwalkNo;
+    }
+
+    public void setCatwalkNo(String catwalkNo) {
+        this.catwalkNo = catwalkNo;
+    }
+
+    public String getPosServerIp() {
+        return posServerIp;
+    }
+
+    public void setPosServerIp(String posServerIp) {
+        this.posServerIp = posServerIp;
+    }
+
+    public String getPosServerPort() {
+        return posServerPort;
+    }
+
+    public void setPosServerPort(String posServerPort) {
+        this.posServerPort = posServerPort;
+    }
+
+    private String shopName; // 门店名称
+    private String shopNo; // 门店编码
+    private String shopMerchantNo; // 门店商户号
+    private String catwalkNo; // 款台号
+    private String posServerIp; // pos后台ip地址
+    private String posServerPort; // pos后台ip端口
     private String operatorNo; // 操作员编号
 
     public String getOperatorNo() {
