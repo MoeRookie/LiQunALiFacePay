@@ -20,7 +20,6 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.MOUNT_UNMOUNT_FILESYSTEMS" />
     <!-- If your application uses Wi-Fi, declare so with a <uses-feature> element in the manifest file -->
-    >
     <uses-feature android:name="android.hardware.wifi" />
 
     <!-- Bluetooth permission -->

@@ -16,7 +16,7 @@ public class ConstantValue {
     /**
      * POS后台服务器地址
      */
-    public static final String IP_SERVER_ADDRESS = "128.192.80.113";
+    public static final String IP_SERVER_ADDRESS = "10.185.1.212";
 
     /**
      * 交易流水的tag
@@ -102,15 +102,15 @@ public class ConstantValue {
     /**
      * 设置界面内容的key
      */
-    public static final String KEY_SETTING_CONTENT = "key_setting_content";
+    public static final String SETTING_CONTENT = "setting_content";
     /**
      * 设置需要的密码值
      */
-    public static final String VALUE_SETTING_PWD = "111333777";
+    public static final String SETTING_PWD = "111333777";
     /**
      * 购物袋信息的key
      */
-    public static final String KEY_SHOPPING_BAG_MSG = "key_shopping_bag_msg";
+    public static final String SHOPPING_BAG_MSG = "shopping_bag_msg";
     /**
      * 请求刷脸的接口根地址
      * 浏览器:http://10.5.3.43:9080/Alipay-RL/services/Alipay_Liqun_Bussiness/wsdl/Alipay_Liqun_Bussiness.wsdl

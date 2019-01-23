@@ -236,7 +236,7 @@ implements View.OnClickListener {
         // 获取设置信息
         String settingMsg = SpUtils.getString(
                 this,
-                ConstantValue.KEY_SETTING_CONTENT,
+                ConstantValue.SETTING_CONTENT,
                 ""
         );
         // 将设置信息转换为集合对象
@@ -456,7 +456,7 @@ implements View.OnClickListener {
         // 获取设置信息
         String settingMsg = SpUtils.getString(
                 SelectPayTypeActivity.this,
-                ConstantValue.KEY_SETTING_CONTENT,
+                ConstantValue.SETTING_CONTENT,
                 ""
         );
         // 转换为集合对象

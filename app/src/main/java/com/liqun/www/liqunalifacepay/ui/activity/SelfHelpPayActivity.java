@@ -20,7 +20,6 @@ import com.liqun.www.liqunalifacepay.R;
 import com.liqun.www.liqunalifacepay.application.ALiFacePayApplication;
 import com.liqun.www.liqunalifacepay.application.ConstantValue;
 import com.liqun.www.liqunalifacepay.data.bean.ShoppingBagBean;
-import com.liqun.www.liqunalifacepay.data.bean.VipCardBean;
 import com.liqun.www.liqunalifacepay.data.utils.JointDismantleUtils;
 import com.liqun.www.liqunalifacepay.data.utils.L;
 import com.liqun.www.liqunalifacepay.data.utils.SpUtils;
@@ -507,7 +506,7 @@ implements View.OnClickListener {
             List<ShoppingBagBean> bagBeanList = parseArray(
                     SpUtils.getString(
                             this,
-                            ConstantValue.KEY_SHOPPING_BAG_MSG,
+                            ConstantValue.SHOPPING_BAG_MSG,
                             ""
                     ), ShoppingBagBean.class
             );

@@ -15,7 +15,6 @@ import android.widget.ImageView;
 import android.widget.LinearLayout.LayoutParams;
 import android.widget.TextView;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alipay.xdevicemanager.api.XDeviceManager;
 import com.liqun.www.liqunalifacepay.R;
@@ -198,7 +197,7 @@ implements View.OnClickListener {
         // 获取设置信息
         mSettingMsg = SpUtils.getString(
                 HomeActivity.this,
-                ConstantValue.KEY_SETTING_CONTENT,
+                ConstantValue.SETTING_CONTENT,
                 ""
         );
     }
@@ -245,7 +244,7 @@ implements View.OnClickListener {
         // 1.获取设置信息(为空则提示设置设置信息)
         String settingMsg = SpUtils.getString(
                 HomeActivity.this,
-                ConstantValue.KEY_SETTING_CONTENT,
+                ConstantValue.SETTING_CONTENT,
                 ""
         );
         List<SettingItemBean> itemList = null;
@@ -277,6 +276,10 @@ implements View.OnClickListener {
             }
             if (TextUtils.isEmpty(itemList.get(7).getContent())) {
                 showWarnDialog("尚未设置POS后台IP端口,请联系管理员!");
+                return;
+            }
+            if (TextUtils.isEmpty(itemList.get(8).getContent())) {
+                showWarnDialog("尚未设置购物袋信息,请联系管理员!");
                 return;
             }
             if (TextUtils.isEmpty(itemList.get(9).getContent())) {
@@ -367,6 +370,9 @@ implements View.OnClickListener {
                     printWriter.print(msg);
                     printWriter.flush();
                     socket.close();
+                    mMessage = Message.obtain();
+                    mMessage.what = 1;
+                    mHandler.sendMessage(mMessage);
                 } catch (IOException e) {
                     mMessage = Message.obtain();
                     mMessage.what = 2;
