@@ -145,6 +145,8 @@ public class SettingActivity extends AppCompatActivity {
                 ConstantValue.SETTING_CONTENT,
                 content
         );
+        ConstantValue.IP_SERVER_ADDRESS = mItemList.get(6).getContent();
+        ConstantValue.PORT_SERVER_RECEIVE = Integer.valueOf(mItemList.get(7).getContent());
     }
 
     private void initUI() {

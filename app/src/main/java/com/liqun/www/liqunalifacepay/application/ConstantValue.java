@@ -12,11 +12,11 @@ public class ConstantValue {
     /**
      * 服务端接收消息需要监听的端口
      */
-    public static final int PORT_SERVER_RECEIVE = 3012;
+    public static int PORT_SERVER_RECEIVE;
     /**
      * POS后台服务器地址
      */
-    public static final String IP_SERVER_ADDRESS = "10.185.1.212";
+    public static String IP_SERVER_ADDRESS;
 
     /**
      * 交易流水的tag
