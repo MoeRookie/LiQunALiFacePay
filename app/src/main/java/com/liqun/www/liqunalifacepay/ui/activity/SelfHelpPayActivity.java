@@ -22,6 +22,7 @@ import com.liqun.www.liqunalifacepay.application.ConstantValue;
 import com.liqun.www.liqunalifacepay.data.bean.ShoppingBagBean;
 import com.liqun.www.liqunalifacepay.data.utils.JointDismantleUtils;
 import com.liqun.www.liqunalifacepay.data.utils.L;
+import com.liqun.www.liqunalifacepay.data.utils.SocketUtils;
 import com.liqun.www.liqunalifacepay.data.utils.SpUtils;
 import com.liqun.www.liqunalifacepay.ui.adapter.GoodsAdapter;
 import com.liqun.www.liqunalifacepay.ui.adapter.ShoppingBag2Adapter;
@@ -47,7 +48,6 @@ import static com.liqun.www.liqunalifacepay.data.bean.CancelDealBean.CancelDealR
 import static com.liqun.www.liqunalifacepay.data.bean.CancelDealBean.CancelDealResponseBean;
 import static com.liqun.www.liqunalifacepay.data.bean.CancelGoodsBean.*;
 import static com.liqun.www.liqunalifacepay.data.bean.PreparePaymentBean.*;
-import static com.liqun.www.liqunalifacepay.data.bean.ReObtainDealDetailsBean.*;
 import static com.liqun.www.liqunalifacepay.data.bean.ScanGoodsBean.ScanGoodsRequestBean;
 import static com.liqun.www.liqunalifacepay.data.bean.ScanGoodsBean.ScanGoodsResponseBean;
 import static com.liqun.www.liqunalifacepay.data.bean.VipCardBean.*;
@@ -68,7 +68,7 @@ import static com.liqun.www.liqunalifacepay.data.bean.VipCardBean.*;
 public class SelfHelpPayActivity extends AppCompatActivity
 implements View.OnClickListener {
     private static final String EXTRA_IS_VIP = "com.liqun.www.liqunalifacepay.is_vip";
-    public static SelfHelpPayActivity mActivity;
+    public static SelfHelpPayActivity sActivity;
     public static Thread sServerSocketThread;
     public static ServerSocket sServerSocket;
     private StringBuffer mSb = new StringBuffer();
@@ -101,7 +101,7 @@ implements View.OnClickListener {
             switch (msg.what) {
                 case 0:
                     // 读取服务器失败
-                    showWarnDialogActivity(
+                    showWarnDialog(
                             getString(R.string.connect_client_fail)
                     );
                     break;
@@ -114,23 +114,24 @@ implements View.OnClickListener {
                 case 2:
                     // 连接服务器失败
                     // 弹出警告对话框,点击确定返回到主界面
-                    showWarnDialogActivity(
+                    showWarnDialog(
                             getString(R.string.connect_server_fail)
                     );
                     break;
             }
         }
     };
-    private MultipleDialog mMultipleDialog;
-    private List<ShoppingBagBean> mBagList;
+    private MultipleDialog mBagDialog;
+    private List<ShoppingBagBean> mBagList = new ArrayList<>();
     private ShoppingBag2Adapter mBagAdapter;
     private int mIndex = -1;
     private TextView mBtnInputBarCode;
     private WarnDialog mWarnDialog;
-    private InputNumberDialog mPhoneNumberDialog;
+    private InputNumberDialog mCardNumDialog;
     private TextView mTvMessage;
-    private EditText mEtPhoneNumber;
+    private EditText mEtCardNum;
     private TextView mTvTitle;
+    private TextView mTvErr;
 
     /**
      * 显示警告类型的对话框
@@ -155,7 +156,7 @@ implements View.OnClickListener {
                 mTvMessage.setVisibility(View.VISIBLE);
                 mTvMessage.setText(retmsg);
             } else if ("0".equals(retflag)) {
-                mPhoneNumberDialog.dismiss();
+                mCardNumDialog.dismiss();
                 mTvTitle.setText("您好 , 尊敬的利群会员\n卡号 : "+vcrb.getVipno());
             }
         }
@@ -168,7 +169,7 @@ implements View.OnClickListener {
             } else if ("1".equals(retflag)) {
                 retmsg = cdrb.getRetmsg();
             }
-            closeServer();
+            SocketUtils.closeServer(sServerSocket,sServerSocketThread);
             showWarnDialogActivity(retmsg);
         }
         if (obj instanceof ScanGoodsResponseBean) { // 扫描商品
@@ -195,11 +196,23 @@ implements View.OnClickListener {
         if (obj instanceof PreparePaymentResponseBean) { // 准备付款
             PreparePaymentResponseBean pprb = (PreparePaymentResponseBean) obj;
             String retmsg = pprb.getRetmsg();
-            // 关闭服务端侦听
-            closeServer();
-            // 跳转选择支付方式界面
-            Intent intent = SelectPayTypeActivity.newIntent(this, retmsg,mCount,mTotalPrice);
-            startActivity(intent);
+            String retflag = pprb.getRetflag();
+            if ("0".equals(retflag)) {
+                // 关闭服务端侦听
+                SocketUtils.closeServer(sServerSocket,sServerSocketThread);
+                // 数量
+                float qty = pprb.getQty();
+                // 总金额
+                float total = pprb.getTotal();
+                // 优惠金额
+                float totaldsc = pprb.getTotaldsc();
+                // 跳转选择支付方式界面
+                Intent intent = SelectPayTypeActivity.newIntent(
+                        SelfHelpPayActivity.this,qty,total,totaldsc);
+                startActivity(intent);
+            } else if ("1".equals(retflag)) {
+                showWarnDialog(retmsg);
+            }
         }
     }
     public static Intent newIntent(Context packageContext, boolean isVip) {
@@ -210,7 +223,7 @@ implements View.OnClickListener {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        mActivity = this;
+        sActivity = this;
         setContentView(R.layout.activity_self_help_pay);
         initData();
         initUI();
@@ -226,7 +239,7 @@ implements View.OnClickListener {
             );
             // 如果isVip==true则弹出提示输入手机号码的对话框
             if (isVip) {
-                showInputPhoneNumDialog();
+                showCardNumDialog();
             }
         }
     }
@@ -234,26 +247,26 @@ implements View.OnClickListener {
     /**
      * 弹出输入手机号码的对话框
      */
-    private void showInputPhoneNumDialog() {
-        if (mPhoneNumberDialog == null) {
-            mPhoneNumberDialog = new InputNumberDialog(this);
-            mPhoneNumberDialog.setLayoutResId(R.layout.dialog_input_phone_num);
-            mPhoneNumberDialog.setTitle("会员登录");
-            mPhoneNumberDialog.setOnYesClickListener(new InputNumberDialog.OnYesClickListener() {
+    private void showCardNumDialog() {
+        if (mCardNumDialog == null) {
+            mCardNumDialog = new InputNumberDialog(this);
+            mCardNumDialog.setLayoutResId(R.layout.dialog_input_phone_num);
+            mCardNumDialog.setTitle("会员登录");
+            mCardNumDialog.setOnYesClickListener(new InputNumberDialog.OnYesClickListener() {
                 @Override
                 public void onYesClicked() {
-                    String phoneNumber = mEtPhoneNumber.getText().toString().trim();
+                    String cardNum = mEtCardNum.getText().toString().trim();
                     // 1.判空(空则提示手机号不能为空)
-                    if (TextUtils.isEmpty(phoneNumber)) {
+                    if (TextUtils.isEmpty(cardNum)) {
                         mTvMessage.setVisibility(View.VISIBLE);
                         mTvMessage.setText(R.string.hint_phone_number_empty_err);
                         return;
                     }
                     // 2.判格式(不符合则提示手机号格式有误,并清空手机号输入框)
-                    if(!Pattern.matches(REGEX_MOBILE, phoneNumber)){
+                    if(!Pattern.matches(REGEX_MOBILE, cardNum)){
                         mTvMessage.setVisibility(View.VISIBLE);
                         mTvMessage.setText(R.string.hint_phone_number_format_err);
-                        mEtPhoneNumber.setText("");
+                        mEtCardNum.setText("");
                         return;
                     }
                     // 3.请求会员登录(失败则提示返回信息)
@@ -261,19 +274,19 @@ implements View.OnClickListener {
                             ConstantValue.TAG_VIP_CARD,
                             new VipCardRequestBean(
                                     ALiFacePayApplication.getInstance().getHostIP(),
-                                    phoneNumber,
+                                    cardNum,
                                     "1"
                             )
                     );
                 }
             });
         }
-        mPhoneNumberDialog.show();
+        mCardNumDialog.show();
         if (mTvMessage == null) {
-            mTvMessage = mPhoneNumberDialog.findViewById(R.id.tv_message);
+            mTvMessage = mCardNumDialog.findViewById(R.id.tv_message);
         }
-        if (mEtPhoneNumber == null) {
-            mEtPhoneNumber = mPhoneNumberDialog.findViewById(R.id.et_number);
+        if (mEtCardNum == null) {
+            mEtCardNum = mCardNumDialog.findViewById(R.id.et_number);
         }
         // 每次显示dialog时,提示默认不显示
         mTvMessage.setVisibility(View.GONE);
@@ -305,17 +318,6 @@ implements View.OnClickListener {
         mTvGoodsTotalPrice = findViewById(R.id.tv_goods_total_price);
     }
 
-    /**
-     * ascii码转换为字符串
-     * @param paramString ascii码值
-     * @return 对应的字符串
-     */
-    private String asciiToString(String paramString) {
-        StringBuffer localStringBuffer = new StringBuffer();
-        localStringBuffer.append((char) Integer.parseInt(paramString));
-        return localStringBuffer.toString();
-
-    }
     // 监听键盘按下
     public boolean onKeyDown(int paramInt, KeyEvent paramKeyEvent){
         // 每次按下获取键值后存贮(如果不是回车,则拼接)
@@ -343,7 +345,17 @@ implements View.OnClickListener {
         }
         return super.onKeyDown(paramInt, paramKeyEvent);
     }
+    /**
+     * ascii码转换为字符串
+     * @param paramString ascii码值
+     * @return 对应的字符串
+     */
+    private String asciiToString(String paramString) {
+        StringBuffer localStringBuffer = new StringBuffer();
+        localStringBuffer.append((char) Integer.parseInt(paramString));
+        return localStringBuffer.toString();
 
+    }
     private void setListener() {
         // 默认
         mBtnCancelDeal.setOnClickListener(this);
@@ -362,7 +374,6 @@ implements View.OnClickListener {
                     ScanGoodsResponseBean goodsBean = mList.get(i);
                     // 2.发起取消商品的请求(tag,ip、序号、barCode)
                     mIndex = i;
-                    L.e("序号:" + mIndex + ",商品码:" + goodsBean.getBarcode());
                     requestNetWorkServer(
                             ConstantValue.TAG_CANCEL_GOODS,
                             new CancelGoodsRequestBean(
@@ -384,19 +395,6 @@ implements View.OnClickListener {
         initNetWorkServer();
     }
 
-    public static void closeServer(){
-        if (sServerSocket != null) {
-            try {
-                sServerSocket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-                L.e("=======================哎呀,关闭服务端侦听失败啦=======================");
-            }
-        }
-        if (sServerSocketThread != null) {
-            sServerSocketThread.interrupt();
-        }
-    }
     /**
      * 开启本地服务端,以监听此时作为客户端的服务器返回数据
      */
@@ -436,28 +434,19 @@ implements View.OnClickListener {
                 break;
             case R.id.btn_input:
                 // 手输条码
-                showInputBarCodeDialog();
+                showBarCodeDialog();
                 break;
             case R.id.btn_add_bag: // 添加购物袋
                 showShoppingBagDialog();
                 break;
             case R.id.btn_input_bar_code:
                 // 手输条码
-                showInputBarCodeDialog();
+                showBarCodeDialog();
                 break;
             case R.id.btn_pay:
                 // 跳转到选择支付方式界面
-                /**
-                 * 1.判断用户是否没有选择任何商品
-                 *  DialogActivity提示"您没有选择任何商品！"
-                 *  选择确定关闭当前dialog
-                 * 2.判断是否存在前后端返回总金额差值
-                 *  不存在差值,->跳转支付方式界面
-                 *  存在差值,->跳转支付方式界面+弹出dialog提示("服务端返回的内容")
-                 *  关闭dialog时则关闭当前界面;
-                 */
                 if (mCount == 0) {
-                    showWarnDialog();
+                    showWarnDialog(getString(R.string.hint_goods_number_err));
                 }else{
                     // 发起准备付款的请求
                     requestNetWorkServer(
@@ -477,10 +466,9 @@ implements View.OnClickListener {
     /**
      * 弹出警告类型的对话框
      */
-    private void showWarnDialog() {
+    private void showWarnDialog(String err) {
         if (mWarnDialog == null) {
             mWarnDialog = new WarnDialog(this);
-            mWarnDialog.setMessage(getString(R.string.hint_goods_number_err));
             mWarnDialog.setOnConfirmClickListener(new WarnDialog.OnConfirmClickListener() {
                 @Override
                 public void onConfirmClicked() {
@@ -489,16 +477,19 @@ implements View.OnClickListener {
             });
         }
         mWarnDialog.show();
+        if (mTvErr == null) {
+            mTvErr = mWarnDialog.findViewById(R.id.tv_message);
+        }
+        mTvErr.setText(err);
     }
 
     /**
      * 显示添加购物袋的对话框
      */
     private void showShoppingBagDialog() {
-        if (mMultipleDialog == null) {
-            mMultipleDialog = new MultipleDialog(this);
-            mMultipleDialog.setTitle("添加购物袋");
-            mBagList = new ArrayList<>();
+        if (mBagDialog == null) {
+            mBagDialog = new MultipleDialog(this);
+            mBagDialog.setTitle("添加购物袋");
             // 将Sp中保存的购物袋信息保存为集合数据
             if (mBagList != null && mBagList.size() > 0) {
                 mBagList.clear();
@@ -519,7 +510,7 @@ implements View.OnClickListener {
                 }
             }
             mBagAdapter = new ShoppingBag2Adapter(this, mBagList);
-            mMultipleDialog.setAdapter(mBagAdapter);
+            mBagDialog.setAdapter(mBagAdapter);
             mBagAdapter.setOnItemCheckedChangeListener(new ShoppingBag2Adapter.OnItemCheckedChangeListener() {
                 @Override
                 public void onItemCheckedChanged(int i) {
@@ -528,22 +519,22 @@ implements View.OnClickListener {
                     mBagAdapter.notifyDataSetChanged();
                 }
             });
-            setMultipleDialogListener();
+            setBagDialogListener();
         }
-        mMultipleDialog.show();
+        mBagDialog.show();
     }
 
     /**
      * 设置多选对话框监听
      */
-    private void setMultipleDialogListener() {
-        mMultipleDialog.setOnNoClickListener("取消", new MultipleDialog.OnNoClickListener() {
+    private void setBagDialogListener() {
+        mBagDialog.setOnNoClickListener("取消", new MultipleDialog.OnNoClickListener() {
             @Override
             public void onNoClick() {
-                mMultipleDialog.dismiss();
+                mBagDialog.dismiss();
             }
         });
-        mMultipleDialog.setOnYesClickListener("确定", new MultipleDialog.OnYesClickListener() {
+        mBagDialog.setOnYesClickListener("确定", new MultipleDialog.OnYesClickListener() {
             @Override
             public void onYesClicked() {
                 // 筛选出用户选中的购物袋并发起扫描商品请求
@@ -560,7 +551,7 @@ implements View.OnClickListener {
                         );
                     }
                 }
-                mMultipleDialog.dismiss();
+                mBagDialog.dismiss();
             }
         });
     }
@@ -568,9 +559,10 @@ implements View.OnClickListener {
     /**
      * 弹出条码号输入对话框
      */
-    private void showInputBarCodeDialog() {
+    private void showBarCodeDialog() {
         Intent intent = InputBarCodeActivity.newIntent(this);
         startActivityForResult(intent,REQUEST_CODE_INPUT_BAR_CODE_DIALOG);
+        SocketUtils.closeServer(sServerSocket,sServerSocketThread);
     }
 
     /**
@@ -654,7 +646,6 @@ implements View.OnClickListener {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        initNetWorkServer();
         if (requestCode == REQUEST_CODE_INPUT_BAR_CODE_DIALOG && resultCode == RESULT_OK) {
             if (data != null) {
                 ScanGoodsResponseBean goodsBean =
@@ -662,14 +653,6 @@ implements View.OnClickListener {
                                 getSerializableExtra(InputBarCodeActivity.EXTRA_RET_MSG);
                 // 设置商品信息
                 setGoodsListMsg("+",goodsBean);
-                // 重新获取交易明细
-                requestNetWorkServer(
-                        ConstantValue.TAG_RE_OBTAIN_DEAL_DETAILS,
-                        new ReObtainDealDetailsRequestBean(
-                                ALiFacePayApplication.getInstance().getHostIP(),
-                                ALiFacePayApplication.getInstance().getFlowNo()
-                        )
-                );
             }
         }
     }
@@ -682,7 +665,7 @@ implements View.OnClickListener {
     private void setGoodsListMsg(String operator, ScanGoodsResponseBean goodsBean) {
         switch (operator) {
             case "+":
-                if (mList.size() <= 0) {
+                if (mList.size() == 0) {
                     // 隐藏默认界面,显示商品信息界面
                     mLLSelfPayFirst.setVisibility(View.GONE);
                     mLLSelfPaySecond.setVisibility(View.VISIBLE);

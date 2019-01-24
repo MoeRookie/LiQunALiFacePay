@@ -16,25 +16,18 @@ import android.widget.TextView;
 import com.liqun.www.liqunalifacepay.R;
 import com.liqun.www.liqunalifacepay.application.ALiFacePayApplication;
 import com.liqun.www.liqunalifacepay.application.ConstantValue;
-import com.liqun.www.liqunalifacepay.data.bean.CancelDealBean;
-import com.liqun.www.liqunalifacepay.data.bean.CancelPaymentBean;
-import com.liqun.www.liqunalifacepay.data.bean.DealRecordBean;
-import com.liqun.www.liqunalifacepay.data.bean.FacePayBean.FacePayResponseBean.JsonBean;
-import com.liqun.www.liqunalifacepay.data.bean.PaymentTypeBean;
 import com.liqun.www.liqunalifacepay.data.utils.JointDismantleUtils;
 import com.liqun.www.liqunalifacepay.data.utils.L;
+import com.liqun.www.liqunalifacepay.data.utils.SocketUtils;
 import com.liqun.www.liqunalifacepay.ui.view.WarnDialog;
 import com.szsicod.print.escpos.PrinterAPI;
 import com.szsicod.print.io.InterfaceAPI;
 import com.szsicod.print.io.USBAPI;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -48,7 +41,7 @@ public class FacePayResultActivity extends AppCompatActivity
 implements View.OnClickListener {
 
     private static final String EXTRA_COUNT = "com.liqun.www.liqunalifacepay.count";
-    private static final String EXTRA_TOTAL_PRICE = "com.liqun.www.liqunalifacepay.total_price";
+    private static final String EXTRA_TOTAL = "com.liqun.www.liqunalifacepay.total_price";
     private static final String EXTRA_PAY_RESULT = "com.liqun.www.liqunalifacepay.pay_result";
     private final static int time = 10000;
     private MyCountDownTimer cdt;
@@ -58,7 +51,7 @@ implements View.OnClickListener {
     private int mCount;
 
     private Button mBtnReturnHome1,mBtnReturnHome2,mBtnContinuePay;
-    private float mTotalPrice;
+    private float mTotal;
     private LinearLayout mLLALiPayDisCounts;
     private TextView mTvAccount,mTvALiPayDiscounts;
     private boolean mIsSuccess = true;
@@ -118,11 +111,11 @@ implements View.OnClickListener {
 
     public static Intent newIntent(
             Context packageContext,
-            float totalPrice,
+            float total,
             int count,
             FacePayResponseBean fprb) {
         Intent intent = new Intent(packageContext, FacePayResultActivity.class);
-        intent.putExtra(EXTRA_TOTAL_PRICE, totalPrice);
+        intent.putExtra(EXTRA_TOTAL, total);
         intent.putExtra(EXTRA_COUNT, count);
         intent.putExtra(EXTRA_PAY_RESULT,fprb);
         return intent;
@@ -143,9 +136,8 @@ implements View.OnClickListener {
         mTvAccount = findViewById(R.id.tv_account);
         mTvTotalPrice1 = findViewById(R.id.tv_total_price1);
         mTvCount = findViewById(R.id.tv_count);
-        mLLALiPayDisCounts = findViewById(R.id.ll_alipay_discounts);
-        mTvALiPayDiscounts = findViewById(R.id.tv_alipay_discounts);
         mTvTotalPrice2 = findViewById(R.id.tv_total_price2);
+        mTvALiPayDiscounts = findViewById(R.id.tv_alipay_discounts);
         mBtnReturnHome1 = findViewById(R.id.btn_return_home1);
         // 支付失败界面
         mLLPayFail = findViewById(R.id.ll_pay_fail);
@@ -160,60 +152,65 @@ implements View.OnClickListener {
         cdt = new MyCountDownTimer(time,1000);
         Intent intent = getIntent();
         if (intent != null) {
-            mTotalPrice = intent.getFloatExtra(EXTRA_TOTAL_PRICE, 0.00f);
+            mTotal = intent.getFloatExtra(EXTRA_TOTAL, 0.00f);
             mCount = intent.getIntExtra(EXTRA_COUNT, 0);
             final FacePayResponseBean fprb = (FacePayResponseBean) intent.getSerializableExtra(EXTRA_PAY_RESULT);
-            AlipayTradePayResponseBean payResponse = fprb.getJson().getAlipay_trade_pay_response();
-            String totalAmount = payResponse.getTotal_amount();
-            String code = payResponse.getCode();
-            if ("10000".equals(code)) { // 成功
-                // 设置刷脸付成功
-                mIsSuccess = true;
-                String aliPayAccount = payResponse.getBuyer_logon_id();
-                String receiptAmountStr = payResponse.getReceipt_amount();// 实收金额
-                String buyerPayAmountStr = payResponse.getBuyer_pay_amount();// 付款金额
-                double receiptAmount = Double.valueOf(receiptAmountStr);
-                double buyerPayAmount = Double.valueOf(buyerPayAmountStr);
-                DecimalFormat df = new DecimalFormat("#.00");
-                double discounts = receiptAmount-buyerPayAmount;
-                String disCountsStr = df.format(discounts);
-                // 显示支付成功界面,隐藏支付失败界面
-                setLayoutVisibility(true);
-                // 设置支付成功界面显示
-                mTvAccount.setVisibility(View.VISIBLE);
-                mTvAccount.setText("支付宝账号" + aliPayAccount);
-                mTvTotalPrice1.setText("￥" + mTotalPrice);
-                mTvCount.setText("共" + mCount + "件商品");
-                mTvTotalPrice2.setText("￥" + mTotalPrice);
-                if (Double.valueOf(disCountsStr) > 0.00) {
-                    // 设置优惠项显示
-                    mLLALiPayDisCounts.setVisibility(View.VISIBLE);
-                    // 设置优惠金额
-                    mTvALiPayDiscounts.setText("￥"+disCountsStr);
-                }
-                // 请求支付结果
-                requestNetWorkServer(
-                        ConstantValue.TAG_PAYMENT_TYPE,
-                        new PaymentTypeRequestBean(
-                                ALiFacePayApplication.getInstance().getHostIP(),
-                                "32",
-                                Float.valueOf(totalAmount),
-                                payResponse.getOut_trade_no(),
-                                "",
-                                "",
-                                "",
-                                "0",
-                                null
-                        )
-                );
-            }else{ // 失败
+            if (fprb == null) { // 设置刷脸付失败
                 // 设置刷脸付失败
                 mIsSuccess = false;
                 // 显示支付失败界面,隐藏支付成功界面
                 setLayoutVisibility(false);
-                mTvTotalPrice3.setText("￥" + mTotalPrice);
+                mTvTotalPrice3.setText("￥" + mTotal);
                 mTvCount1.setText("共" + mCount + "件商品");
-                mTvErrHint.setText("支付失败 : "+payResponse.getMsg());
+                return;
+            }else{
+                AlipayTradePayResponseBean payResponse = fprb.getJson().getAlipay_trade_pay_response();
+                String totalAmount = payResponse.getTotal_amount();
+                String code = payResponse.getCode();
+                if ("10000".equals(code)) { // 成功
+                    // 设置刷脸付成功
+                    mIsSuccess = true;
+                    String aliPayAccount = payResponse.getBuyer_logon_id(); // 支付宝账号
+                    String receiptAmountStr = payResponse.getReceipt_amount();// 实收金额
+                    String buyerPayAmountStr = payResponse.getBuyer_pay_amount();// 付款金额
+                    double receiptAmount = Double.valueOf(receiptAmountStr);
+                    double buyerPayAmount = Double.valueOf(buyerPayAmountStr);
+                    DecimalFormat df = new DecimalFormat("#.00");
+                    double discounts = receiptAmount-buyerPayAmount;
+                    String disCountsStr = df.format(discounts);
+                    // 显示支付成功界面,隐藏支付失败界面
+                    setLayoutVisibility(true);
+                    // 设置支付成功界面显示
+                    mTvAccount.setText("支付宝账号" + aliPayAccount);
+                    mTvTotalPrice1.setText("￥" + mTotal);
+                    mTvCount.setText("共" + mCount + "件商品");
+                    mTvTotalPrice2.setText("￥" + mTotal);
+                    // 设置优惠金额
+                    mTvALiPayDiscounts.setText("￥"+disCountsStr);
+                    // 请求支付结果
+                    requestNetWorkServer(
+                            ConstantValue.TAG_PAYMENT_TYPE,
+                            new PaymentTypeRequestBean(
+                                    ALiFacePayApplication.getInstance().getHostIP(),
+                                    "32",
+                                    Float.valueOf(totalAmount),
+                                    payResponse.getOut_trade_no(),
+                                    "",
+                                    "",
+                                    "",
+                                    "0",
+                                    null
+                            )
+                    );
+                }else{ // 失败
+                    // 设置刷脸付失败
+                    mIsSuccess = false;
+                    // 显示支付失败界面,隐藏支付成功界面
+                    setLayoutVisibility(false);
+                    mTvTotalPrice3.setText("￥" + mTotal);
+                    mTvCount1.setText("共" + mCount + "件商品");
+                    mTvErrHint.setText("支付失败 : "+payResponse.getMsg());
+                }
             }
             cdt.start();
         }
@@ -266,23 +263,16 @@ implements View.OnClickListener {
                     public void run() {
                         super.run();
                         InterfaceAPI io = new USBAPI(FacePayResultActivity.this);
-                        // 如果打印机连接API成功
                         if (PrinterAPI.SUCCESS == mPrinter.connect(io)) {
-                            // 打印printxt的内容
-                            // 设置字体样式
                             mPrinter.setFontStyle(0);
                             try {
-                                // 如果字符串流入打印机成功
                                 if (PrinterAPI.SUCCESS == mPrinter.printString(
                                         ptrb.getPrinttxt(),
                                         "GBK",
-                                        // 流入
                                         true)) {
                                     String printtxt1 = "支付宝扫下方二维码 , 更多优惠及精彩内容为你呈现";
-                                    // 打印之后的文本
                                     if (PrinterAPI.SUCCESS == mPrinter.printString(
                                             printtxt1,"GBK",true)) {
-                                        // 打印二维码
                                         if (PrinterAPI.SUCCESS == mPrinter.printQRCode(
                                                 "https://m.alipay.com/9y5i54d",
                                                 6,
@@ -290,13 +280,10 @@ implements View.OnClickListener {
                                             // 打印并换行
                                             mPrinter.printFeed();
                                         }
-                                        // 打印最后的文本切纸并关闭打印机
                                         String printtxt2 = "\n\t\t    利群集团";
                                         if (PrinterAPI.SUCCESS == mPrinter.printString(
                                                 printtxt2,"GBK",true)) {
-                                            // 切纸
                                             mPrinter.cutPaper(66, 0);
-                                            // 关闭打印机
                                             mPrinter.disconnect();
                                         }
                                     }
@@ -395,12 +382,12 @@ implements View.OnClickListener {
                 cdt.onFinish();
                 break;
             case R.id.btn_continue_pay: // 继续支付
-                // 跳转扫码付款界面
-                closeServer();
-                Intent intent = ScanCodePayActivity.newIntent(
-                        this,
-                        mCount,
-                        mTotalPrice);
+                // 跳转选择支付方式界面
+                SocketUtils.closeServer(sServerSocket,sServerSocketThread);
+                Intent intent = SelectPayTypeActivity.newIntent(
+                        FacePayResultActivity.this,
+                        mTotal, mCount, 0.00f
+                );
                 startActivity(intent);
                 break;
         }
@@ -443,24 +430,8 @@ implements View.OnClickListener {
         @Override
         public void onFinish() {
             enterHome();
-            closeServer();
+            SocketUtils.closeServer(sServerSocket,sServerSocketThread);
             finish();
-        }
-    }
-    /**
-     * 关闭服务端侦听
-     */
-    public static void closeServer(){
-        if (sServerSocket != null) {
-            try {
-                sServerSocket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-                L.e("=======================哎呀,关闭服务端侦听失败啦=======================");
-            }
-        }
-        if (sServerSocketThread != null) {
-            sServerSocketThread.interrupt();
         }
     }
 }

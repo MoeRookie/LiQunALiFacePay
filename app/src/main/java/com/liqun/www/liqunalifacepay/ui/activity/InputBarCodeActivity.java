@@ -7,6 +7,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
+import android.text.TextUtils;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -18,6 +19,7 @@ import com.liqun.www.liqunalifacepay.application.ConstantValue;
 import com.liqun.www.liqunalifacepay.data.bean.ScanGoodsBean;
 import com.liqun.www.liqunalifacepay.data.utils.JointDismantleUtils;
 import com.liqun.www.liqunalifacepay.data.utils.L;
+import com.liqun.www.liqunalifacepay.data.utils.SocketUtils;
 import com.liqun.www.liqunalifacepay.ui.view.NumberKeyboardView;
 
 import java.io.BufferedReader;
@@ -75,8 +77,8 @@ public class InputBarCodeActivity extends AppCompatActivity {
             if ("1".equals(retflag)) {
                 setDialogErrMsg(true,retmsg);
             } else if ("0".equals(retflag)) {
-                setDialogErrMsg(false, "");
-                closeServer();
+                setDialogErrMsg(false, null);
+                SocketUtils.closeServer(mServerSocket,mServerSocketThread);
                 Intent intent = new Intent();
                 intent.putExtra(EXTRA_RET_MSG, sgrb);
                 setResult(RESULT_OK,intent);
@@ -124,14 +126,12 @@ public class InputBarCodeActivity extends AppCompatActivity {
     }
 
     private void setListener()  {
-        // 为防止之前的服务端侦听拦截数据,须先关闭之前的服务端侦听
-        SelfHelpPayActivity.closeServer();
         initNetWorkServer();
         mBtnNo.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 // 为防止当前的服务端侦听拦截数据,须先关闭当前的服务端侦听
-                closeServer();
+                SocketUtils.closeServer(mServerSocket,mServerSocketThread);
                 finish();
             }
         });
@@ -154,7 +154,7 @@ public class InputBarCodeActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 String barCodeStr = mEtBarCode.getText().toString().trim();
-                if ("".equals(barCodeStr)) {
+                if (TextUtils.isEmpty(barCodeStr)) {
                     mTvMessage.setVisibility(View.VISIBLE);
                     mTvMessage.setText(R.string.bar_code_not_null);
                     return;
@@ -201,23 +201,6 @@ public class InputBarCodeActivity extends AppCompatActivity {
             }
         };
         mServerSocketThread.start();
-    }
-
-    /**
-     * 关闭当前服务端侦听
-     */
-    private void closeServer(){
-        if (mServerSocket != null) {
-            try {
-                mServerSocket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-                L.e("=======================哎呀,关闭服务端侦听失败啦=======================");
-            }
-        }
-        if (mServerSocketThread != null) {
-            mServerSocketThread.interrupt();
-        }
     }
     /**
      * Socket多线程处理类 用来处理服务端接收到的客户端请求(处理Socket对象)

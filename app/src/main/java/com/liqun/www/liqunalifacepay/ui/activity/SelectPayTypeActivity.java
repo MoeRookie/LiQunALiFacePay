@@ -24,8 +24,8 @@ import com.liqun.www.liqunalifacepay.application.ConstantValue;
 import com.liqun.www.liqunalifacepay.data.bean.SettingItemBean;
 import com.liqun.www.liqunalifacepay.data.utils.JointDismantleUtils;
 import com.liqun.www.liqunalifacepay.data.utils.L;
+import com.liqun.www.liqunalifacepay.data.utils.SocketUtils;
 import com.liqun.www.liqunalifacepay.data.utils.SpUtils;
-import com.liqun.www.liqunalifacepay.ui.view.LoadingDialog;
 import com.liqun.www.liqunalifacepay.ui.view.WarnDialog;
 
 import org.ksoap2.serialization.SoapObject;
@@ -55,9 +55,9 @@ import static com.liqun.www.liqunalifacepay.data.bean.FacePayBean.FacePayRespons
 
 public class SelectPayTypeActivity extends AppCompatActivity
 implements View.OnClickListener {
-    private static final String EXTRA_RETMSG = "com.liqun.www.liqunalifacepay.retmsg";
-    private static final String EXTRA_TOTAL_PRICE = "com.liqun.www.liqunalifacepay.total_price";
     private static final String EXTRA_COUNT = "com.liqun.www.liqunalifacepay.count";
+    private static final String EXTRA_TOTAL = "com.liqun.www.liqunalifacepay.total_price";
+    private static final String EXTRA_TOTAL_DSC = "com.liqun.www.liqunalifacepay.total_dsc";
     private WarnDialog mWarnDialog;
     private TextView mTvMessage;
     private static Thread sServerSocketThread;
@@ -99,7 +99,6 @@ implements View.OnClickListener {
             switch (msg.what) {
                 case 0:
                     // 连接服务器失败
-                    // 弹出警告对话框,点击确定返回到主界面
                     showWarnDialog(
                             getString(R.string.connect_server_fail)
                     );
@@ -133,9 +132,8 @@ implements View.OnClickListener {
                         if (msg.obj instanceof String) {
                             String json = (String) msg.obj;
                             FacePayResponseBean fprb = JSON.parseObject(json, FacePayResponseBean.class);
-                            L.e("fprb.code = " + fprb.getJson().getAlipay_trade_pay_response().getCode());
                             // 1.关闭当前服务端侦听
-                            closeServer();
+                            SocketUtils.closeServer(sServerSocket,sServerSocketThread);
                             // 3.finish掉当前界面
                             finish();
                             // 4.关闭提示支付中界面
@@ -143,7 +141,7 @@ implements View.OnClickListener {
                             // 2.跳转到刷脸结果界面
                             Intent intent = FacePayResultActivity.newIntent(
                                     SelectPayTypeActivity.this,
-                                    mTotalPrice,
+                                    mTotal,
                                     mCount,
                                     fprb
                             );
@@ -158,15 +156,22 @@ implements View.OnClickListener {
             }
         }
     };
+    private boolean mIsCancelPaySuccess;
 
     private void enterPayingActivity() {
         Intent intent = PayingActivity.newIntent(this);
         startActivity(intent);
     }
 
-    private float mTotalPrice = 0.00f;
     private int mCount;
-    private LoadingDialog mLoadingDialog;
+    private float mTotal = 0.00f;
+    private float mTotalDsc = 0.00f;
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        mIsCancelPaySuccess = false;
+    }
 
     /**
      * 处理请求结果
@@ -179,9 +184,10 @@ implements View.OnClickListener {
             String retmsg = cprb.getRetmsg();
             if ("0".equals(retflag)) {
                 retmsg = "取消付款成功！";
+                mIsCancelPaySuccess = true;
             }
             // 成功后关闭当前服务端侦听&当前界面
-            closeServer();
+            SocketUtils.closeServer(sServerSocket,sServerSocketThread);
             showWarnDialog(retmsg);
         }
     }
@@ -193,14 +199,18 @@ implements View.OnClickListener {
     private void smile(String zimId, String protocal) {
         Map params = new HashMap();
         params.put(KEY_INIT_RESP_NAME, protocal);
-        /* start: 如果是预输入手机号方案，请加入以下代码,填入会员绑定的手机号，必须与支付宝帐号对应的手机号一致 */
+        // 如果是预输入手机号方案，请加入以下代码,填入会员绑定的手机号，必须与支付宝帐号对应的手机号一致
         params.put("phone_number", "1381XXXXX");
-        /* end: --------------------------------------------- */
         zoloz.zolozVerify(zimId, params, new ZolozCallback() {
             @Override
             public void response(final Map smileToPayResponse) {
                 if (smileToPayResponse == null) {
-                    L.e("==================人脸识别验证失败=================");
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            showWarnDialog("人脸识别验证失败");
+                        }
+                    });
                     return;
                 }
                 String code = (String)smileToPayResponse.get("code");
@@ -216,16 +226,6 @@ implements View.OnClickListener {
             }
         });
     }
-    /**
-     * 弹出加载类型的对话框
-     */
-//    private void showLoadingDialog() {
-//        if (mLoadingDialog == null) {
-//            mLoadingDialog = new LoadingDialog(this,R.style.LoadingDialogStyle);
-//        }
-//        mLoadingDialog.show();
-//        mLoadingDialog.setMessage("支付中 . . .");
-//    }
 
     /**
      * 支付
@@ -233,18 +233,10 @@ implements View.OnClickListener {
      */
     private void pay(String fToken) {
         // 拼接参数
-        // 获取设置信息
-        String settingMsg = SpUtils.getString(
-                this,
-                ConstantValue.SETTING_CONTENT,
-                ""
-        );
-        // 将设置信息转换为集合对象
-        List<SettingItemBean> settingList = JSONArray.parseArray(settingMsg, SettingItemBean.class);
         // 获取门店编码+门店商户号+款台号
-        String shopNo = settingList.get(3).getContent();
-        String merchantNo = settingList.get(4).getContent();
-        String catwalkNo = settingList.get(5).getContent();
+        String shopNo = ALiFacePayApplication.getInstance().getShopNo();
+        String merchantNo = ALiFacePayApplication.getInstance().getShopMerchantNo();
+        String catwalkNo = ALiFacePayApplication.getInstance().getCatwalkNo();
         // 获取固定规则的当前时间
         String requestTime = getRequestTime(System.currentTimeMillis());
         // 获取流水号
@@ -285,7 +277,7 @@ implements View.OnClickListener {
                                     catwalkNo,
                                     signedFToken,
                                     "1m",
-                                    String.valueOf(mTotalPrice))
+                                    String.valueOf(mTotal))
                     ),
                     4
             );
@@ -302,28 +294,14 @@ implements View.OnClickListener {
         return sdf.format(date); // 发送请求的时间;
     }
 
-    public static void closeServer(){
-        if (sServerSocket != null) {
-            try {
-                sServerSocket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-                L.e("=======================哎呀,关闭服务端侦听失败啦=======================");
-            }
-        }
-        if (sServerSocketThread != null) {
-            sServerSocketThread.interrupt();
-        }
-    }
-
     private Button mBtnClose;
     private ImageButton mIbScanCode,mIbSmile;
 
-    public static Intent newIntent(Context packageContext, String retmsg, int count, float totalPrice) {
+    public static Intent newIntent(Context packageContext,float count, float total,float totaldsc) {
         Intent intent = new Intent(packageContext, SelectPayTypeActivity.class);
-        intent.putExtra(EXTRA_RETMSG, retmsg);
         intent.putExtra(EXTRA_COUNT, count);
-        intent.putExtra(EXTRA_TOTAL_PRICE,totalPrice);
+        intent.putExtra(EXTRA_TOTAL,total);
+        intent.putExtra(EXTRA_TOTAL_DSC, totaldsc);
         return intent;
     }
 
@@ -332,8 +310,8 @@ implements View.OnClickListener {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_select_pay_type);
         zoloz = Zoloz.getInstance(getApplicationContext());
-        initError();
         initUI();
+        initData();
         setListener();
     }
 
@@ -341,6 +319,17 @@ implements View.OnClickListener {
         mBtnClose = findViewById(R.id.btn_close);
         mIbScanCode = findViewById(R.id.ib_scan_code);
         mIbSmile = findViewById(R.id.ib_smile);
+    }
+
+    private void initData() {
+        Intent intent = getIntent();
+        if (intent != null) {
+            mCount = (int) intent.getFloatExtra(EXTRA_COUNT, 0.00f);
+            mTotal = intent.getFloatExtra(EXTRA_TOTAL, 0.00f);
+            mTotalDsc = intent.getFloatExtra(EXTRA_TOTAL_DSC, 0.00f);
+        }
+        // 启用服务端侦听
+        initNetWorkServer();
     }
 
     private void setListener() {
@@ -362,8 +351,8 @@ implements View.OnClickListener {
                 );
                 break;
             case R.id.ib_scan_code: // 扫码支付
-                closeServer();
-                Intent intent = ScanCodePayActivity.newIntent(this,mCount,mTotalPrice);
+                SocketUtils.closeServer(sServerSocket,sServerSocketThread);
+                Intent intent = ScanCodePayActivity.newIntent(this,mCount, mTotal,mTotalDsc);
                 startActivity(intent);
                 finish();
                 break;
@@ -380,7 +369,12 @@ implements View.OnClickListener {
             @Override
             public void response(Map smileToPayResponse) {
                 if (smileToPayResponse == null) {
-                    L.e("===========本地刷脸初始化失败==========");
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            showWarnDialog("本地刷脸初始化失败");
+                        }
+                    });
                     return;
                 }
                 String code = (String)smileToPayResponse.get("code");
@@ -393,7 +387,12 @@ implements View.OnClickListener {
                             ConstantValue.METHOD_ZOLOZ_INIT,
                             metaInfo,3);
                 } else {
-                    L.e("===========获取刷脸初始化参数失败==========");
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            showWarnDialog("获取刷脸初始化参数失败");
+                        }
+                    });
                 }
             }
         });
@@ -440,10 +439,25 @@ implements View.OnClickListener {
                     mMessage.what = what;
                     mMessage.obj = bodyIn;
                     mHandler.sendMessage(mMessage);
-                } catch (IOException e) {
-                    L.e("==========客户端或者服务端数据异常(IO)==========");
-                } catch (XmlPullParserException e) {
-                    L.e("==========客户端或者服务端数据异常(XML)==========");
+                } catch (Exception e) {
+                    if (what == 3) {
+                        showWarnDialog("人脸初始化失败");
+                    } else if (what == 4) { // 刷脸付款失败
+                        // 1.关闭当前服务端侦听
+                        SocketUtils.closeServer(sServerSocket,sServerSocketThread);
+                        // 3.finish掉当前界面
+                        finish();
+                        // 4.关闭提示支付中界面
+                        PayingActivity.sInstance.finish();
+                        // 2.跳转到刷脸结果界面
+                        Intent intent = FacePayResultActivity.newIntent(
+                                SelectPayTypeActivity.this,
+                                mTotal,
+                                mCount,
+                                null
+                        );
+                        startActivity(intent);
+                    }
                 }
             }
         }.start();
@@ -521,24 +535,6 @@ implements View.OnClickListener {
     }
 
     /**
-     * 设置错误信息
-     */
-    private void initError() {
-        Intent intent = getIntent();
-        if (intent != null) {
-            String errStr = intent.getStringExtra(EXTRA_RETMSG);
-            if (!TextUtils.isEmpty(errStr)) {
-                showWarnDialog(errStr);
-            }else{
-                mTotalPrice = intent.getFloatExtra(EXTRA_TOTAL_PRICE, 0.00f);
-                mCount = intent.getIntExtra(EXTRA_COUNT, 0);
-                // 1.开启服务端侦听
-                initNetWorkServer();
-            }
-        }
-    }
-
-    /**
      * 启用服务端侦听
      */
     private void initNetWorkServer() {
@@ -571,7 +567,10 @@ implements View.OnClickListener {
             mWarnDialog.setOnConfirmClickListener(new WarnDialog.OnConfirmClickListener() {
                 @Override
                 public void onConfirmClicked() {
-                    finish();
+                    mWarnDialog.dismiss();
+                    if (mIsCancelPaySuccess) {
+                        finish();
+                    }
                 }
             });
         }

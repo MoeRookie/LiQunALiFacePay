@@ -13,7 +13,6 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.liqun.www.liqunalifacepay.R;
-import com.liqun.www.liqunalifacepay.data.bean.PaymentTypeBean;
 import com.liqun.www.liqunalifacepay.data.utils.L;
 import com.szsicod.print.escpos.PrinterAPI;
 import com.szsicod.print.io.InterfaceAPI;
@@ -26,11 +25,12 @@ import static com.liqun.www.liqunalifacepay.data.bean.PaymentTypeBean.*;
 public class ScanCodePayResultActivity extends AppCompatActivity
 implements View.OnClickListener {
 
-    private static final String EXTRA_COUNT = "com.liqun.www.liqunalifacepay.count";
-    private static final String EXTRA_TOTAL_PRICE = "com.liqun.www.liqunalifacepay.total_price";
-    private static final String EXTRA_RETMSG = "com.liqun.www.liqunalifacepay.retmsg";
     private static final String EXTRA_IS_SUCCESS = "com.liqun.www.liqunalifacepay.is_success";
     private static final String EXTRA_PTRB = "com.liqun.www.liqunalifacepay.ptrb";
+    private static final String EXTRA_RETMSG = "com.liqun.www.liqunalifacepay.retmsg";
+    private static final String EXTRA_COUNT = "com.liqun.www.liqunalifacepay.count";
+    private static final String EXTRA_TOTAL = "com.liqun.www.liqunalifacepay.total_price";
+    private static final String EXTRA_TOTAL_DSC = "com.liqun.www.liqunalifacepay.total_dsc";
     private final static int time = 10000;
     private MyCountDownTimer cdt;
     private LinearLayout mLLPaySuccess;
@@ -43,20 +43,24 @@ implements View.OnClickListener {
 //             3、打印完成后继续调用打印文本->打印二维码->打印文本的功能
 //             4、打印最终完成后断开打印机
     private Button mBtnReturnHome1,mBtnReturnHome2,mBtnContinuePay;
-    private float mTotalPrice;
+    private float mTotal;
+    private TextView mTvALiDsc;
+    private float mTotalDsc;
 
     public static Intent newIntent(
             Context packageContext,
             boolean isSuccess,
             String retmsg,
-            float totalPrice,
-            int count, PaymentTypeResponseBean ptrb)
-    {
+            int count,
+            float total,
+            float totaldsc,
+            PaymentTypeResponseBean ptrb) {
         Intent intent = new Intent(packageContext, ScanCodePayResultActivity.class);
         intent.putExtra(EXTRA_IS_SUCCESS, isSuccess);
         intent.putExtra(EXTRA_RETMSG, retmsg);
-        intent.putExtra(EXTRA_TOTAL_PRICE, totalPrice);
         intent.putExtra(EXTRA_COUNT, count);
+        intent.putExtra(EXTRA_TOTAL, total);
+        intent.putExtra(EXTRA_TOTAL_DSC, totaldsc);
         intent.putExtra(EXTRA_PTRB, ptrb);
         return intent;
     }
@@ -76,6 +80,7 @@ implements View.OnClickListener {
         mTvTotalPrice1 = findViewById(R.id.tv_total_price1);
         mTvCount = findViewById(R.id.tv_count);
         mTvTotalPrice2 = findViewById(R.id.tv_total_price2);
+        mTvALiDsc = findViewById(R.id.tv_alipay_discounts);
         mBtnReturnHome1 = findViewById(R.id.btn_return_home1);
         // 支付失败界面
         mLLPayFail = findViewById(R.id.ll_pay_fail);
@@ -92,15 +97,19 @@ implements View.OnClickListener {
         if (intent != null) {
             boolean isSuccess = intent.getBooleanExtra(EXTRA_IS_SUCCESS, true);
             String retmsg = intent.getStringExtra(EXTRA_RETMSG);
-            mTotalPrice = intent.getFloatExtra(EXTRA_TOTAL_PRICE, 0.00f);
             mCount = intent.getIntExtra(EXTRA_COUNT, 0);
+            mTotal = intent.getFloatExtra(EXTRA_TOTAL, 0.00f);
+            mTotalDsc = intent.getFloatExtra(EXTRA_TOTAL_DSC, 0.00f);
             if (isSuccess) {
                 // 显示支付成功界面,隐藏支付失败界面
                 setLayoutVisibility(true);
                 // 设置支付成功界面显示
-                mTvTotalPrice1.setText("￥" + mTotalPrice);
+                mTvTotalPrice1.setText("￥" + mTotal);
                 mTvCount.setText("共" + mCount + "件商品");
-                mTvTotalPrice2.setText("￥" + mTotalPrice);
+                mTvTotalPrice2.setText("￥" + mTotal);
+                mTvALiDsc.setText("￥" + mTotalDsc);
+                // 启用计时器
+                cdt.start();
                 /**
                  * 打印小票
                  * 1.连接usb;
@@ -110,67 +119,53 @@ implements View.OnClickListener {
                  * 5.成功后打印"利群集团(须居中显示)"字样;
                  * 6.断开usb连接并启动计时器;
                  */
-                // 启用计时器
-                cdt.start();
                 final PaymentTypeResponseBean ptrb =
                         (PaymentTypeResponseBean) intent.getSerializableExtra(EXTRA_PTRB);
                 if (!TextUtils.isEmpty(ptrb.getPrinttxt())) {
-                // 连接usb
-                if(mPrinter.isConnect()){
-                    mPrinter.disconnect();
-                }
-                // 开启子线程
-                new Thread(){
-                    @Override
-                    public void run() {
-                        super.run();
-                        InterfaceAPI io = new USBAPI(ScanCodePayResultActivity.this);
-                        // 如果打印机连接API成功
-                        if (PrinterAPI.SUCCESS == mPrinter.connect(io)) {
-                            // 打印printxt的内容
-                            // 设置字体样式
-                            mPrinter.setFontStyle(0);
-                            try {
-                                // 如果字符串流入打印机成功
-                                if (PrinterAPI.SUCCESS == mPrinter.printString(
-                                        ptrb.getPrinttxt(),
-                                        "GBK",
-                                        // 流入
-                                        true)) {
-                                    String printtxt1 = "支付宝扫下方二维码 , 更多优惠及精彩内容为你呈现";
-                                    // 打印之后的文本
+                    // 连接usb
+                    if(mPrinter.isConnect()){
+                        mPrinter.disconnect();
+                    }
+                    // 开启子线程
+                    new Thread(){
+                        @Override
+                        public void run() {
+                            super.run();
+                            InterfaceAPI io = new USBAPI(ScanCodePayResultActivity.this);
+                            // 如果打印机连接API成功
+                            if (PrinterAPI.SUCCESS == mPrinter.connect(io)) {
+                                mPrinter.setFontStyle(0);
+                                try {
                                     if (PrinterAPI.SUCCESS == mPrinter.printString(
-                                            printtxt1,"GBK",true)) {
-                                        // 打印二维码
-                                        if (PrinterAPI.SUCCESS == mPrinter.printQRCode(
-                                                "https://m.alipay.com/9y5i54d",
-                                                6,
-                                                false)) {
-                                            // 打印并换行
-                                            mPrinter.printFeed();
-                                        }
-                                        // 打印最后的文本切纸并关闭打印机
-                                        String printtxt2 = "\n\t\t    利群集团";
+                                            ptrb.getPrinttxt(), "GBK", true)) {
+                                        String printtxt1 = "支付宝扫下方二维码 , 更多优惠及精彩内容为你呈现";
                                         if (PrinterAPI.SUCCESS == mPrinter.printString(
-                                                printtxt2,"GBK",true)) {
-                                            // 切纸
-                                            mPrinter.cutPaper(66, 0);
-                                            // 关闭打印机
-                                            mPrinter.disconnect();
+                                                printtxt1,"GBK",true)) {
+                                            if (PrinterAPI.SUCCESS == mPrinter.printQRCode(
+                                                    "https://m.alipay.com/9y5i54d", 6, false)) {
+                                                mPrinter.printFeed();
+                                            }
+                                            // 打印最后的文本切纸并关闭打印机
+                                            String printtxt2 = "\n\t\t    利群集团";
+                                            if (PrinterAPI.SUCCESS == mPrinter.printString(
+                                                    printtxt2,"GBK",true)) {
+                                                mPrinter.cutPaper(66, 0);
+                                                mPrinter.disconnect();
+                                            }
                                         }
                                     }
+                                } catch (UnsupportedEncodingException e) {
+                                    L.e("==================不支持的编码格式===============");
                                 }
-                            } catch (UnsupportedEncodingException e) {
-                                L.e("==================不支持的编码格式===============");
                             }
                         }
-                    }
-                }.start();
-            }
+                    }.start();
+                }
             }else{
                 // 显示支付失败界面,隐藏支付成功界面
                 setLayoutVisibility(false);
-                mTvTotalPrice3.setText("￥" + mTotalPrice);
+                // 设置支付失败界面显示
+                mTvTotalPrice3.setText("￥" + mTotal);
                 mTvCount1.setText("共" + mCount + "件商品");
                 mTvErrHint.setText(retmsg);
             }
@@ -200,7 +195,8 @@ implements View.OnClickListener {
                 Intent intent = ScanCodePayActivity.newIntent(
                         this,
                         mCount,
-                        mTotalPrice);
+                        mTotal,
+                        0.00f);
                 startActivity(intent);
                 break;
         }

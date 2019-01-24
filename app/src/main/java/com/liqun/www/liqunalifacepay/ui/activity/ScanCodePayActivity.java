@@ -19,13 +19,12 @@ import com.liqun.www.liqunalifacepay.application.ALiFacePayApplication;
 import com.liqun.www.liqunalifacepay.application.ConstantValue;
 import com.liqun.www.liqunalifacepay.data.utils.JointDismantleUtils;
 import com.liqun.www.liqunalifacepay.data.utils.L;
+import com.liqun.www.liqunalifacepay.data.utils.SocketUtils;
 import com.liqun.www.liqunalifacepay.ui.view.LoadingDialog;
 import com.liqun.www.liqunalifacepay.ui.view.WarnDialog;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
@@ -33,6 +32,8 @@ import java.net.Socket;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+
+import javax.net.ssl.SSLContext;
 
 import static com.liqun.www.liqunalifacepay.data.bean.CancelPaymentBean.CancelPaymentRequestBean;
 import static com.liqun.www.liqunalifacepay.data.bean.CancelPaymentBean.CancelPaymentResponseBean;
@@ -45,14 +46,14 @@ import static com.liqun.www.liqunalifacepay.data.bean.PaymentTypeBean.PaymentTyp
 public class ScanCodePayActivity extends AppCompatActivity {
     private XDeviceManager mXDeviceManager;
     private static final String EXTRA_COUNT = "com.liqun.www.liqunalifacepay.count";
-    private static final String EXTRA_TOTAL_PRICE = "com.liqun.www.liqunalifacepay.total_price";
+    private static final String EXTRA_TOTAL = "com.liqun.www.liqunalifacepay.total";
+    private static final String EXTRA_TOTAL_DSC = "com.liqun.www.liqunalifacepay.total_dsc";
     private TextView mBtnCancelPay,mTvTotalPrice;
     private int time = 118000;
     private MyCountDownTimer cdt;
     private static Thread sServerSocketThread;
     private static ServerSocket sServerSocket;
     private Message mMessage;
-    private float mTotalPrice = 0.00f;
     private StringBuffer mSb = new StringBuffer();
     private static final String TYPE_SCAN_CODE_PAY = "type_scan_code_pay";
     private boolean mIsCancelPay = true; // 操作类型->取消付款
@@ -113,6 +114,8 @@ public class ScanCodePayActivity extends AppCompatActivity {
     private TextView mTvMessage;
     private LoadingDialog mLoadingDialog;
     private int mCount;
+    private float mTotal = 0.00f;
+    private float mTotalDsc = 0.00f;
     private String mBarCode;
     private String mSignedBarCode;
     private Button mBtnConfirm;
@@ -135,7 +138,7 @@ public class ScanCodePayActivity extends AppCompatActivity {
                  */
                 if (!mIsManual) {
                     // 关闭服务端侦听
-                    closeServer();
+                    SocketUtils.closeServer(sServerSocket,sServerSocketThread);
                     // finish()当前界面
                     finish();
                 }else{ // 手动取消(弹出带倒计时的警告框)
@@ -166,7 +169,7 @@ public class ScanCodePayActivity extends AppCompatActivity {
         // 关闭加载框
         mLoadingDialog.dismiss();
         // 关闭服务端侦听
-        closeServer();
+        SocketUtils.closeServer(sServerSocket,sServerSocketThread);
         // finish掉当前界面
         finish();
         // 跳转支付结果界面
@@ -174,8 +177,10 @@ public class ScanCodePayActivity extends AppCompatActivity {
                 ScanCodePayActivity.this,
                 isSuccess,
                 retmsg,
-                mTotalPrice,
-                mCount,ptrb
+                mCount,
+                mTotal,
+                mTotalDsc,
+                ptrb
 
         );
         startActivity(intent);
@@ -207,10 +212,11 @@ public class ScanCodePayActivity extends AppCompatActivity {
         mTvMessage.setText(msg);
     }
 
-    public static Intent newIntent(Context packageContext, int count, float totalPrice) {
+    public static Intent newIntent(Context packageContext, int count, float total,float totaldsc) {
         Intent intent = new Intent(packageContext, ScanCodePayActivity.class);
         intent.putExtra(EXTRA_COUNT, count);
-        intent.putExtra(EXTRA_TOTAL_PRICE, totalPrice);
+        intent.putExtra(EXTRA_TOTAL, total);
+        intent.putExtra(EXTRA_TOTAL_DSC, totaldsc);
         return intent;
     }
 
@@ -235,8 +241,8 @@ public class ScanCodePayActivity extends AppCompatActivity {
         Intent intent = getIntent();
         if (intent != null) {
             mCount = intent.getIntExtra(EXTRA_COUNT, 0);
-            mTotalPrice = intent.getFloatExtra(EXTRA_TOTAL_PRICE, 0.00f);
-            mTvTotalPrice.setText("￥ " + mTotalPrice);
+            mTotal = intent.getFloatExtra(EXTRA_TOTAL, 0.00f);
+            mTvTotalPrice.setText("￥ " + mTotal);
         }
     }
 
@@ -325,7 +331,7 @@ public class ScanCodePayActivity extends AppCompatActivity {
                             new PaymentTypeRequestBean(
                                     ALiFacePayApplication.getInstance().getHostIP(),
                                     "07", // 支付方式 - 支付宝
-                                    mTotalPrice, // 总金额
+                                    mTotal, // 总金额
                                     mBarCode, // 条码值
                                     "", // 支付密码
                                     "", // 校验码
@@ -458,7 +464,7 @@ public class ScanCodePayActivity extends AppCompatActivity {
                         // 关闭对话框
                         mWarnDialog.dismiss();
                         // 关闭服务端侦听
-                        closeServer();
+                        SocketUtils.closeServer(sServerSocket,sServerSocketThread);
                         // finish()当前界面
                         finish();
                     }
@@ -466,7 +472,7 @@ public class ScanCodePayActivity extends AppCompatActivity {
                     // 关闭对话框
                     mWarnDialog.dismiss();
                     // 关闭服务端侦听
-                    closeServer();
+                    SocketUtils.closeServer(sServerSocket,sServerSocketThread);
                     // finish()掉当前界面
                     finish();
                     // 跳转到首页
@@ -475,19 +481,6 @@ public class ScanCodePayActivity extends AppCompatActivity {
                     );
                 }
             }
-        }
-    }
-    public static void closeServer(){
-        if (sServerSocket != null) {
-            try {
-                sServerSocket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-                L.e("=======================哎呀,关闭服务端侦听失败啦=======================");
-            }
-        }
-        if (sServerSocketThread != null) {
-            sServerSocketThread.interrupt();
         }
     }
     /**

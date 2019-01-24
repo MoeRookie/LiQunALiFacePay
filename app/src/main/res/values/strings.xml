@@ -10,7 +10,7 @@
     <string name="pwd_not_null">密码不可为空！</string>
     <string name="pwd_err">密码有误，请重新输入！</string>
     <string name="connect_server_fail">连接服务器失败 , 请联系管理员. . .</string>
-    <string name="connect_client_fail">读取服务器失败 . . .</string>
+    <string name="connect_client_fail">读取服务器失败 , 请联系管理员 . . .</string>
     <string name="result_null_err">日结无果,请重新操作！</string>
     <string name="day_end_success">日结完成！</string>
     <!-- 设置 -->

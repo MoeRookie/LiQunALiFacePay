@@ -38,7 +38,7 @@
                         android:textStyle="bold"/>
                     <TextView
                         android:id="@+id/tv_account"
-                        android:visibility="gone"
+                        android:visibility="visible"
                         android:layout_gravity="center_horizontal"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -100,7 +100,6 @@
             </LinearLayout>
             <LinearLayout
                 android:id="@+id/ll_alipay_discounts"
-                android:visibility="gone"
                 android:layout_marginTop="8dp"
                 android:layout_marginLeft="50dp"
                 android:layout_marginRight="50dp"
@@ -124,7 +123,8 @@
                     android:layout_height="wrap_content"
                     android:textSize="11sp"
                     android:textColor="@color/black"
-                    android:textStyle="bold"/>
+                    android:textStyle="bold"
+                    android:text="￥0.00"/>
             </LinearLayout>
             <TextView
                 android:layout_marginTop="23dp"

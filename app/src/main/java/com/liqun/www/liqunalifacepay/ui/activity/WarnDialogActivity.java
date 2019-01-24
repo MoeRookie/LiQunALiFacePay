@@ -86,7 +86,7 @@ public class WarnDialogActivity extends AppCompatActivity {
         public void onFinish() {
             Log.e("MyCountDownTimer","onFinish.....");
             finish();
-            SelfHelpPayActivity.mActivity.finish();
+            SelfHelpPayActivity.sActivity.finish();
         }
     }
 }
