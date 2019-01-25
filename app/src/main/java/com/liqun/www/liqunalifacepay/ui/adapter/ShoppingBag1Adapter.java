@@ -10,6 +10,7 @@ import android.view.ViewGroup;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
+import android.widget.TextView;
 
 import com.liqun.www.liqunalifacepay.R;
 import com.liqun.www.liqunalifacepay.data.bean.ShoppingBagBean;
@@ -45,8 +46,8 @@ public class ShoppingBag1Adapter extends RecyclerView.Adapter<ShoppingBag1Adapte
         String price = bagBean.getPrice();
         holder.cbType.setChecked(bagBean.isSelected());
         holder.cbType.setText(bagBean.getType());
-        holder.etPrice.setText(!TextUtils.isEmpty(price)?price:"");
-
+        holder.tvCoding.setText(bagBean.getProductNo());
+        holder.tvPrice.setText(bagBean.getPrice());
         holder.cbType.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
@@ -63,11 +64,13 @@ public class ShoppingBag1Adapter extends RecyclerView.Adapter<ShoppingBag1Adapte
     class BagItemHolder extends RecyclerView.ViewHolder{
 
         private CheckBox cbType;
-        private EditText etPrice;
+        private TextView tvCoding,tvPrice;
+
         public BagItemHolder(@NonNull View itemView) {
             super(itemView);
             cbType = itemView.findViewById(R.id.cb_type);
-            etPrice = itemView.findViewById(R.id.et_price);
+            tvCoding = itemView.findViewById(R.id.tv_coding);
+            tvPrice = itemView.findViewById(R.id.tv_price);
         }
     }
 

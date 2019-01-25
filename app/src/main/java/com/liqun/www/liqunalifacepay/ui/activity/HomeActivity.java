@@ -278,7 +278,8 @@ implements View.OnClickListener {
                 showWarnDialog("尚未设置POS后台IP端口,请联系管理员!");
                 return;
             }
-            if (TextUtils.isEmpty(itemList.get(8).getContent())) {
+            if (TextUtils.isEmpty(itemList.get(8).getContent())
+                    ||itemList.get(8).getContent().equals(getString(R.string.content_no_use_shopping_bag))) {
                 showWarnDialog("尚未设置购物袋信息,请联系管理员!");
                 return;
             }

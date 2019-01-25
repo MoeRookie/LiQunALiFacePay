@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal">
@@ -11,17 +12,28 @@
         android:text="test"
         android:textStyle="bold"/>
     <TextView
+        android:id="@+id/tv_coding"
+        android:layout_gravity="center_vertical"
         android:layout_marginLeft="10dp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="￥"/>
-    <!-- 设置 android:background="@null"隐藏下划线,隐藏光标,默认为TRUE -->
-    <EditText
-        android:id="@+id/et_price"
+        tools:text="2499997"
+        android:textColor="@color/black"/>
+    <TextView
+        android:id="@+id/tv_price"
+        android:layout_gravity="center_vertical"
+        android:layout_marginLeft="10dp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:hint="点击改价"
-        android:textSize="12sp"
-        android:background="@null"
-        android:cursorVisible="false"/>
+        tools:text="￥0.1"
+        android:textColor="@color/black"/>
+    <!-- 设置 android:background="@null"隐藏下划线,隐藏光标,默认为TRUE -->
+    <!--<EditText-->
+        <!--android:id="@+id/et_price"-->
+        <!--android:layout_width="wrap_content"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:hint="点击改价"-->
+        <!--android:textSize="12sp"-->
+        <!--android:background="@null"-->
+        <!--android:cursorVisible="false"/>-->
 </LinearLayout>

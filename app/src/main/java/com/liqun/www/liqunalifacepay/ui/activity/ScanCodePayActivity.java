@@ -358,27 +358,6 @@ public class ScanCodePayActivity extends AppCompatActivity {
         mLoadingDialog.setMessage("支付中 . . .");
     }
 
-    /**
-     * 将请求时间转换为订单时间
-     * @param requestTime 请求时间
-     * @return 订单时间
-     */
-    private String getOrderTime(String requestTime) {
-        // 字符串->日期
-        SimpleDateFormat oldFormat = new SimpleDateFormat("yyyy-mm-dd hh:mm:ss");
-        try {
-            Date date = oldFormat.parse(requestTime);
-            // 格式化日期 ->
-            SimpleDateFormat newFormat = new SimpleDateFormat("yyyyMMddhhmmss");
-            // 获取日期字符串和时间字符串
-            return newFormat.format(date);
-        } catch (ParseException e) {
-            L.e("======================字符串转日期异常=====================");
-            e.printStackTrace();
-        }
-        return null;
-    }
-
 
     /**
      * ascii码转换为字符串

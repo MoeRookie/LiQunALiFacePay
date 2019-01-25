@@ -69,7 +69,7 @@ public class SettingActivity extends AppCompatActivity {
     private TextView tvMessage;
     private SettingItemBean mItemBean;
     private WarnDialog mWarnDialog;
-    private MultipleDialog mShoppingBagDialog;
+    private MultipleDialog mBagDialog;
     private ShoppingBag1Adapter mBagAdapter;
     private StringBuilder mSb = new StringBuilder();
     private EditText mEtPrice;
@@ -145,8 +145,12 @@ public class SettingActivity extends AppCompatActivity {
                 ConstantValue.SETTING_CONTENT,
                 content
         );
-        ConstantValue.IP_SERVER_ADDRESS = mItemList.get(6).getContent();
-        ConstantValue.PORT_SERVER_RECEIVE = Integer.valueOf(mItemList.get(7).getContent());
+        String ip = mItemList.get(6).getContent();
+        String port = mItemList.get(7).getContent();
+        if (!TextUtils.isEmpty(ip) && !TextUtils.isEmpty(port)) {
+            ConstantValue.IP_SERVER_ADDRESS = ip;
+            ConstantValue.PORT_SERVER_RECEIVE = Integer.valueOf(port);
+        }
     }
 
     private void initUI() {
@@ -416,11 +420,11 @@ public class SettingActivity extends AppCompatActivity {
      * @param itemBean 当前设置项
      */
     private void showShoppingBagDialog(SettingItemBean itemBean) {
-        if (mShoppingBagDialog == null) {
-            mShoppingBagDialog = new MultipleDialog(this);
-            mShoppingBagDialog.setTitle(itemBean.getTitle());
+        if (mBagDialog == null) {
+            mBagDialog = new MultipleDialog(this);
+            mBagDialog.setTitle(itemBean.getTitle());
             mBagAdapter = new ShoppingBag1Adapter(this, mBagList);
-            mShoppingBagDialog.setAdapter(mBagAdapter);
+            mBagDialog.setAdapter(mBagAdapter);
             mBagAdapter.setOnItemCheckedChangeListener(new ShoppingBag1Adapter.OnItemCheckedChangeListener() {
                 @Override
                 public void onItemCheckedChanged(int i) {
@@ -431,10 +435,7 @@ public class SettingActivity extends AppCompatActivity {
             });
             setShoppingBagDialogListener(itemBean);
         }
-        mShoppingBagDialog.show();
-        if (mEtPrice == null) {
-            mEtPrice = mShoppingBagDialog.findViewById(R.id.et_price);
-        }
+        mBagDialog.show();
     }
 
     /**
@@ -444,13 +445,13 @@ public class SettingActivity extends AppCompatActivity {
     private void setShoppingBagDialogListener(final SettingItemBean itemBean) {
         String noStr = getString(R.string.cancel);
         String yesStr = getString(R.string.sure);
-        mShoppingBagDialog.setOnNoClickListener(noStr, new MultipleDialog.OnNoClickListener() {
+        mBagDialog.setOnNoClickListener(noStr, new MultipleDialog.OnNoClickListener() {
             @Override
             public void onNoClick() {
-                mShoppingBagDialog.dismiss();
+                mBagDialog.dismiss();
             }
         });
-        mShoppingBagDialog.setOnYesClickListener(yesStr, new MultipleDialog.OnYesClickListener() {
+        mBagDialog.setOnYesClickListener(yesStr, new MultipleDialog.OnYesClickListener() {
             @Override
             public void onYesClicked() {
                 String json = JSONArray.toJSONString(mBagList);
@@ -464,32 +465,22 @@ public class SettingActivity extends AppCompatActivity {
                 }
                 for (int i = 0; i < mBagList.size(); i++) {
                     ShoppingBagBean bagBean = mBagList.get(i);
-                    String type = bagBean.getType();
-                    if (type.contains("小")) {
-                        type = "小";
-                    } else if (type.contains("中")) {
-                        type = "中";
-                    } else if (type.contains("大")) {
-                        type = "大";
-                    } else if (type.contains("特大")) {
-                        type = "特大";
-                    }
                     if (bagBean.isSelected()) {
-                        mSb.append(type);
+                        mSb.append(bagBean.getType().substring(0,bagBean.getType().indexOf("号") + 1));
+                        mSb.append("、");
                     }
                 }
-                itemBean.setContent("已启用"+ mSb.toString()+"号购物袋");
+                if (!TextUtils.isEmpty(mSb.toString().trim())) {
+                    itemBean.setContent("已启用"+ mSb.toString().trim().substring(0,mSb.toString().trim().length()-1)+"购物袋");
+                }else{
+                    itemBean.setContent(getString(R.string.content_no_use_shopping_bag));
+                }
                 mAdapter.notifyDataSetChanged();
+                // 保存购物袋信息
+                saveBagMsg();
                 // 保存当前界面状态
                 saveSettingMsg();
-                mShoppingBagDialog.dismiss();
-
-                String testStr = SpUtils.getString(
-                        SettingActivity.this,
-                        ConstantValue.SHOPPING_BAG_MSG,
-                        ""
-                );
-                L.e("testStr = " + testStr);
+                mBagDialog.dismiss();
             }
         });
     }
