@@ -72,7 +72,6 @@ public class SettingActivity extends AppCompatActivity {
     private MultipleDialog mBagDialog;
     private ShoppingBag1Adapter mBagAdapter;
     private StringBuilder mSb = new StringBuilder();
-    private EditText mEtPrice;
 
     public static Intent newIntent(Context packageContext) {
         Intent intent = new Intent(packageContext, SettingActivity.class);
@@ -145,12 +144,6 @@ public class SettingActivity extends AppCompatActivity {
                 ConstantValue.SETTING_CONTENT,
                 content
         );
-        String ip = mItemList.get(6).getContent();
-        String port = mItemList.get(7).getContent();
-        if (!TextUtils.isEmpty(ip) && !TextUtils.isEmpty(port)) {
-            ConstantValue.IP_SERVER_ADDRESS = ip;
-            ConstantValue.PORT_SERVER_RECEIVE = Integer.valueOf(port);
-        }
     }
 
     private void initUI() {

@@ -101,7 +101,6 @@ implements View.OnClickListener {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
         initUI();
-        initData();
         setListener();
     }
     /**
@@ -193,67 +192,27 @@ implements View.OnClickListener {
         layoutParams.height = layoutParams.width * width / height;
         iv.setLayoutParams(layoutParams);
     }
-    private void initData() {
-        // 获取设置信息
-        mSettingMsg = SpUtils.getString(
-                HomeActivity.this,
-                ConstantValue.SETTING_CONTENT,
-                ""
-        );
-    }
 
     @Override
     protected void onResume() {
         super.onResume();
         // 启用服务端侦听
         initNetWorkServer();
-        // 先取消付款
-        requestNetWorkServer(
-                ConstantValue.TAG_CANCEL_PAYMENT,
-                new CancelPaymentRequestBean(
-                        ALiFacePayApplication.getInstance().getHostIP(),
-                        "0"
-                )
-        );
-    }
-
-
-    private void setListener() {
-        mIvLiQun.setOnClickListener(this);
-        mIvRt.setOnClickListener(this);
-        mBtnNoVip.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mIsVip = false;
-                getFlowNo();
-            }
-        });
-        mBtnVip.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mIsVip = true;
-                getFlowNo();
-            }
-        });
-    }
-
-    /**
-     * 获取流水号
-     */
-    private void getFlowNo() {
         // 1.获取设置信息(为空则提示设置设置信息)
-        String settingMsg = SpUtils.getString(
+        mSettingMsg = SpUtils.getString(
                 HomeActivity.this,
                 ConstantValue.SETTING_CONTENT,
                 ""
         );
+        mBtnVip.setEnabled(false);
+        mBtnNoVip.setEnabled(false);
         List<SettingItemBean> itemList = null;
-        if (TextUtils.isEmpty(settingMsg)) {
+        if (TextUtils.isEmpty(mSettingMsg)) {
             showWarnDialog("尚未设置信息,请联系管理员!");
             return;
-        }else{
+        } else{
             // 2.转换为json数组
-            itemList = JSONArray.parseArray(settingMsg, SettingItemBean.class);
+            itemList = JSONArray.parseArray(mSettingMsg, SettingItemBean.class);
             if (TextUtils.isEmpty(itemList.get(2).getContent())) {
                 showWarnDialog("尚未设置门店名称,请联系管理员!");
                 return;
@@ -288,6 +247,43 @@ implements View.OnClickListener {
                 return;
             }
             setConfigMsg(itemList);
+            mBtnVip.setEnabled(true);
+            mBtnNoVip.setEnabled(true);
+            // 先取消付款
+            requestNetWorkServer(
+                    ConstantValue.TAG_CANCEL_PAYMENT,
+                    new CancelPaymentRequestBean(
+                            ALiFacePayApplication.getInstance().getHostIP(),
+                            "0"
+                    )
+            );
+        }
+    }
+
+
+    private void setListener() {
+        mIvLiQun.setOnClickListener(this);
+        mIvRt.setOnClickListener(this);
+        mBtnNoVip.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mIsVip = false;
+                getFlowNo();
+            }
+        });
+        mBtnVip.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mIsVip = true;
+                getFlowNo();
+            }
+        });
+    }
+
+    /**
+     * 获取流水号
+     */
+    private void getFlowNo() {
             // 3.请求获取流水号(失败时直接提示,点击确定后关闭对话框)
             requestNetWorkServer(
                     ConstantValue.TAG_DEAL_RECORD,
@@ -297,7 +293,6 @@ implements View.OnClickListener {
                             "0"
                     )
             );
-        }
     }
 
     /**
@@ -310,6 +305,7 @@ implements View.OnClickListener {
         ALiFacePayApplication.getInstance().setCatwalkNo(itemList.get(5).getContent());
         ALiFacePayApplication.getInstance().setPosServerIp(itemList.get(6).getContent());
         ALiFacePayApplication.getInstance().setPosServerPort(itemList.get(7).getContent());
+        ALiFacePayApplication.getInstance().setBagMsg(itemList.get(8).getContent());
         ALiFacePayApplication.getInstance().setOperatorNo(itemList.get(9).getContent());
     }
 
@@ -374,8 +370,8 @@ implements View.OnClickListener {
                 //建立tcp的服务
                 try {
                     Socket socket = new Socket(
-                            ConstantValue.IP_SERVER_ADDRESS,
-                            ConstantValue.PORT_SERVER_RECEIVE);
+                            ALiFacePayApplication.getInstance().getPosServerIp(),
+                            Integer.valueOf(ALiFacePayApplication.getInstance().getPosServerPort()));
                     //获取到Socket的输出流对象
                     OutputStream outputStream = socket.getOutputStream();
                     // 将输出流包装成打印流

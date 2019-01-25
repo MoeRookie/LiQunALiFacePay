@@ -289,8 +289,8 @@ public class ScanCodePayActivity extends AppCompatActivity {
                 //建立tcp的服务
                 try {
                     Socket socket = new Socket(
-                            ConstantValue.IP_SERVER_ADDRESS,
-                            ConstantValue.PORT_SERVER_RECEIVE);
+                            ALiFacePayApplication.getInstance().getPosServerIp(),
+                            Integer.valueOf(ALiFacePayApplication.getInstance().getPosServerPort()));
                     //获取到Socket的输出流对象
                     OutputStream outputStream = socket.getOutputStream();
                     // 将输出流包装成打印流

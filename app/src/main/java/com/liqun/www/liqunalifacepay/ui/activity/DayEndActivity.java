@@ -14,12 +14,16 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import com.alibaba.fastjson.JSONArray;
 import com.liqun.www.liqunalifacepay.R;
 import com.liqun.www.liqunalifacepay.application.ALiFacePayApplication;
 import com.liqun.www.liqunalifacepay.application.ConstantValue;
+import com.liqun.www.liqunalifacepay.data.bean.CancelPaymentBean;
+import com.liqun.www.liqunalifacepay.data.bean.SettingItemBean;
 import com.liqun.www.liqunalifacepay.data.utils.JointDismantleUtils;
 import com.liqun.www.liqunalifacepay.data.utils.L;
 import com.liqun.www.liqunalifacepay.data.utils.SocketUtils;
+import com.liqun.www.liqunalifacepay.data.utils.SpUtils;
 import com.liqun.www.liqunalifacepay.ui.view.GlobalDialog;
 import com.liqun.www.liqunalifacepay.ui.view.LoadingDialog;
 import com.liqun.www.liqunalifacepay.ui.view.WarnDialog;
@@ -32,6 +36,7 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.List;
 
 import static com.liqun.www.liqunalifacepay.data.bean.DayEndBean.DayEndRequestBean;
 import static com.liqun.www.liqunalifacepay.data.bean.DayEndBean.DayEndResponseBean;
@@ -46,6 +51,7 @@ public class DayEndActivity extends AppCompatActivity{
     private TextView mTvMessage;
     private EditText mEtPwd;
     private Message mMessage;
+    private String mSettingMsg;
     private Handler mHandler = new Handler(){
         @Override
         public void handleMessage(Message msg) {
@@ -148,6 +154,20 @@ public class DayEndActivity extends AppCompatActivity{
         mBtnDayEnd = findViewById(R.id.btn_day_end);
     }
 
+    /**
+     * 设置配置信息
+     */
+    private void setConfigMsg(List<SettingItemBean> itemList) {
+        ALiFacePayApplication.getInstance().setShopName(itemList.get(2).getContent());
+        ALiFacePayApplication.getInstance().setShopNo(itemList.get(3).getContent());
+        ALiFacePayApplication.getInstance().setShopMerchantNo(itemList.get(4).getContent());
+        ALiFacePayApplication.getInstance().setCatwalkNo(itemList.get(5).getContent());
+        ALiFacePayApplication.getInstance().setPosServerIp(itemList.get(6).getContent());
+        ALiFacePayApplication.getInstance().setPosServerPort(itemList.get(7).getContent());
+        ALiFacePayApplication.getInstance().setBagMsg(itemList.get(8).getContent());
+        ALiFacePayApplication.getInstance().setOperatorNo(itemList.get(9).getContent());
+    }
+
     private void setListener() {
         /**
          * 点击"返回"|"确定"按钮都返回到上一个界面
@@ -177,8 +197,58 @@ public class DayEndActivity extends AppCompatActivity{
             public void onClick(View v) {
                 // 等待日结服务端
                 initNetWorkServer();
-                // 弹出确认密码弹框
-                showGlobalDialog();
+                // 1.获取设置信息(为空则提示设置设置信息)
+                mSettingMsg = SpUtils.getString(
+                        DayEndActivity.this,
+                        ConstantValue.SETTING_CONTENT,
+                        ""
+                );
+                mBtnDayEnd.setEnabled(false);
+                List<SettingItemBean> itemList = null;
+                if (TextUtils.isEmpty(mSettingMsg)) {
+                    showWarnDialog("尚未设置信息,请联系管理员!");
+                    return;
+                } else{
+                    // 2.转换为json数组
+                    itemList = JSONArray.parseArray(mSettingMsg, SettingItemBean.class);
+                    if (TextUtils.isEmpty(itemList.get(2).getContent())) {
+                        showWarnDialog("尚未设置门店名称,请联系管理员!");
+                        return;
+                    }
+                    if (TextUtils.isEmpty(itemList.get(3).getContent())) {
+                        showWarnDialog("尚未设置门店编码,请联系管理员!");
+                        return;
+                    }
+                    if (TextUtils.isEmpty(itemList.get(4).getContent())) {
+                        showWarnDialog("尚未设置门店商户号,请联系管理员!");
+                        return;
+                    }
+                    if (TextUtils.isEmpty(itemList.get(5).getContent())) {
+                        showWarnDialog("尚未设置款台号,请联系管理员!");
+                        return;
+                    }
+                    if (TextUtils.isEmpty(itemList.get(6).getContent())) {
+                        showWarnDialog("尚未设置POS后台IP地址,请联系管理员!");
+                        return;
+                    }
+                    if (TextUtils.isEmpty(itemList.get(7).getContent())) {
+                        showWarnDialog("尚未设置POS后台IP端口,请联系管理员!");
+                        return;
+                    }
+                    if (TextUtils.isEmpty(itemList.get(8).getContent())
+                            ||itemList.get(8).getContent().equals(getString(R.string.content_no_use_shopping_bag))) {
+                        showWarnDialog("尚未设置购物袋信息,请联系管理员!");
+                        return;
+                    }
+                    if (TextUtils.isEmpty(itemList.get(9).getContent())) {
+                        showWarnDialog("尚未设置收款员编码,请联系管理员!");
+                        return;
+                    }
+                    setConfigMsg(itemList);
+                    mBtnDayEnd.setEnabled(true);
+                    // 弹出确认密码弹框
+                    showGlobalDialog();
+                }
             }
         });
     }
@@ -337,8 +407,8 @@ public class DayEndActivity extends AppCompatActivity{
                 //建立tcp的服务
                 try {
                     Socket socket = new Socket(
-                            ConstantValue.IP_SERVER_ADDRESS,
-                            ConstantValue.PORT_SERVER_RECEIVE);
+                            ALiFacePayApplication.getInstance().getPosServerIp(),
+                            Integer.valueOf(ALiFacePayApplication.getInstance().getPosServerPort()));
                     //获取到Socket的输出流对象
                     OutputStream outputStream = socket.getOutputStream();
                     // 将输出流包装成打印流

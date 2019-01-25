@@ -32,6 +32,20 @@ public class ALiFacePayApplication extends Application {
     private static final String MAIN_PROCESS_NAME = "com.liqun.www.liqunalifacepay";
     private static ALiFacePayApplication instance;
 
+    private XDeviceManager mXDeviceManager;
+    private String hostIP; // 本机ip地址
+    private String shoppingBagMsg; // 购物袋信息
+
+    private String shopName; // 门店名称
+    private String shopNo; // 门店编码
+    private String shopMerchantNo; // 门店商户号
+    private String catwalkNo; // 款台号
+    private String posServerIp; // pos后台ip地址
+    private String posServerPort; // pos后台ip端口
+
+    private String bagMsg; // 启用购物袋信息
+    private String operatorNo; // 操作员编号
+    private String flowNo; // 流水号
     public XDeviceManager getXDeviceManager() {
         return mXDeviceManager;
     }
@@ -39,11 +53,6 @@ public class ALiFacePayApplication extends Application {
     public void setXDeviceManager(XDeviceManager XDeviceManager) {
         mXDeviceManager = XDeviceManager;
     }
-
-    private XDeviceManager mXDeviceManager;
-    private String hostIP; // 本机ip地址
-    private String shoppingBagMsg; // 购物袋信息
-
     public String getShopName() {
         return shopName;
     }
@@ -92,13 +101,14 @@ public class ALiFacePayApplication extends Application {
         this.posServerPort = posServerPort;
     }
 
-    private String shopName; // 门店名称
-    private String shopNo; // 门店编码
-    private String shopMerchantNo; // 门店商户号
-    private String catwalkNo; // 款台号
-    private String posServerIp; // pos后台ip地址
-    private String posServerPort; // pos后台ip端口
-    private String operatorNo; // 操作员编号
+
+    public String getBagMsg() {
+        return bagMsg;
+    }
+
+    public void setBagMsg(String bagMsg) {
+        this.bagMsg = bagMsg;
+    }
 
     public String getOperatorNo() {
         return operatorNo;
@@ -115,8 +125,6 @@ public class ALiFacePayApplication extends Application {
     public void setFlowNo(String flowNo) {
         this.flowNo = flowNo;
     }
-
-    private String flowNo; // 流水号
 
     @Override
     public void onCreate() {
