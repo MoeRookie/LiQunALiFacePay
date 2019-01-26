@@ -3,13 +3,11 @@ package com.liqun.www.liqunalifacepay.ui.adapter;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
-import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
-import android.widget.EditText;
 import android.widget.TextView;
 
 import com.liqun.www.liqunalifacepay.R;
@@ -23,6 +21,8 @@ public class ShoppingBag1Adapter extends RecyclerView.Adapter<ShoppingBag1Adapte
     private List<ShoppingBagBean> mBagList;
     private OnItemCheckedChangeListener onItemCheckedChangeListener;
 
+    private OnItemBagPriceClickListener onItemBagPriceClickListener;
+
     public ShoppingBag1Adapter(Context ctx, List<ShoppingBagBean> bagList) {
         mCtx = ctx;
         mBagList = bagList;
@@ -31,6 +31,16 @@ public class ShoppingBag1Adapter extends RecyclerView.Adapter<ShoppingBag1Adapte
 
     public void setOnItemCheckedChangeListener(OnItemCheckedChangeListener onItemCheckedChangeListener) {
         this.onItemCheckedChangeListener = onItemCheckedChangeListener;
+    }
+
+    public void setOnItemBagCodeClickListener(OnItemBagCodeClickListener onItemBagCodeClickListener) {
+        this.onItemBagCodeClickListener = onItemBagCodeClickListener;
+    }
+
+    private OnItemBagCodeClickListener onItemBagCodeClickListener;
+
+    public void setOnItemBagPriceClickListener(OnItemBagPriceClickListener onItemBagPriceClickListener) {
+        this.onItemBagPriceClickListener = onItemBagPriceClickListener;
     }
 
     @NonNull
@@ -43,7 +53,6 @@ public class ShoppingBag1Adapter extends RecyclerView.Adapter<ShoppingBag1Adapte
     @Override
     public void onBindViewHolder(@NonNull BagItemHolder holder, final int i) {
         ShoppingBagBean bagBean = mBagList.get(i);
-        String price = bagBean.getPrice();
         holder.cbType.setChecked(bagBean.isSelected());
         holder.cbType.setText(bagBean.getType());
         holder.tvCoding.setText(bagBean.getProductNo());
@@ -52,6 +61,18 @@ public class ShoppingBag1Adapter extends RecyclerView.Adapter<ShoppingBag1Adapte
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 onItemCheckedChangeListener.onItemCheckedChanged(i);
+            }
+        });
+        holder.tvCoding.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                onItemBagCodeClickListener.onItemBagCodeClicked(i);
+            }
+        });
+        holder.tvPrice.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                onItemBagPriceClickListener.onItemBagPriceClicked(i);
             }
         });
     }
@@ -79,5 +100,17 @@ public class ShoppingBag1Adapter extends RecyclerView.Adapter<ShoppingBag1Adapte
      */
     public interface OnItemCheckedChangeListener{
         void onItemCheckedChanged(int i);
+    }
+    /**
+     * 列表项购物袋编码改变
+     */
+    public interface OnItemBagCodeClickListener {
+        void onItemBagCodeClicked(int i);
+    }
+    /**
+     * 列表项购物袋价格改变
+     */
+    public interface OnItemBagPriceClickListener {
+        void onItemBagPriceClicked(int i);
     }
 }

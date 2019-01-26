@@ -61,5 +61,6 @@
         <activity android:name=".ui.activity.ScanCodePayResultActivity"/>
         <activity android:name=".ui.activity.FacePayResultActivity"/>
         <activity android:name=".ui.activity.PayingActivity"/>
+        <activity android:name=".ui.activity.ShoppingBagActivity"/>
     </application>
 </manifest>

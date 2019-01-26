@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    android:layout_marginTop="1dp"
+    android:padding="4dp"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="horizontal">
+    android:orientation="horizontal"
+    android:background="@drawable/selector_bg_item_setting">
     <CheckBox
         android:id="@+id/cb_type"
         android:layout_width="wrap_content"
@@ -27,13 +30,4 @@
         android:layout_height="wrap_content"
         tools:text="￥0.1"
         android:textColor="@color/black"/>
-    <!-- 设置 android:background="@null"隐藏下划线,隐藏光标,默认为TRUE -->
-    <!--<EditText-->
-        <!--android:id="@+id/et_price"-->
-        <!--android:layout_width="wrap_content"-->
-        <!--android:layout_height="wrap_content"-->
-        <!--android:hint="点击改价"-->
-        <!--android:textSize="12sp"-->
-        <!--android:background="@null"-->
-        <!--android:cursorVisible="false"/>-->
 </LinearLayout>
