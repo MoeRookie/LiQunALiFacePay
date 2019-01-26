@@ -20,14 +20,22 @@
         android:layout_marginLeft="10dp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:padding="3dp"
         tools:text="2499997"
         android:textColor="@color/black"/>
     <TextView
-        android:id="@+id/tv_price"
         android:layout_gravity="center_vertical"
         android:layout_marginLeft="10dp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        tools:text="￥0.1"
+        android:text="￥"
+        android:textColor="@color/black"/>
+    <TextView
+        android:id="@+id/tv_price"
+        android:layout_gravity="center_vertical"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="3dp"
+        tools:text="0.1"
         android:textColor="@color/black"/>
 </LinearLayout>

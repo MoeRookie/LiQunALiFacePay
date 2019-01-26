@@ -30,6 +30,7 @@ public class ShoppingBagActivity extends AppCompatActivity {
 
     private static final String PRODUCT_NO = "product_no";
     private static final String PRICE = "price";
+    public static final String EXTRA_BAG_MSG = "com.liqun.www.liqunalifacepay.bag_msg";
     private String mOperator;
     private RecyclerView mRvBags;
     private Button mBtnSave;
@@ -40,6 +41,7 @@ public class ShoppingBagActivity extends AppCompatActivity {
     private TextView mTvTitle,mTvMessage;
     private EditText mEtContent;
     private ShoppingBagBean mBagBean;
+    private StringBuilder mSb = new StringBuilder();
 
     public static Intent newIntent(Context packageContext) {
         Intent intent = new Intent(packageContext, ShoppingBagActivity.class);
@@ -109,9 +111,26 @@ public class ShoppingBagActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 saveBagMsg();
-                for (int i = 0; i < mBagList.size(); i++) {
-                    L.e("BagBean" + (i + 1) + "=" + mBagList.get(i).toString());
+                String content = null;
+                // 拼接购物袋列表项内容并设置给设置界面
+                if (mSb.length() > 0) {
+                    mSb.delete(0, mSb.length());
                 }
+                for (int i = 0; i < mBagList.size(); i++) {
+                    ShoppingBagBean bagBean = mBagList.get(i);
+                    if (bagBean.isSelected()) {
+                        mSb.append(bagBean.getType().substring(0,bagBean.getType().indexOf("号") + 1));
+                        mSb.append("、");
+                    }
+                }
+                if (!TextUtils.isEmpty(mSb.toString().trim())) {
+                    content = "已启用" + mSb.toString().trim().substring(0, mSb.toString().trim().length() - 1) + "购物袋";
+                }else{
+                    content = getString(R.string.content_no_use_shopping_bag);
+                }
+                Intent intent = new Intent();
+                intent.putExtra(EXTRA_BAG_MSG, content);
+                setResult(RESULT_OK,intent);
                 finish();
             }
         });

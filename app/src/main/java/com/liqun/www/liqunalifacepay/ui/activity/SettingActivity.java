@@ -19,6 +19,7 @@ import com.liqun.www.liqunalifacepay.application.ALiFacePayApplication;
 import com.liqun.www.liqunalifacepay.application.ConstantValue;
 import com.liqun.www.liqunalifacepay.data.bean.SettingItemBean;
 import com.liqun.www.liqunalifacepay.data.bean.ShoppingBagBean;
+import com.liqun.www.liqunalifacepay.data.utils.L;
 import com.liqun.www.liqunalifacepay.data.utils.SpUtils;
 import com.liqun.www.liqunalifacepay.ui.adapter.SettingAdapter;
 import com.liqun.www.liqunalifacepay.ui.adapter.ShoppingBag1Adapter;
@@ -68,9 +69,6 @@ public class SettingActivity extends AppCompatActivity {
     private TextView tvMessage;
     private SettingItemBean mItemBean;
     private WarnDialog mWarnDialog;
-    private MultipleDialog mBagDialog;
-    private ShoppingBag1Adapter mBagAdapter;
-    private StringBuilder mSb = new StringBuilder();
 
     public static Intent newIntent(Context packageContext) {
         Intent intent = new Intent(packageContext, SettingActivity.class);
@@ -362,73 +360,24 @@ public class SettingActivity extends AppCompatActivity {
             }
         });
     }
-    /**
-     * 显示"启用购物袋"的对话框
-     * @param itemBean 当前设置项
-     */
-//    private void showShoppingBagDialog(SettingItemBean itemBean) {
-//        if (mBagDialog == null) {
-//            mBagDialog = new MultipleDialog(this);
-//            mBagDialog.setTitle(itemBean.getTitle());
-//            mBagAdapter = new ShoppingBag1Adapter(this, mBagList);
-//            mBagDialog.setAdapter(mBagAdapter);
-//            mBagAdapter.setOnItemCheckedChangeListener(new ShoppingBag1Adapter.OnItemCheckedChangeListener() {
-//                @Override
-//                public void onItemCheckedChanged(int i) {
-//                    ShoppingBagBean bagBean = mBagList.get(i);
-//                    bagBean.setSelected(!bagBean.isSelected());
-//                    mBagAdapter.notifyDataSetChanged();
-//                }
-//            });
-//            setShoppingBagDialogListener(itemBean);
-//        }
-//        mBagDialog.show();
-//    }
 
-    /**
-     * 监听多选对话框取消&确定按钮被点击
-     * @param itemBean 当前设置项
-     */
-//    private void setShoppingBagDialogListener(final SettingItemBean itemBean) {
-//        String noStr = getString(R.string.cancel);
-//        String yesStr = getString(R.string.sure);
-//        mBagDialog.setOnNoClickListener(noStr, new MultipleDialog.OnNoClickListener() {
-//            @Override
-//            public void onNoClick() {
-//                mBagDialog.dismiss();
-//            }
-//        });
-//        mBagDialog.setOnYesClickListener(yesStr, new MultipleDialog.OnYesClickListener() {
-//            @Override
-//            public void onYesClicked() {
-//                String json = JSONArray.toJSONString(mBagList);
-//                SpUtils.putString(
-//                        getApplicationContext(),
-//                        ConstantValue.SHOPPING_BAG_MSG,
-//                        json
-//                );
-//                if (mSb.length() > 0) {
-//                    mSb.delete(0, mSb.length());
-//                }
-//                for (int i = 0; i < mBagList.size(); i++) {
-//                    ShoppingBagBean bagBean = mBagList.get(i);
-//                    if (bagBean.isSelected()) {
-//                        mSb.append(bagBean.getType().substring(0,bagBean.getType().indexOf("号") + 1));
-//                        mSb.append("、");
-//                    }
-//                }
-//                if (!TextUtils.isEmpty(mSb.toString().trim())) {
-//                    itemBean.setContent("已启用"+ mSb.toString().trim().substring(0,mSb.toString().trim().length()-1)+"购物袋");
-//                }else{
-//                    itemBean.setContent(getString(R.string.content_no_use_shopping_bag));
-//                }
-//                mAdapter.notifyDataSetChanged();
-//                // 保存购物袋信息
-//                saveBagMsg();
-//                // 保存当前界面状态
-//                saveSettingMsg();
-//                mBagDialog.dismiss();
-//            }
-//        });
-//    }
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_CODE_BAG) {
+            if (resultCode == RESULT_OK) {
+                if (data != null) {
+                    String bagMsg = data.getStringExtra(ShoppingBagActivity.EXTRA_BAG_MSG);
+                    // 获取到购物袋信息列表项
+                    SettingItemBean bagItem = mItemList.get(8);
+                    // 设置购物袋信息
+                    bagItem.setContent(bagMsg);
+                    // 更新当前界面显示
+                    mAdapter.notifyDataSetChanged();
+                    // 保存当前界面信息
+                    saveSettingMsg();
+                }
+            }
+        }
+    }
 }
