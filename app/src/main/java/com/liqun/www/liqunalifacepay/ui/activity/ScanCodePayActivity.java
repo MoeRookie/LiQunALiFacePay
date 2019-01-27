@@ -60,7 +60,7 @@ public class ScanCodePayActivity extends AppCompatActivity {
     private boolean mIsRequestSuccess = true; // 请求结果
     private boolean mIsManual = false; // 默认自动
     private boolean mIsCancel = true; // 计时器默认作用于取消按钮
-
+    private boolean mIsFirstScan = true; // 是否为第一次扫描支付宝付款码
     private Handler mHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
@@ -162,6 +162,7 @@ public class ScanCodePayActivity extends AppCompatActivity {
                 retmsg = "支付宝付款成功";
             }
             enterPayResult(retmsg,"0".equals(retflag)||"2".equals(retflag),ptrb);
+            mIsFirstScan = true;
         }
     }
 
@@ -320,12 +321,13 @@ public class ScanCodePayActivity extends AppCompatActivity {
             // 设置当前操作类型为扫码付
             mIsCancelPay = false;
             // 加签
-                int result[] = new int[1];
-                mSignedBarCode = mXDeviceManager.sign(mBarCode.getBytes(), result);
-                if (result[0] != 0) {
-                    // 加签失败
-                    L.e("加签失败：" + result[0]);
-                } else{
+            int result[] = new int[1];
+            mSignedBarCode = mXDeviceManager.sign(mBarCode.getBytes(), result);
+            if (result[0] != 0) {
+                // 加签失败
+                L.e("加签失败：" + result[0]);
+            } else{
+                if (mIsFirstScan) {
                     showLoadingDialog();
                     requestNetWorkServer(
                             ConstantValue.TAG_PAYMENT_TYPE,
@@ -341,8 +343,10 @@ public class ScanCodePayActivity extends AppCompatActivity {
                                     mSignedBarCode
                             )
                     );
+                    mIsFirstScan = false;
                 }
-                    // 2.请求支付
+            }
+            // 2.请求支付
             // 清空stringBuffer
             mSb.delete(0,mSb.length());
         }
