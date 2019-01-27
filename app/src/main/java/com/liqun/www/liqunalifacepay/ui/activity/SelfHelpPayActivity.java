@@ -41,7 +41,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Pattern;
 
 import static com.alibaba.fastjson.JSONArray.parseArray;
 import static com.liqun.www.liqunalifacepay.data.bean.CancelDealBean.CancelDealRequestBean;
@@ -90,10 +89,6 @@ implements View.OnClickListener {
     private float mTotalPrice = 0.00f; // 记录商品的总价格
     private TextView mTvGoodsNum;
     private TextView mTvGoodsTotalPrice;
-    /**
-     * 正则表达式：验证手机号
-     */
-    public static final String REGEX_MOBILE = "^[1](([3][0-9])|([4][5,7,9])|([5][^4,6,9])|([6][6])|([7][3,5,6,7,8])|([8][0-9])|([9][8,9]))[0-9]{8}$";
     private Handler mHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
@@ -259,13 +254,13 @@ implements View.OnClickListener {
                     // 1.判空(空则提示手机号不能为空)
                     if (TextUtils.isEmpty(cardNum)) {
                         mTvMessage.setVisibility(View.VISIBLE);
-                        mTvMessage.setText(R.string.hint_phone_number_empty_err);
+                        mTvMessage.setText(R.string.hint_card_number_empty_err);
                         return;
                     }
                     // 2.判格式(不符合则提示手机号格式有误,并清空手机号输入框)
-                    if(!Pattern.matches(REGEX_MOBILE, cardNum)){
+                    if(cardNum.length()!=7 && cardNum.length()!=8 && cardNum.length()!=11){
                         mTvMessage.setVisibility(View.VISIBLE);
-                        mTvMessage.setText(R.string.hint_phone_number_format_err);
+                        mTvMessage.setText(R.string.hint_card_number_digit_err);
                         mEtCardNum.setText("");
                         return;
                     }
