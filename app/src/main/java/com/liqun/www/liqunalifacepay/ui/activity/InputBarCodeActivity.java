@@ -161,6 +161,7 @@ public class InputBarCodeActivity extends AppCompatActivity {
                 }
                 if (barCodeStr.length() != 7
                         && barCodeStr.length() != 8
+                        && barCodeStr.length() != 12
                         && barCodeStr.length() != 13
                         && barCodeStr.length() != 15
                         && barCodeStr.length() != 20) {

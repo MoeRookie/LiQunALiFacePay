@@ -323,6 +323,7 @@ implements View.OnClickListener {
             // 检测到回车后获取到商品码
             if ((barCode.length() == 7
                     || barCode.length() == 8
+                    || barCode.length() == 12
                     || barCode.length() == 13
                     || barCode.length() == 15
                     || barCode.length() == 20)) {
