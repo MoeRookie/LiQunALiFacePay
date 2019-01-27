@@ -29,6 +29,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
+import java.math.BigDecimal;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.text.DecimalFormat;
@@ -175,9 +176,12 @@ implements View.OnClickListener {
                     String buyerPayAmountStr = payResponse.getBuyer_pay_amount();// 付款金额
                     double receiptAmount = Double.valueOf(receiptAmountStr);
                     double buyerPayAmount = Double.valueOf(buyerPayAmountStr);
-                    DecimalFormat df = new DecimalFormat("#.00");
                     double discounts = receiptAmount-buyerPayAmount;
-                    String disCountsStr = df.format(discounts);
+                    // 四舍五入保留两位小数
+                    double disCounts = new BigDecimal(discounts)
+                            .setScale(2, BigDecimal.ROUND_HALF_UP)
+                            .doubleValue();
+                    String disCountsStr = String.valueOf(disCounts);
                     // 显示支付成功界面,隐藏支付失败界面
                     setLayoutVisibility(true);
                     // 设置支付成功界面显示

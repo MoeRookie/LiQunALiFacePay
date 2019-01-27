@@ -243,6 +243,7 @@ public class ScanCodePayActivity extends AppCompatActivity {
             mCount = intent.getIntExtra(EXTRA_COUNT, 0);
             mTotal = intent.getFloatExtra(EXTRA_TOTAL, 0.00f);
             mTvTotalPrice.setText("￥ " + mTotal);
+            mTotalDsc = intent.getFloatExtra(EXTRA_TOTAL_DSC, 0.00f);
         }
     }
 

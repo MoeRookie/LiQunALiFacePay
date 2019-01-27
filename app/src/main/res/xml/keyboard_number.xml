@@ -47,7 +47,8 @@
             <!--android:keyLabel="C" />-->
         <Key
             android:codes="48"
-            android:keyLabel="0" />
+            android:keyLabel="0"
+            android:keyWidth="56%p"/>
 
         <Key
             android:codes="-5"
